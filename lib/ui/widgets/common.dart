@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 
 /// Colour of a signal state (tokens only).
 Color stateColor(BuildContext context, SignalState state) {
-  final t = context.moto;
+  final t = context.vehicle;
   return switch (state) {
     SignalState.live => t.live,
     SignalState.stale => t.stale,
@@ -76,7 +76,7 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.moto;
+    final t = context.vehicle;
     return Container(
       width: double.infinity,
       padding: padding,
@@ -93,7 +93,7 @@ class SectionCard extends StatelessWidget {
 }
 
 Color toneColor(BuildContext context, Tone tone) {
-  final t = context.moto;
+  final t = context.vehicle;
   return switch (tone) {
     Tone.ok => t.live,
     Tone.warn => t.stale,
@@ -130,7 +130,7 @@ class StatusPill extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium!.copyWith(color: context.moto.textPrimary),
+              style: Theme.of(context).textTheme.labelMedium!.copyWith(color: context.vehicle.textPrimary),
             ),
           ),
         ],
@@ -234,7 +234,7 @@ class KeyValueRow extends StatelessWidget {
           children: [
             Expanded(
               flex: 5,
-              child: Text(label, style: theme.textTheme.bodyMedium!.copyWith(color: context.moto.textSecondary)),
+              child: Text(label, style: theme.textTheme.bodyMedium!.copyWith(color: context.vehicle.textSecondary)),
             ),
             const SizedBox(width: Spacing.md),
             Expanded(
@@ -267,7 +267,7 @@ class SignalTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = context.moto;
+    final t = context.vehicle;
     final live = view.isLive;
     final color = live ? t.textPrimary : stateColor(context, view.state);
     final style = (valueStyle ?? theme.textTheme.displaySmall!).copyWith(color: color);

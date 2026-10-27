@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/imu_block.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/imu_block.dart';
 
 /// Builds one raw IMU block: a 12-byte header followed by [sampleCount]
 /// 12-byte samples, all sharing the same raw axis values unless overridden
@@ -48,8 +48,8 @@ Uint8List buildImuBlockBytes({
 
 void main() {
   group('generated layout is self-consistent', () {
-    // The layout itself lives in the generated moto_defs package (D-061); a
-    // drift between it and the firmware is caught by moto-vehicle-defs, not
+    // The layout itself lives in the generated vehicle_defs package (D-061); a
+    // drift between it and the firmware is caught by vehicle-defs, not
     // here. These checks only guard the assumptions the decoder makes.
     test('header fields exactly cover headerBytes', () {
       final fields = <(int, int)>[

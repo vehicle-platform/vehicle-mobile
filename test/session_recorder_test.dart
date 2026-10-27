@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/session_meta.dart';
-import 'package:moto_mobile/models/telemetry_data.dart';
-import 'package:moto_mobile/services/session_recorder.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart';
 
 import 'imu_block_test.dart' show buildImuBlockBytes;
 import 'telemetry_data_test.dart' show buildV2Packet, buildV3Packet, buildV4Packet;

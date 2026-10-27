@@ -1,17 +1,17 @@
 # Ride session file format
 
-This is moto-mobile's side of the session file contract shared with
-`moto-server`: what `SessionRecorder` (`lib/services/session_recorder.dart`)
+This is vehicle-mobile's side of the session file contract shared with
+`vehicle-server`: what `SessionRecorder` (`lib/services/session_recorder.dart`)
 writes to `<app documents>/sessions/<session_id>/`, and what the upload
-archive (`lib/services/session_upload.dart`) contains. moto-server is built
+archive (`lib/services/session_upload.dart`) contains. vehicle-server is built
 against the same contract independently -- if you change anything here,
 change it on both sides together.
 
 The BLE packet layouts referenced throughout (telemetry versions 2, 3 and 4,
 the IMU block, the GPS block and the vehicle-signal block) have exactly one
-source of truth: `ble/ble_schema.json` in `moto-vehicle-defs` (D-061). This repo takes it through the
-`external/moto-vehicle-defs` submodule and the generated Dart package
-`moto_defs` (`package:moto_defs/moto_defs.dart`, a path dependency); there is
+source of truth: `ble/ble_schema.json` in `vehicle-defs` (D-061). This repo takes it through the
+`external/vehicle-defs` submodule and the generated Dart package
+`vehicle_defs` (`package:vehicle_defs/vehicle_defs.dart`, a path dependency); there is
 no copy of the schema and no drift test here. Never hand-invent a field name,
 offset or scale -- it comes from the schema (its `testerStats` section
 explains the version 4 fields), and a layout change is a defs change plus a
@@ -72,7 +72,7 @@ rtt_sum_ms,rtt_count,rtt_nrc78_count
 
 Notes:
 - `raw_hex` is lowercase hex of the *entire* notification payload (16 bytes
-  for version 2, 37 for version 3, 57 for version 4) and is authoritative: moto-server
+  for version 2, 37 for version 3, 57 for version 4) and is authoritative: vehicle-server
   re-decodes it from the schema and only uses this app's decoded columns as
   a consistency check.
 - A row whose packet decoded as version 2 (old firmware, or the negotiated
@@ -110,9 +110,9 @@ Notes:
   A round trip is the time from the request's send to the tester step that
   drains its answer, so it includes one step and loop latency (see the
   schema's `testerStats.roundTrip`).
-- **moto-server must accept the same 43 columns** (the 8 new ones are empty
+- **vehicle-server must accept the same 43 columns** (the 8 new ones are empty
   for version 2 and 3 rows). This is part of the contract shared with
-  moto-server; change it on both sides together.
+  vehicle-server; change it on both sides together.
 - `can_bus_state` and `can_flags` are the raw integers from the schema's
   `canHealth.busState` / `canHealth.canFlags`, not names.
 - Booleans are `1`/`0`; every other unavailable value (including an age
@@ -141,7 +141,7 @@ ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps
 - `sample_index` = `firstSampleIndex + i` (mod 65536); `device_time_ms` =
   `deviceTimeMs + i * samplePeriodMs` -- both per the schema's `timeRule`.
 - `*_raw` are the signed 16-bit values straight off the wire; `*_g` / `*_dps`
-  are `raw / scale` using the schema's `imuBlock.scale` (moto-server
+  are `raw / scale` using the schema's `imuBlock.scale` (vehicle-server
   recomputes these from the raw values independently).
 - A block that fails to decode (bad version, bad size, `sampleCount` out of
   range) never gets a row here -- it is counted as a `decode_error` event
@@ -152,7 +152,7 @@ ax_g,ay_g,az_g,gx_dps,gy_dps,gz_dps
 Speed and heading of connectivity-node's GPS, from the schema's `gpsBlock`
 (notified on the `gps` characteristic, one block per UBX-NAV-PVT, 10 Hz).
 **There is no position:** latitude, longitude and height never leave the node
-(D-060 item 3, invariant 7), and moto-server rejects a `gps.csv` whose header
+(D-060 item 3, invariant 7), and vehicle-server rejects a `gps.csv` whose header
 is not exactly the one below.
 
 Created lazily, the first time a GPS block decodes successfully -- a session
@@ -167,7 +167,7 @@ heading_accuracy_deg,gnss_fix_ok,parse_error,uart_overflow
 ```
 
 - `raw_hex` is lowercase hex of the whole 26-byte block and is
-  authoritative: moto-server re-decodes it and uses the other columns only as
+  authoritative: vehicle-server re-decodes it and uses the other columns only as
   a consistency check.
 - `lost_since_prev` = `(seq - prev.seq - 1) mod 256` (schema `sequenceRule`;
   0 for the first block of the session). It counts blocks lost on the radio
@@ -195,7 +195,7 @@ next one. A failure never affects telemetry or IMU.
 
 **Residual privacy risk (D-060 item 5).** A speed + heading series can rebuild
 the route's shape by dead reckoning. A session with `gps.csv` goes only to
-the user's own local moto-server (Phase 0 runs it on the laptop), never to a
+the user's own local vehicle-server (Phase 0 runs it on the laptop), never to a
 server that is not local, and real sessions are never committed (D-033).
 
 ## signals.csv (optional, D-066 item 4)
@@ -227,7 +227,7 @@ did,state,age_ms,raw,signal,value
     `65534` = saturated); like `telemetry.csv`'s `rtt_*` columns it holds the raw wire value.
   - `raw`: the 32-bit raw field as a decimal integer: the data bytes as an unsigned big-endian
     number for state 1 and 2, the NRC for state 4, 0 otherwise.
-- `signal` and `value` are this app's catalog decode, a convenience that moto-server
+- `signal` and `value` are this app's catalog decode, a convenience that vehicle-server
   recomputes from `did` + `raw` with its own generated catalog (and only uses as a
   consistency check):
   - `signal`: the catalog name (e.g. `ENGINE_SPEED`), empty for a DID that is not in the
@@ -238,8 +238,8 @@ did,state,age_ms,raw,signal,value
 - A block that fails to decode (wrong version, length that does not match `recordCount`)
   gets no row; it is a `decode_error` event with the detail prefixed `vsig:`.
 
-moto-server must accept exactly this header for `signals.csv` (reject any other header, like
-`gps.csv`), re-decode `value` from `did` + `raw` via `moto_defs.vehicle_catalog`, keep rows of
+vehicle-server must accept exactly this header for `signals.csv` (reject any other header, like
+`gps.csv`), re-decode `value` from `did` + `raw` via `vehicle_defs.vehicle_catalog`, keep rows of
 unknown DIDs with an empty value, and expose the decoded signals in its outputs alongside the
 telemetry signals.
 
@@ -314,7 +314,7 @@ New keys (D-066 item 4):
   `vehicle_signal_lost_blocks`, `vehicle_signal_lost_percent` (0 / `0.0` when
   no block arrived; percent = lost / (count + lost) * 100).
 
-## Upload to moto-server
+## Upload to vehicle-server
 
 - `POST {baseUrl}/sessions`, `multipart/form-data`, field name `archive`,
   filename `<session_id>.zip`, header `Authorization: Bearer <token>`.

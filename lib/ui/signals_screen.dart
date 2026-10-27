@@ -75,7 +75,7 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.moto;
+    final t = context.vehicle;
     return SectionCard(
       child: Row(
         children: [
@@ -158,7 +158,7 @@ class _SignalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = context.moto;
+    final t = context.vehicle;
     final live = view.isLive;
     final valueColor = live ? t.textPrimary : stateColor(context, view.state);
     final signal = view.signal;

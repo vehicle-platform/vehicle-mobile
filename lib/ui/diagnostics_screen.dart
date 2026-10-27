@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 import '../models/telemetry_data.dart';
 import 'telemetry/link_status.dart';
@@ -41,7 +41,7 @@ class DiagnosticsScreen extends StatelessWidget {
   String _num(int? v) => v == null ? '--' : '$v';
 
   Widget _flagRow(BuildContext context, String label, bool? value, {required bool badWhenTrue}) {
-    final t = context.moto;
+    final t = context.vehicle;
     if (value == null) return KeyValueRow(label: label, value: '--');
     final bad = value == badWhenTrue;
     return KeyValueRow(
@@ -54,7 +54,7 @@ class DiagnosticsScreen extends StatelessWidget {
   Widget _linkSection(BuildContext context) {
     final data = store.data;
     final since = store.sinceLastPacket;
-    final t = context.moto;
+    final t = context.vehicle;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -98,12 +98,12 @@ class DiagnosticsScreen extends StatelessWidget {
               KeyValueRow(
                 label: 'Rejected (version)',
                 value: '${TelemetryData.versionRejectedCount}',
-                valueColor: TelemetryData.versionRejectedCount > 0 ? context.moto.error : null,
+                valueColor: TelemetryData.versionRejectedCount > 0 ? context.vehicle.error : null,
               ),
               KeyValueRow(
                 label: 'Rejected (size)',
                 value: '${TelemetryData.sizeRejectedCount}',
-                valueColor: TelemetryData.sizeRejectedCount > 0 ? context.moto.error : null,
+                valueColor: TelemetryData.sizeRejectedCount > 0 ? context.vehicle.error : null,
               ),
             ],
           ),
@@ -172,7 +172,7 @@ class DiagnosticsScreen extends StatelessWidget {
               KeyValueRow(
                 label: 'Step gap, over limit',
                 value: _num(data.stepGapOverCount),
-                valueColor: (data.stepGapOverCount ?? 0) > 0 ? context.moto.stale : null,
+                valueColor: (data.stepGapOverCount ?? 0) > 0 ? context.vehicle.stale : null,
               ),
               const Divider(),
               const SizedBox(height: Spacing.xs),

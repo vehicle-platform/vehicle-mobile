@@ -1,4 +1,4 @@
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 import '../../models/telemetry_data.dart';
 import '../../models/vehicle_signal_block.dart';

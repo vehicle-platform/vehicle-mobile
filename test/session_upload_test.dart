@@ -8,10 +8,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:moto_mobile/services/app_settings.dart';
-import 'package:moto_mobile/services/network_info.dart';
-import 'package:moto_mobile/services/session_upload.dart';
-import 'package:moto_mobile/services/upload_client.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/network_info.dart';
+import 'package:vehicle_mobile/services/session_upload.dart';
+import 'package:vehicle_mobile/services/upload_client.dart';
 
 class _FixedNetworkInfo implements NetworkInfo {
   _FixedNetworkInfo(this._value);
@@ -227,7 +227,7 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://moto.example.com', apiToken: 't'),
+        const AppSettings(serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
       );
       expect(status.state, SessionUploadState.failed);
       expect(status.reason, contains('D-063'));
@@ -270,7 +270,7 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://moto.example.com', apiToken: 't'),
+        const AppSettings(serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
       );
       expect(status.state, SessionUploadState.uploaded);
       expect(body, contains('signals.csv'));
@@ -290,7 +290,7 @@ void main() {
         'http://169.254.10.1',
         'http://[fe80::1]:8000',
         'http://[fd12:3456::1]:8000',
-        'http://moto-laptop.local:8000',
+        'http://vehicle-laptop.local:8000',
       ]) {
         expect(isLocalServerUrl(url), isTrue, reason: url);
       }
@@ -298,12 +298,12 @@ void main() {
 
     test('rejects public hosts, names and malformed input', () {
       for (final url in [
-        'https://moto.example.com',
+        'https://vehicle.example.com',
         'http://8.8.8.8',
         'http://172.32.0.1',
         'http://192.169.1.1',
         'http://[2001:db8::1]',
-        'http://moto-laptop',
+        'http://vehicle-laptop',
         'not a url',
         '',
         null,
@@ -350,7 +350,7 @@ void main() {
 
     test('flags plain http to a remote host only', () {
       expect(isCleartextRemoteUrl('http://192.168.1.20:8000'), isTrue);
-      expect(isCleartextRemoteUrl('https://moto.example.com'), isFalse);
+      expect(isCleartextRemoteUrl('https://vehicle.example.com'), isFalse);
       expect(isCleartextRemoteUrl('http://localhost:8000'), isFalse);
       expect(isCleartextRemoteUrl(null), isFalse);
       expect(const AppSettings(serverBaseUrl: 'http://10.0.0.5').sendsTokenInCleartext, isTrue);

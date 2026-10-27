@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 // GPS block decoder (D-060). The block layout (offsets, total size, version,
 // fixType values, flag bits, scale) is NOT defined here: the single source of
-// truth is moto-vehicle-defs `ble/ble_schema.json` (`gpsBlock`, D-061), taken
-// through the generated `moto_defs` Dart package (`BleGpsBlock`,
+// truth is vehicle-defs `ble/ble_schema.json` (`gpsBlock`, D-061), taken
+// through the generated `vehicle_defs` Dart package (`BleGpsBlock`,
 // `BleGpsOffsets`, `BleGpsFixType`, `BleGpsFlagBits`, `BleGpsScale`).
 //
 // Speed and heading only: latitude, longitude and height never leave

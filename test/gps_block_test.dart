@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/gps_block.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
 
 /// Builds one raw GPS block from the generated offsets (never hand-written).
 Uint8List buildGpsBlockBytes({
@@ -90,8 +90,8 @@ void main() {
     expect(block.headingOfMotionDeg, closeTo(-1.0, 1e-9));
   });
 
-  test('agrees with moto-server on a block of its v4_gps fixture', () {
-    // tests/fixtures/v4_gps_session/gps.csv row 2 in moto-server, packed there
+  test('agrees with vehicle-server on a block of its v4_gps fixture', () {
+    // tests/fixtures/v4_gps_session/gps.csv row 2 in vehicle-server, packed there
     // from the same defs schema by its own encoder.
     final block = GpsBlock.decode(_hex('01fcf0230000672b0000798489002c01000050c3000003090100'));
     expect(block.seq, 252);

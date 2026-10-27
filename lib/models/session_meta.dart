@@ -1,4 +1,4 @@
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 import 'telemetry_data.dart' show TelemetryVersion;
 
@@ -8,7 +8,7 @@ import 'telemetry_data.dart' show TelemetryVersion;
 const String kAppVersion = '0.2.0+3'; // keep equal to pubspec.yaml
 
 /// Metadata captured once per ride-recording session, per the
-/// moto-vehicle-defs phase0 data-collection plan §3.2. Persisted verbatim as
+/// vehicle-defs phase0 data-collection plan §3.2. Persisted verbatim as
 /// `meta.json` alongside that session's `telemetry.csv` and `events.csv`.
 ///
 /// Every numeric field is nullable: the rider may not know or may not want

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// App-wide settings for talking to moto-server: where it is, how to
+/// App-wide settings for talking to vehicle-server: where it is, how to
 /// authenticate, and whether uploads should wait for Wi-Fi. The URL and the
 /// Wi-Fi switch live in shared_preferences; the API token lives in the
 /// platform keystore (see [SecretStore]).
@@ -14,7 +14,7 @@ class AppSettings {
     this.uploadOnlyOnWifi = true,
   });
 
-  /// e.g. `https://moto-server.example.com`. `null`/empty means "no server
+  /// e.g. `https://vehicle-server.example.com`. `null`/empty means "no server
   /// configured yet" -- uploads are disabled in the UI in that case, but
   /// recording and sharing sessions locally keep working regardless.
   final String? serverBaseUrl;

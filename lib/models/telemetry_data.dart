@@ -1,17 +1,17 @@
 import 'dart:typed_data';
 
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 // BLE telemetry packet decoder. The packet layout (offsets, sizes, versions,
 // sentinels, flag bits, bus states, UUIDs) is NOT defined here: the single
-// source of truth is moto-vehicle-defs `ble/ble_schema.json` (D-061), taken
-// through the generated `moto_defs` Dart package (`BleTelemetry*`,
+// source of truth is vehicle-defs `ble/ble_schema.json` (D-061), taken
+// through the generated `vehicle_defs` Dart package (`BleTelemetry*`,
 // `BleTelemetryV2Offsets`, `BleTelemetryV3Offsets`, `BleTelemetryV4Offsets`,
 // `BleTelemetryFlagBits`, `BleCanFlagsBits`, `BleCanBusState`). A layout
 // change is a defs change plus a version bump; this file only decodes.
 //
 // Implementations of the schema: the generated C header (firmware,
-// moto-connectivity-node) and this file (decoder, moto-mobile). Ported from
+// vehicle-connectivity-node) and this file (decoder, vehicle-mobile). Ported from
 // HondaCl250_Telemetry@legacy-final (schema version 1) per D-023.
 //
 // Version history (see the schema's `versioning.history`):
@@ -69,7 +69,7 @@ enum CanBusState {
 }
 
 /// Telemetry model representing a decoded binary BLE packet from
-/// moto-connectivity-node, version 2, 3 or 4.
+/// vehicle-connectivity-node, version 2, 3 or 4.
 class TelemetryData {
   /// 0 for [TelemetryData.initial] (no packet decoded yet), otherwise
   /// [TelemetryVersion.v2], [TelemetryVersion.v3] or [TelemetryVersion.v4].

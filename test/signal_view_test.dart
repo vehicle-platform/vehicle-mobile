@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/gps_block.dart';
-import 'package:moto_mobile/models/telemetry_data.dart';
-import 'package:moto_mobile/models/vehicle_signal_block.dart';
-import 'package:moto_mobile/ui/telemetry/link_status.dart';
-import 'package:moto_mobile/ui/telemetry/signal_view.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 
 /// A packet with every polled signal valid (version 4 unless overridden).
 TelemetryData packet({

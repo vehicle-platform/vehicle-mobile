@@ -1,5 +1,5 @@
-name: moto_mobile
-description: "moto-platform phone companion app (BLE telemetry client, ride history, settings)."
+name: vehicle_mobile
+description: "vehicle-platform phone companion app (BLE telemetry client, ride history, settings)."
 publish_to: 'none'
 version: 0.4.0+5 # semver (D-036); +N = Android versionCode, bump on every release
 
@@ -20,8 +20,8 @@ dependencies:
   archive: ^3.6.1
   connectivity_plus: ^6.0.5
   flutter_secure_storage: ^10.3.4
-  moto_defs:
-    path: external/moto-vehicle-defs/gen/dart/moto_defs
+  vehicle_defs:
+    path: external/vehicle-defs/gen/dart/vehicle_defs
 
 dev_dependencies:
   flutter_test:

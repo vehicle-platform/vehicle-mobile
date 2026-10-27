@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/gps_block.dart';
-import 'package:moto_mobile/models/session_meta.dart';
-import 'package:moto_mobile/services/session_recorder.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart';
 
 import 'gps_block_test.dart' show buildGpsBlockBytes;
 
@@ -30,7 +30,7 @@ void main() {
 
   List<List<String>> events() => readCsv('events.csv').skip(1).toList();
 
-  test('gps.csv header: the moto-server contract, schema names, no position column', () {
+  test('gps.csv header: the vehicle-server contract, schema names, no position column', () {
     expect(SessionRecorder.gpsCsvHeader, [
       'rx_utc_iso', 'rx_mono_ms', 'seq', 'lost_since_prev', 'raw_hex', //
       'device_time_ms', 'ground_speed', 'heading_of_motion', 'speed_accuracy', 'heading_accuracy',

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:moto_mobile/services/upload_client.dart';
+import 'package:vehicle_mobile/services/upload_client.dart';
 
 void main() {
   group('UploadClient.uploadSession', () {
@@ -18,7 +18,7 @@ void main() {
       );
 
       final result = await client.uploadSession(
-        baseUrl: 'https://moto-server.example.com',
+        baseUrl: 'https://vehicle-server.example.com',
         apiToken: 'secret-token',
         sessionId: '20260927-120000-ab12',
         archiveBytes: [1, 2, 3, 4],
@@ -27,7 +27,7 @@ void main() {
       expect(result.outcome, UploadOutcome.created);
       expect(result.isSuccess, isTrue);
       expect(captured.method, 'POST');
-      expect(captured.url.toString(), 'https://moto-server.example.com/sessions');
+      expect(captured.url.toString(), 'https://vehicle-server.example.com/sessions');
       expect(captured.headers['Authorization'], 'Bearer secret-token');
       expect(captured.headers['content-type'], contains('multipart/form-data'));
 
@@ -45,12 +45,12 @@ void main() {
         }),
       );
       await client.uploadSession(
-        baseUrl: 'https://moto-server.example.com/',
+        baseUrl: 'https://vehicle-server.example.com/',
         apiToken: 't',
         sessionId: 's',
         archiveBytes: [1],
       );
-      expect(capturedUrl.toString(), 'https://moto-server.example.com/sessions');
+      expect(capturedUrl.toString(), 'https://vehicle-server.example.com/sessions');
     });
 
     test('200 is treated as success (already uploaded, idempotent)', () async {

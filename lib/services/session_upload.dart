@@ -11,7 +11,7 @@ import 'upload_client.dart';
 /// Per-session upload state, persisted as `<session>/upload.json`. This file
 /// is intentionally NOT one of the files zipped up for upload (see
 /// [buildSessionArchiveBytes]) -- it is app-local bookkeeping, not session
-/// data moto-server needs.
+/// data vehicle-server needs.
 enum SessionUploadState { notUploaded, uploading, uploaded, failed }
 
 class SessionUploadStatus {
@@ -76,7 +76,7 @@ Future<List<int>> buildSessionArchiveBytes(Directory sessionDir) async {
   return encoded ?? const <int>[];
 }
 
-/// Uploads recorded sessions to moto-server and tracks each session's
+/// Uploads recorded sessions to vehicle-server and tracks each session's
 /// upload status on disk (`upload.json`), independent of the app's process
 /// lifetime.
 class SessionUploader {

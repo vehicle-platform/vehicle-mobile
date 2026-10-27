@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/session_meta.dart';
-import 'package:moto_mobile/models/vehicle_signal_block.dart';
-import 'package:moto_mobile/services/session_recorder.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart';
 
 import 'vehicle_signal_block_test.dart' show Rec, buildVehicleSignalBlockBytes, byName, unknownDid;
 
@@ -37,7 +37,7 @@ void main() {
         seq: seq,
       );
 
-  test('signals.csv header: the moto-server contract', () {
+  test('signals.csv header: the vehicle-server contract', () {
     expect(SessionRecorder.signalsCsvHeader, [
       'rx_utc_iso', 'rx_mono_ms', 'block_seq', 'lost_since_prev', //
       'device_time_ms', 'total_records', 'first_record',
