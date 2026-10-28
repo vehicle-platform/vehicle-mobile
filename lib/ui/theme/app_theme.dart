@@ -152,7 +152,7 @@ class VehicleTokens extends ThemeExtension<VehicleTokens> {
 }
 
 /// `context.vehicle` -> the active [VehicleTokens].
-extension MotoThemeContext on BuildContext {
+extension VehicleThemeContext on BuildContext {
   VehicleTokens get vehicle => Theme.of(this).extension<VehicleTokens>() ?? VehicleTokens.dark;
 }
 

@@ -29,7 +29,7 @@ void main() {
       (call) async => null,
     );
     SharedPreferences.setMockInitialValues({});
-    tmp = Directory.systemTemp.createTempSync('moto_ui_test_');
+    tmp = Directory.systemTemp.createTempSync('vehicle_ui_test_');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       (call) async => tmp.path,
