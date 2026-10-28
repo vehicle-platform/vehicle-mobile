@@ -66,7 +66,7 @@ void main() {
         (message) async => const StandardMessageCodec().encodeMessage(<Object?>[]),
       );
       SharedPreferences.setMockInitialValues({});
-      tmp = Directory.systemTemp.createTempSync('moto_vsig_ui_test_');
+      tmp = Directory.systemTemp.createTempSync('vehicle_vsig_ui_test_');
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
         const MethodChannel('plugins.flutter.io/path_provider'),
         (call) async => tmp.path,
