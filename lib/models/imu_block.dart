@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 // IMU sample block decoder. The block layout (header/sample offsets and
 // sizes, version, limits, flag bits, raw scale) is NOT defined here: the
-// single source of truth is moto-vehicle-defs `ble/ble_schema.json`
-// (`imuBlock`, D-061), taken through the generated `moto_defs` Dart package
+// single source of truth is vehicle-defs `ble/ble_schema.json`
+// (`imuBlock`, D-061), taken through the generated `vehicle_defs` Dart package
 // (`BleImuBlock`, `BleImuHeaderOffsets`, `BleImuSampleOffsets`,
 // `BleImuFlagBits`, `BleImuScale`).
 //

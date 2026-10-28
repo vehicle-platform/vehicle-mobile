@@ -15,7 +15,7 @@ const Duration uploadConnectTimeout = Duration(seconds: 10);
 /// large session on a slow link still completes.
 const Duration uploadTotalTimeout = Duration(minutes: 5);
 
-/// Outcome of one upload attempt against moto-server's ingestion API
+/// Outcome of one upload attempt against vehicle-server's ingestion API
 /// (`POST {baseUrl}/sessions`).
 enum UploadOutcome {
   /// 201: the archive was accepted and stored for the first time.
@@ -46,7 +46,7 @@ class UploadResult {
   bool get isSuccess => outcome == UploadOutcome.created || outcome == UploadOutcome.alreadyUploaded;
 }
 
-/// Uploads a session archive to moto-server.
+/// Uploads a session archive to vehicle-server.
 ///
 /// `multipart/form-data`, field name `archive`, filename `<session_id>.zip`,
 /// header `Authorization: Bearer <token>`. The [http.Client] is injectable so

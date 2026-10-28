@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/gps_block.dart';
@@ -30,7 +30,7 @@ Future<Directory> resolveSessionsRootDir(DocumentsDirProvider documentsDirProvid
 }
 
 /// Summary written to `summary.json` when a recording stops. Field names and
-/// keys follow the session file contract shared with moto-server.
+/// keys follow the session file contract shared with vehicle-server.
 class SessionSummary {
   final Duration duration;
   final int packetCount;
@@ -244,7 +244,7 @@ class SessionRecorder extends ChangeNotifier {
   ];
 
   /// gps.csv (D-060): one row per GPS block. The raw columns are the schema's
-  /// `gpsBlock` field names in snake_case; moto-server accepts exactly this
+  /// `gpsBlock` field names in snake_case; vehicle-server accepts exactly this
   /// header. No position column exists (D-060 item 3).
   static const List<String> gpsCsvHeader = [
     'rx_utc_iso',
@@ -273,7 +273,7 @@ class SessionRecorder extends ChangeNotifier {
   /// block header fields repeat on every row of a block; `lost_since_prev` is
   /// non-zero on a block's first row only. `did`, `state`, `age_ms` and `raw`
   /// are the wire values; `signal` and `value` are this app's catalog decode.
-  /// moto-server accepts exactly this header.
+  /// vehicle-server accepts exactly this header.
   static const List<String> signalsCsvHeader = [
     'rx_utc_iso',
     'rx_mono_ms',

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/telemetry_data.dart';
-import 'package:moto_mobile/models/vehicle_signal_block.dart' show vehicleSignalByDid;
-import 'package:moto_mobile/services/ble_service.dart';
-import 'package:moto_mobile/ui/diagnostics_screen.dart';
-import 'package:moto_mobile/ui/live_screen.dart';
-import 'package:moto_mobile/ui/telemetry/link_status.dart' show didHex;
-import 'package:moto_mobile/ui/telemetry/telemetry_store.dart';
-import 'package:moto_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart' show vehicleSignalByDid;
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/diagnostics_screen.dart';
+import 'package:vehicle_mobile/ui/live_screen.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart' show didHex;
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 /// The rotating RTT DID of the fixtures, taken from the generated catalog.
 final int _rttDid = vehicleSignalCatalog.firstWhere((s) => s.name == VehicleSignalNames.engineSpeed).did;

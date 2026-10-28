@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/telemetry_data.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
 
-// The packet layout comes from the generated `moto_defs` package (D-061,
-// moto-vehicle-defs `ble/ble_schema.json`); these tests build packets byte by
+// The packet layout comes from the generated `vehicle_defs` package (D-061,
+// vehicle-defs `ble/ble_schema.json`); these tests build packets byte by
 // byte from the generated offsets and check the decoder against them. There
 // is no schema copy in this repo.
 

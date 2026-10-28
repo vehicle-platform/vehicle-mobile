@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 // Vehicle-signal block decoder (D-066 item 4). The block layout (header and
 // record offsets/sizes, version, record limits, state values) is NOT defined
-// here: the single source of truth is moto-vehicle-defs `ble/ble_schema.json`
-// (`vehicleSignalBlock`, D-061), taken through the generated `moto_defs` Dart
+// here: the single source of truth is vehicle-defs `ble/ble_schema.json`
+// (`vehicleSignalBlock`, D-061), taken through the generated `vehicle_defs` Dart
 // package (`BleVehicleSignalBlock`, `BleVehicleSignalHeaderOffsets`,
 // `BleVehicleSignalRecordOffsets`, `BleVehicleSignalState`). The physical
 // value of a record comes from the generated catalog (`vehicleSignalCatalog`,

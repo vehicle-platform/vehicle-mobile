@@ -4,12 +4,12 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 import '../models/gps_block.dart';
 import '../models/telemetry_data.dart';
 
 /// BLE client. GATT UUIDs and the requested ATT MTU come from the generated
-/// [BleGatt] (moto-vehicle-defs `ble/ble_schema.json`, D-061); nothing about
+/// [BleGatt] (vehicle-defs `ble/ble_schema.json`, D-061); nothing about
 /// the GATT layout is hand-written here.
 class BleService {
   /// Advertised-name prefix of the vehicle's BLE server. Exposed so callers

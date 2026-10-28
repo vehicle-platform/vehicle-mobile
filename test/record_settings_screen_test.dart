@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_mobile/services/ble_service.dart';
-import 'package:moto_mobile/ui/record_screen.dart';
-import 'package:moto_mobile/ui/settings_screen.dart';
-import 'package:moto_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/record_screen.dart';
+import 'package:vehicle_mobile/ui/settings_screen.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget host(Widget child, {double textScale = 1.0}) => MaterialApp(

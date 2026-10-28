@@ -1,11 +1,11 @@
-# moto-mobile
+# vehicle-mobile
 
-The phone companion app for the moto-platform motorcycle telemetry/diagnostics
+The phone companion app for the vehicle-platform motorcycle telemetry/diagnostics
 system (see the workspace `CLAUDE.md` / `PLATFORM-RULES.md` for the full
 platform picture). Written in Flutter (D-022). Scope: settings, ride
 history/reports, park-mode alarm notifications, and profile selection. It
-talks to the vehicle over BLE/Wi-Fi via `moto-connectivity-node`, and to the
-`moto-server` API for historical data. The app is not involved in anything
+talks to the vehicle over BLE/Wi-Fi via `vehicle-connectivity-node`, and to the
+`vehicle-server` API for historical data. The app is not involved in anything
 safety-critical: the vehicle works fully whether or not the phone is
 connected.
 
@@ -52,10 +52,10 @@ sample block), `lib/models/gps_block.dart` (the GPS block) and
 `lib/models/vehicle_signal_block.dart` (the D-066 vehicle-signal block, records
 keyed by DID, physical values through the generated catalog), plus the GATT
 UUIDs and MTU, are defined once, in
-`moto-vehicle-defs` `ble/ble_schema.json` (D-061). This repo does not copy it:
-the `external/moto-vehicle-defs` submodule provides the generated Dart path
-package `moto_defs` (`external/moto-vehicle-defs/gen/dart/moto_defs`,
-`import 'package:moto_defs/moto_defs.dart'`), and the decoders only read its
+`vehicle-defs` `ble/ble_schema.json` (D-061). This repo does not copy it:
+the `external/vehicle-defs` submodule provides the generated Dart path
+package `vehicle_defs` (`external/vehicle-defs/gen/dart/vehicle_defs`,
+`import 'package:vehicle_defs/vehicle_defs.dart'`), and the decoders only read its
 constants. After cloning, fetch the submodule first:
 
 ```
@@ -65,26 +65,26 @@ git submodule update --init
 The tests build packets byte by byte from the generated offsets; a layout
 change is a defs change plus a version bump, never a hand edit here.
 
-## Ride session files and moto-server upload
+## Ride session files and vehicle-server upload
 
 Recording a ride writes `meta.json`, `telemetry.csv`, `events.csv`,
 `summary.json` and (when the connected device sends IMU, GPS or vehicle-signal
 data) `imu.csv`, `gps.csv` and `signals.csv` to `<app documents>/sessions/<session_id>/` -- see
-`docs/session-format.md` for the exact contract shared with `moto-server`.
+`docs/session-format.md` for the exact contract shared with `vehicle-server`.
 GPS is speed and heading only (D-060), and its characteristic needs the phone
 to be paired (bonded) with the bike (D-062): on Android the app starts the
 pairing on connect; telemetry, IMU and the vehicle-signal characteristic work
 without it (firmware without a characteristic is simply not subscribed to).
 `signals.csv` holds engine data only, so the D-063 local-only rule is for
 `gps.csv` alone. Sessions can be shared locally
-at any time; uploading them to a configured `moto-server` is a separate,
+at any time; uploading them to a configured `vehicle-server` is a separate,
 optional action (Settings screen sets the server URL/API token) and never
 blocks recording or sharing.
 
 ## Commands
 
 ```
-git submodule update --init   # moto-vehicle-defs, needed by the moto_defs path package
+git submodule update --init   # vehicle-defs, needed by the vehicle_defs path package
 flutter pub get
 flutter analyze
 flutter test

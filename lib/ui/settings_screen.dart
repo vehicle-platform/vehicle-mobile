@@ -69,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = context.moto;
+    final t = context.vehicle;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: _loading
@@ -79,7 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SectionLabel('moto-server upload'),
+                  const SectionLabel('vehicle-server upload'),
                   SectionCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           keyboardType: TextInputType.url,
                           decoration: const InputDecoration(
                             labelText: 'Server base URL',
-                            hintText: 'https://moto-server.example.com',
+                            hintText: 'https://vehicle-server.example.com',
                           ),
                           onChanged: (_) => setState(() => _saved = false),
                         ),

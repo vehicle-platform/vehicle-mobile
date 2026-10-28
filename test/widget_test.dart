@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_mobile/main.dart';
+import 'package:vehicle_mobile/main.dart';
 
 void main() {
   testWidgets('App shell shows the Live screen and the five destinations', (WidgetTester tester) async {

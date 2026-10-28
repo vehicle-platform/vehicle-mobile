@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -286,7 +286,7 @@ class _RecordScreenState extends State<RecordScreen> {
     if (files.isEmpty) return;
     await Share.shareXFiles(
       files.map((f) => XFile(f.path)).toList(),
-      subject: 'moto-mobile ride session $sessionId',
+      subject: 'vehicle-mobile ride session $sessionId',
     );
   }
 
@@ -300,7 +300,7 @@ class _RecordScreenState extends State<RecordScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete', style: TextStyle(color: context.moto.error)),
+            child: Text('Delete', style: TextStyle(color: context.vehicle.error)),
           ),
         ],
       ),
@@ -348,7 +348,7 @@ class _RecordScreenState extends State<RecordScreen> {
     final recording = _recorder.isRecording;
     final lastPacketUtc = _recorder.lastPacketUtc;
     final lastAgeMs = lastPacketUtc == null ? null : DateTime.now().toUtc().difference(lastPacketUtc).inMilliseconds;
-    final t = context.moto;
+    final t = context.vehicle;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.lg, Spacing.lg, Spacing.xl),
@@ -501,7 +501,7 @@ class _RecordScreenState extends State<RecordScreen> {
       return Text(
         'GPS: not subscribed -- pair the phone with the bike (bonded link required); '
         'it is retried on the next connection',
-        style: style!.copyWith(color: context.moto.warning),
+        style: style!.copyWith(color: context.vehicle.warning),
       );
     }
     if (block == null) {
@@ -534,7 +534,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Widget _buildLiveCounters(int? lastAgeMs) {
-    final t = context.moto;
+    final t = context.vehicle;
     final theme = Theme.of(context);
     final ageColor = (lastAgeMs != null && lastAgeMs > 1000) ? t.error : t.live;
     return SectionCard(
@@ -638,7 +638,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Color _uploadStatusColor(SessionUploadStatus status) {
-    final t = context.moto;
+    final t = context.vehicle;
     return switch (status.state) {
       SessionUploadState.notUploaded => t.textSecondary,
       SessionUploadState.uploading => t.accent,
@@ -664,7 +664,7 @@ class _RecordScreenState extends State<RecordScreen> {
       icon: Icon(isRetry ? Icons.refresh : Icons.cloud_upload_outlined),
       tooltip: !canUpload
           ? 'Set a server URL in Settings to enable uploads'
-          : (isRetry ? 'Retry upload' : 'Upload to moto-server'),
+          : (isRetry ? 'Retry upload' : 'Upload to vehicle-server'),
       onPressed: canUpload ? () => _uploadSession(sessionId) : null,
     );
   }
@@ -785,7 +785,7 @@ class VehicleSignalStatusLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.moto;
+    final t = context.vehicle;
     final style = Theme.of(context).textTheme.bodyMedium!;
     final problem = lostBlocks > 0 ||
         latest.values.any((r) => r.isNegativeResponse || r.isSkipped || r.isStale || r.isNeverReceived);

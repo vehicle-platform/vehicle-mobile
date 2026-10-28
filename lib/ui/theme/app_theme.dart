@@ -21,14 +21,14 @@ abstract final class Radii {
 }
 
 /// Colour tokens of the app. One place; screens read them through
-/// `context.moto` and never hard-code a colour.
+/// `context.vehicle` and never hard-code a colour.
 ///
 /// Palette: near-black surfaces, one saturated accent (cyan), and semantic
 /// colours for signal/link state. Text colours keep high contrast on the
 /// surfaces so the display stays readable in direct sunlight.
 @immutable
-class MotoTokens extends ThemeExtension<MotoTokens> {
-  const MotoTokens({
+class VehicleTokens extends ThemeExtension<VehicleTokens> {
+  const VehicleTokens({
     required this.background,
     required this.surface,
     required this.surfaceRaised,
@@ -76,7 +76,7 @@ class MotoTokens extends ThemeExtension<MotoTokens> {
   /// Warning tone for caution banners (same hue as [stale]).
   Color get warning => stale;
 
-  static const MotoTokens dark = MotoTokens(
+  static const VehicleTokens dark = VehicleTokens(
     background: Color(0xFF050607),
     surface: Color(0xFF101318),
     surfaceRaised: Color(0xFF1A1E25),
@@ -94,7 +94,7 @@ class MotoTokens extends ThemeExtension<MotoTokens> {
   );
 
   @override
-  MotoTokens copyWith({
+  VehicleTokens copyWith({
     Color? background,
     Color? surface,
     Color? surfaceRaised,
@@ -110,7 +110,7 @@ class MotoTokens extends ThemeExtension<MotoTokens> {
     Color? error,
     Color? record,
   }) {
-    return MotoTokens(
+    return VehicleTokens(
       background: background ?? this.background,
       surface: surface ?? this.surface,
       surfaceRaised: surfaceRaised ?? this.surfaceRaised,
@@ -129,10 +129,10 @@ class MotoTokens extends ThemeExtension<MotoTokens> {
   }
 
   @override
-  MotoTokens lerp(ThemeExtension<MotoTokens>? other, double t) {
-    if (other is! MotoTokens) return this;
+  VehicleTokens lerp(ThemeExtension<VehicleTokens>? other, double t) {
+    if (other is! VehicleTokens) return this;
     Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
-    return MotoTokens(
+    return VehicleTokens(
       background: mix(background, other.background),
       surface: mix(surface, other.surface),
       surfaceRaised: mix(surfaceRaised, other.surfaceRaised),
@@ -151,15 +151,15 @@ class MotoTokens extends ThemeExtension<MotoTokens> {
   }
 }
 
-/// `context.moto` -> the active [MotoTokens].
+/// `context.vehicle` -> the active [VehicleTokens].
 extension MotoThemeContext on BuildContext {
-  MotoTokens get moto => Theme.of(this).extension<MotoTokens>() ?? MotoTokens.dark;
+  VehicleTokens get vehicle => Theme.of(this).extension<VehicleTokens>() ?? VehicleTokens.dark;
 }
 
 /// Tabular (fixed-width) numerals so changing values do not jitter.
 const List<FontFeature> _tabular = <FontFeature>[FontFeature.tabularFigures()];
 
-TextTheme _buildTextTheme(MotoTokens t) {
+TextTheme _buildTextTheme(VehicleTokens t) {
   TextStyle s(double size, FontWeight w, {Color? color, double? height, double? letterSpacing}) => TextStyle(
         fontSize: size,
         fontWeight: w,
@@ -192,7 +192,7 @@ TextTheme _buildTextTheme(MotoTokens t) {
 
 /// The app theme: dark, high contrast, Material 3.
 ThemeData buildAppTheme() {
-  const t = MotoTokens.dark;
+  const t = VehicleTokens.dark;
   final scheme = ColorScheme(
     brightness: Brightness.dark,
     primary: t.accent,

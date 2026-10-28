@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_defs/moto_defs.dart';
-import 'package:moto_mobile/models/telemetry_data.dart';
-import 'package:moto_mobile/models/vehicle_signal_block.dart';
-import 'package:moto_mobile/ui/signals_screen.dart';
-import 'package:moto_mobile/ui/telemetry/signal_view.dart';
-import 'package:moto_mobile/ui/telemetry/telemetry_store.dart';
-import 'package:moto_mobile/ui/theme/app_theme.dart';
-import 'package:moto_mobile/ui/widgets/common.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/ui/signals_screen.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 Widget host(Widget child) => MaterialApp(theme: buildAppTheme(), home: child);
 

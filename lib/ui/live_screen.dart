@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:moto_defs/moto_defs.dart';
+import 'package:vehicle_defs/vehicle_defs.dart';
 
 import '../services/ble_service.dart';
 import 'telemetry/link_status.dart';
@@ -78,7 +78,7 @@ class _LiveScreenState extends State<LiveScreen> {
           IconButton(
             tooltip: 'Open the Record screen',
             onPressed: widget.onOpenRecord,
-            icon: Icon(Icons.fiber_manual_record, color: context.moto.record),
+            icon: Icon(Icons.fiber_manual_record, color: context.vehicle.record),
           ),
           const SizedBox(width: Spacing.xs),
         ],
@@ -176,8 +176,8 @@ class _LiveScreenState extends State<LiveScreen> {
         const SizedBox(height: Spacing.lg),
         FilledButton.icon(
           style: FilledButton.styleFrom(
-            backgroundColor: context.moto.record,
-            foregroundColor: context.moto.textPrimary,
+            backgroundColor: context.vehicle.record,
+            foregroundColor: context.vehicle.textPrimary,
             minimumSize: const Size.fromHeight(56),
           ),
           onPressed: widget.onOpenRecord,
@@ -198,7 +198,7 @@ class _HeroTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = context.moto;
+    final t = context.vehicle;
     final live = view.isLive;
     final color = live ? t.textPrimary : stateColor(context, view.state);
     return Container(
@@ -241,7 +241,7 @@ class _ConnectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = context.moto;
+    final t = context.vehicle;
     final connected = store.connected;
     final since = store.sinceLastPacket;
     final String title;
