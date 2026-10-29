@@ -57,7 +57,7 @@ void main() {
         blockCount: 1,
         lostBlocks: 0,
       )));
-      expect(find.text('Vehicle signals: 1 fresh, 0 stale, 0 NRC, 0 missing'), findsOneWidget);
+      expect(find.text('Vehicle signals: 1 fresh'), findsOneWidget);
     });
 
     testWidgets('counts stale records', (tester) async {
@@ -67,7 +67,7 @@ void main() {
         blockCount: 1,
         lostBlocks: 0,
       )));
-      expect(find.text('Vehicle signals: 0 fresh, 1 stale, 0 NRC, 0 missing'), findsOneWidget);
+      expect(find.text('Vehicle signals: 0 fresh, 1 stale'), findsOneWidget);
     });
 
     testWidgets('counts negative responses as NRC', (tester) async {
@@ -77,10 +77,10 @@ void main() {
         blockCount: 1,
         lostBlocks: 0,
       )));
-      expect(find.text('Vehicle signals: 0 fresh, 0 stale, 1 NRC, 0 missing'), findsOneWidget);
+      expect(find.text('Vehicle signals: 0 fresh, 1 NRC'), findsOneWidget);
     });
 
-    testWidgets('counts skipped and never-received records as missing', (tester) async {
+    testWidgets('keeps skipped and never-received records apart', (tester) async {
       await tester.pumpWidget(_host(VehicleSignalStatusLine(
         connected: true,
         latest: {
@@ -91,7 +91,7 @@ void main() {
         lostBlocks: 3,
       )));
       expect(
-        find.text('Vehicle signals: 0 fresh, 0 stale, 0 NRC, 2 missing   Lost blocks: 3'),
+        find.text('Vehicle signals: 0 fresh, 1 skipped, 1 never   Lost blocks: 3'),
         findsOneWidget,
       );
     });
@@ -160,7 +160,7 @@ void main() {
       });
       await tester.pump();
       expect(
-        find.text('Vehicle signals: 1 fresh, 1 stale, 0 NRC, 0 missing   Lost blocks: 1'),
+        find.text('Vehicle signals: 1 fresh, 1 stale   Lost blocks: 1'),
         findsOneWidget,
       );
 

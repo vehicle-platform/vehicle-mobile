@@ -745,8 +745,10 @@ class _RecordScreenState extends State<RecordScreen> {
 }
 
 /// Display only: the state of the vehicle-signal block (D-066 item 4) while
-/// recording -- how many of the DIDs seen are fresh, stale, unsupported (NRC)
-/// or missing, plus the lost blocks. The states come from the generated
+/// recording -- how many of the DIDs seen are fresh, stale, answered with a
+/// negative response, skipped after timeouts or never answered, plus the lost
+/// blocks. Skipped and never stay apart: an ECU that stopped answering is not
+/// one that never did. The states come from the generated
 /// [BleVehicleSignalState]; nothing is interpreted here.
 class VehicleSignalStatusLine extends StatelessWidget {
   const VehicleSignalStatusLine({
@@ -768,16 +770,20 @@ class VehicleSignalStatusLine extends StatelessWidget {
   String get label {
     if (!connected || blockCount == 0 || latest.isEmpty) return 'Vehicle signals: no data';
     int count(int state) => latest.values.where((r) => r.state == state).length;
-    final missing = count(BleVehicleSignalState.skipped) + count(BleVehicleSignalState.neverReceived);
     final other = latest.values
         .where((r) => r.state < BleVehicleSignalState.neverReceived || r.state > BleVehicleSignalState.negativeResponse)
         .length;
+    final problems = [
+      (count(BleVehicleSignalState.stale), 'stale'),
+      (count(BleVehicleSignalState.negativeResponse), 'NRC'),
+      (count(BleVehicleSignalState.skipped), 'skipped'),
+      (count(BleVehicleSignalState.neverReceived), 'never'),
+      (other, 'unknown'),
+    ];
     final parts = [
       '${count(BleVehicleSignalState.valid)} fresh',
-      '${count(BleVehicleSignalState.stale)} stale',
-      '${count(BleVehicleSignalState.negativeResponse)} NRC',
-      '$missing missing',
-      if (other > 0) '$other unknown',
+      for (final (n, name) in problems)
+        if (n > 0) '$n $name',
     ];
     final lost = lostBlocks > 0 ? '   Lost blocks: $lostBlocks' : '';
     return 'Vehicle signals: ${parts.join(', ')}$lost';
