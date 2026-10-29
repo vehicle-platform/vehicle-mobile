@@ -580,6 +580,7 @@ class _RecordScreenState extends State<RecordScreen> {
           _buildGpsLine(),
           const SizedBox(height: Spacing.xs),
           VehicleSignalStatusLine(
+            connected: _isConnected,
             latest: _recorder.latestVehicleSignals,
             blockCount: _recorder.vehicleSignalBlockCount,
             lostBlocks: _recorder.vehicleSignalLostBlocks,
@@ -744,17 +745,19 @@ class _RecordScreenState extends State<RecordScreen> {
 }
 
 /// Display only: the state of the vehicle-signal block (D-066 item 4) while
-/// recording -- how many of the DIDs seen are valid, stale, skipped, answered
-/// with a negative response or never received, plus the lost blocks. The
-/// states come from the generated [BleVehicleSignalState]; nothing is
-/// interpreted here.
+/// recording -- how many of the DIDs seen are fresh, stale, unsupported (NRC)
+/// or missing, plus the lost blocks. The states come from the generated
+/// [BleVehicleSignalState]; nothing is interpreted here.
 class VehicleSignalStatusLine extends StatelessWidget {
   const VehicleSignalStatusLine({
     super.key,
+    required this.connected,
     required this.latest,
     required this.blockCount,
     required this.lostBlocks,
   });
+
+  final bool connected;
 
   /// Latest record per DID.
   final Map<int, VehicleSignalRecord> latest;
@@ -763,32 +766,28 @@ class VehicleSignalStatusLine extends StatelessWidget {
 
   /// "Vehicle signals: ..." text of the current state.
   String get label {
-    if (blockCount == 0) return 'Vehicle signals: waiting for data (or not offered by the firmware)';
+    if (!connected || blockCount == 0 || latest.isEmpty) return 'Vehicle signals: no data';
     int count(int state) => latest.values.where((r) => r.state == state).length;
-    final known = [
-      (count(BleVehicleSignalState.valid), 'valid'),
-      (count(BleVehicleSignalState.stale), 'stale'),
-      (count(BleVehicleSignalState.skipped), 'skipped'),
-      (count(BleVehicleSignalState.negativeResponse), 'NRC'),
-      (count(BleVehicleSignalState.neverReceived), 'never'),
-    ];
+    final missing = count(BleVehicleSignalState.skipped) + count(BleVehicleSignalState.neverReceived);
     final other = latest.values
         .where((r) => r.state < BleVehicleSignalState.neverReceived || r.state > BleVehicleSignalState.negativeResponse)
         .length;
     final parts = [
-      for (final (n, name) in known)
-        if (n > 0) '$n $name',
-      if (other > 0) '$other unknown state',
+      '${count(BleVehicleSignalState.valid)} fresh',
+      '${count(BleVehicleSignalState.stale)} stale',
+      '${count(BleVehicleSignalState.negativeResponse)} NRC',
+      '$missing missing',
+      if (other > 0) '$other unknown',
     ];
-    return 'Vehicle signals (${latest.length} DIDs): ${parts.join(', ')}   Lost blocks: $lostBlocks';
+    final lost = lostBlocks > 0 ? '   Lost blocks: $lostBlocks' : '';
+    return 'Vehicle signals: ${parts.join(', ')}$lost';
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.vehicle;
     final style = Theme.of(context).textTheme.bodyMedium!;
-    final problem = lostBlocks > 0 ||
-        latest.values.any((r) => r.isNegativeResponse || r.isSkipped || r.isStale || r.isNeverReceived);
+    final problem = lostBlocks > 0 || latest.values.any((r) => !r.isValid);
     return Text(label, style: blockCount > 0 && problem ? style.copyWith(color: t.warning) : style);
   }
 }

@@ -30,23 +30,68 @@ void main() {
   final rpm = byName(VehicleSignalNames.engineSpeed);
 
   group('VehicleSignalStatusLine', () {
-    testWidgets('before any block it says it waits for data', (tester) async {
-      await tester.pumpWidget(_host(const VehicleSignalStatusLine(latest: {}, blockCount: 0, lostBlocks: 0)));
-      expect(find.textContaining('Vehicle signals: waiting for data'), findsOneWidget);
+    testWidgets('shows no data without a BLE link', (tester) async {
+      await tester.pumpWidget(_host(VehicleSignalStatusLine(
+        connected: false,
+        latest: {speed.did: _rec(speed.did, BleVehicleSignalState.valid)},
+        blockCount: 5,
+        lostBlocks: 0,
+      )));
+      expect(find.text('Vehicle signals: no data'), findsOneWidget);
     });
 
-    testWidgets('counts the block states per DID and the lost blocks', (tester) async {
+    testWidgets('shows no data before the first block', (tester) async {
+      await tester.pumpWidget(_host(const VehicleSignalStatusLine(
+        connected: true,
+        latest: {},
+        blockCount: 0,
+        lostBlocks: 0,
+      )));
+      expect(find.text('Vehicle signals: no data'), findsOneWidget);
+    });
+
+    testWidgets('counts fresh records', (tester) async {
       await tester.pumpWidget(_host(VehicleSignalStatusLine(
+        connected: true,
+        latest: {speed.did: _rec(speed.did, BleVehicleSignalState.valid)},
+        blockCount: 1,
+        lostBlocks: 0,
+      )));
+      expect(find.text('Vehicle signals: 1 fresh, 0 stale, 0 NRC, 0 missing'), findsOneWidget);
+    });
+
+    testWidgets('counts stale records', (tester) async {
+      await tester.pumpWidget(_host(VehicleSignalStatusLine(
+        connected: true,
+        latest: {rpm.did: _rec(rpm.did, BleVehicleSignalState.stale)},
+        blockCount: 1,
+        lostBlocks: 0,
+      )));
+      expect(find.text('Vehicle signals: 0 fresh, 1 stale, 0 NRC, 0 missing'), findsOneWidget);
+    });
+
+    testWidgets('counts negative responses as NRC', (tester) async {
+      await tester.pumpWidget(_host(VehicleSignalStatusLine(
+        connected: true,
+        latest: {rpm.did: _rec(rpm.did, BleVehicleSignalState.negativeResponse)},
+        blockCount: 1,
+        lostBlocks: 0,
+      )));
+      expect(find.text('Vehicle signals: 0 fresh, 0 stale, 1 NRC, 0 missing'), findsOneWidget);
+    });
+
+    testWidgets('counts skipped and never-received records as missing', (tester) async {
+      await tester.pumpWidget(_host(VehicleSignalStatusLine(
+        connected: true,
         latest: {
-          speed.did: _rec(speed.did, BleVehicleSignalState.valid),
-          rpm.did: _rec(rpm.did, BleVehicleSignalState.negativeResponse),
-          0xFFFF: _rec(0xFFFF, BleVehicleSignalState.skipped),
+          speed.did: _rec(speed.did, BleVehicleSignalState.skipped),
+          rpm.did: _rec(rpm.did, BleVehicleSignalState.neverReceived),
         },
-        blockCount: 5,
-        lostBlocks: 2,
+        blockCount: 2,
+        lostBlocks: 3,
       )));
       expect(
-        find.text('Vehicle signals (3 DIDs): 1 valid, 1 skipped, 1 NRC   Lost blocks: 2'),
+        find.text('Vehicle signals: 0 fresh, 0 stale, 0 NRC, 2 missing   Lost blocks: 3'),
         findsOneWidget,
       );
     });
@@ -86,7 +131,10 @@ void main() {
       addTearDown(ble.vsig.close);
 
       await tester.runAsync(() async {
-        await tester.pumpWidget(MaterialApp(theme: buildAppTheme(), home: RecordScreen(bleService: ble)));
+        await tester.pumpWidget(MaterialApp(
+          theme: buildAppTheme(),
+          home: RecordScreen(bleService: ble, initiallyConnected: true),
+        ));
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
       await tester.pump();
@@ -98,7 +146,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 200));
       });
       await tester.pump();
-      expect(find.textContaining('Vehicle signals: waiting for data'), findsOneWidget);
+      expect(find.text('Vehicle signals: no data'), findsOneWidget);
 
       await tester.runAsync(() async {
         ble.vsig.add(buildVehicleSignalBlockBytes([
@@ -112,7 +160,7 @@ void main() {
       });
       await tester.pump();
       expect(
-        find.text('Vehicle signals (2 DIDs): 1 valid, 1 stale   Lost blocks: 1'),
+        find.text('Vehicle signals: 1 fresh, 1 stale, 0 NRC, 0 missing   Lost blocks: 1'),
         findsOneWidget,
       );
 
