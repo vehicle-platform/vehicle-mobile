@@ -269,31 +269,31 @@ void main() {
       });
     }
 
-    final summaryCases = <(String, Map<String, Object?>)>[
-      ('session_id', summaryWithout('session_id')),
-      ('signals', summaryWithout('signals')),
-      ('name', summarySignalWithout(0, 'name')),
-      ('status', summarySignalWithout(0, 'status')),
-      ('kind', summarySignalWithout(0, 'kind')),
-      ('unit', summarySignalWithout(0, 'unit')),
-      ('range', summarySignalWithout(0, 'range')),
-      ('axes', summarySignalWithout(1, 'axes')),
-      ('cells', summarySignalWithout(1, 'cells')),
-      ('total_s', summarySignalWithout(1, 'total_s')),
-      ('outside_s', summarySignalWithout(1, 'outside_s')),
-      ('input', summaryAxisWithout(1, 0, 'input')),
-      ('axis unit', summaryAxisWithout(1, 0, 'unit')),
-      ('edges', summaryAxisWithout(1, 0, 'edges')),
-      ('index', summaryCellWithout(1, 0, 'index')),
-      ('cell axes', summaryCellWithout(1, 0, 'axes')),
-      ('name (unavailable)', summarySignalWithout(3, 'name')),
-      ('status (unavailable)', summarySignalWithout(3, 'status')),
+    final summaryCases = <(String, String, Map<String, Object?>)>[
+      ('session_id', 'session_id', summaryWithout('session_id')),
+      ('signals', 'signals', summaryWithout('signals')),
+      ('name', 'name', summarySignalWithout(0, 'name')),
+      ('status', 'status', summarySignalWithout(0, 'status')),
+      ('kind', 'kind', summarySignalWithout(0, 'kind')),
+      ('unit', 'unit', summarySignalWithout(0, 'unit')),
+      ('range', 'range', summarySignalWithout(0, 'range')),
+      ('axes', 'axes', summarySignalWithout(1, 'axes')),
+      ('cells', 'cells', summarySignalWithout(1, 'cells')),
+      ('total_s', 'total_s', summarySignalWithout(1, 'total_s')),
+      ('outside_s', 'outside_s', summarySignalWithout(1, 'outside_s')),
+      ('input', 'input', summaryAxisWithout(1, 0, 'input')),
+      ('axis unit', 'axes[0].unit', summaryAxisWithout(1, 0, 'unit')),
+      ('edges', 'edges', summaryAxisWithout(1, 0, 'edges')),
+      ('index', 'index', summaryCellWithout(1, 0, 'index')),
+      ('cell axes', 'cells[0].axes', summaryCellWithout(1, 0, 'axes')),
+      ('name (unavailable)', 'signals[3].name', summarySignalWithout(3, 'name')),
+      ('status (unavailable)', 'signals[3].status', summarySignalWithout(3, 'status')),
     ];
-    for (final (field, payload) in summaryCases) {
-      test('RideSummary rejects a missing $field', () {
+    for (final (description, expected, payload) in summaryCases) {
+      test('RideSummary rejects a missing $description', () {
         expect(
           () => RideSummary.fromJson(payload),
-          throwsA(isA<FormatException>().having((error) => error.message, 'message', contains(field))),
+          throwsA(isA<FormatException>().having((error) => error.message, 'message', contains(expected))),
         );
       });
     }
