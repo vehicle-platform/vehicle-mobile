@@ -289,6 +289,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Widget _oneAxisChart(BinnedSummary signal) {
     final theme = Theme.of(context);
     final axis = signal.axes.first;
+    final edgeRange = rideAxisRange(axis.edges);
     final values = axis.edges
         .asMap()
         .entries
@@ -311,7 +312,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 1),
                     child: Tooltip(
                       message:
-                          '${_edgeText(axis.edges[index], signal.range)} ${axis.unit}: '
+                          '${_edgeText(axis.edges[index], edgeRange)} ${axis.unit}: '
                           '${formatRideRangeValue(values[index], signal.range)}',
                       child: Container(
                         height: heights[index],
@@ -332,7 +333,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             for (final edge in axis.edges)
               Expanded(
                 child: Text(
-                  _edgeText(edge, signal.range),
+                  _edgeText(edge, edgeRange),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -432,6 +433,8 @@ class _HeatGridState extends State<_HeatGrid> {
     // and the analyzer's grid (RideSummary.tsx).
     final rows = signal.axes[0];
     final columns = signal.axes[1];
+    final rowRange = rideAxisRange(rows.edges);
+    final columnRange = rideAxisRange(columns.edges);
     final max = maxCellValue(signal.cells);
     final theme = Theme.of(context);
     final selected = _selectedRow != null && _selectedColumn != null
@@ -461,7 +464,7 @@ class _HeatGridState extends State<_HeatGrid> {
                           SizedBox(
                             width: _cellSize,
                             child: Text(
-                              _edgeText(edge, signal.range),
+                              _edgeText(edge, columnRange),
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -476,7 +479,7 @@ class _HeatGridState extends State<_HeatGrid> {
                           SizedBox(
                             width: _labelWidth,
                             child: Text(
-                              _edgeText(rows.edges[row], signal.range),
+                              _edgeText(rows.edges[row], rowRange),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall,
@@ -521,9 +524,12 @@ class _HeatGridState extends State<_HeatGrid> {
     final cell = _cellAt(signal, [row, column]);
     final opacity = heatOpacity(cell?.value, max);
     final isSelected = _selectedRow == row && _selectedColumn == column;
+    final rowRange = rideAxisRange(rows.edges);
+    final columnRange = rideAxisRange(columns.edges);
     return Tooltip(
       message:
-          '${_edgeText(rows.edges[row], signal.range)} / ${_edgeText(columns.edges[column], signal.range)}: '
+          '${_edgeText(rows.edges[row], rowRange)} / '
+          '${_edgeText(columns.edges[column], columnRange)}: '
           '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}'
           '${cell?.flag != null ? ' · ${cell!.flag}' : ''}',
       child: InkWell(
@@ -558,7 +564,10 @@ class _HeatGridState extends State<_HeatGrid> {
     final value =
         '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}';
     final flag = cell?.flag;
-    return '${_edgeText(rows.edges[row], signal.range)} / ${_edgeText(columns.edges[column], signal.range)}: '
+    final rowRange = rideAxisRange(rows.edges);
+    final columnRange = rideAxisRange(columns.edges);
+    return '${_edgeText(rows.edges[row], rowRange)} / '
+        '${_edgeText(columns.edges[column], columnRange)}: '
         '$value${flag != null ? ' · $flag' : ''}';
   }
 }
