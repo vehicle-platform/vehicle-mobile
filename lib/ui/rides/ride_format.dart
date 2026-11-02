@@ -6,11 +6,20 @@ import '../../models/ride_summary.dart';
 int precisionForRange(double min, double max) {
   final span = (max - min).abs();
   if (!span.isFinite || span == 0) return 3;
-  return math.min(6, math.max(0, 4 - (math.log(span) / math.ln10).floor()));
+  return math.min(6, math.max(0, 4 - _floorLog10(span)));
+}
+
+/// floor(log10(x)) for x > 0, exact at powers of ten (`log(1000) / ln10` is
+/// 2.9999999999999996 in double arithmetic; JS `Math.log10` gives 3).
+int _floorLog10(double x) {
+  var exponent = (math.log(x) / math.ln10).floor();
+  if (math.pow(10, exponent + 1) <= x) exponent++;
+  if (math.pow(10, exponent) > x) exponent--;
+  return exponent;
 }
 
 String formatRideValue(double? value, double min, double max) {
-  if (value == null || !value.isFinite) return '—';
+  if (value == null || !value.isFinite) return '–';
   return value.toStringAsFixed(precisionForRange(min, max));
 }
 
@@ -18,7 +27,7 @@ String formatRideRangeValue(double? value, RideRange range) => formatRideValue(v
 
 /// Whole seconds in a compact form: `0 s`, `42 s`, `3 min 05 s`, `1 h 02 min`.
 String formatDurationS(num? seconds) {
-  if (seconds == null || !seconds.isFinite || seconds < 0) return '—';
+  if (seconds == null || !seconds.isFinite || seconds < 0) return '–';
   final total = seconds.round();
   if (total < 60) return '$total s';
   final minutes = total ~/ 60;

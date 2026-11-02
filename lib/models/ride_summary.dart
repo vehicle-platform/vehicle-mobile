@@ -233,10 +233,10 @@ class UnavailableSummary extends RideSummarySignal {
   final List<String> missing;
   final String? message;
 
-  factory UnavailableSummary.fromJson(Map<String, Object?> map, String field) {
+  factory UnavailableSummary.fromJson(Map<String, Object?> map, String field, {required String status}) {
     return UnavailableSummary(
       name: _asString(map, 'name', field),
-      status: _asString(map, 'status', field),
+      status: status,
       reason: _asNullableString(map['reason'], '$field.reason'),
       pendingInputs: _asStringList(map['pending_inputs'], '$field.pending_inputs'),
       missing: _asStringList(map['missing'], '$field.missing'),
@@ -276,15 +276,19 @@ class RideSummary {
 
 RideSummarySignal _parseSignal(Object? json, String field) {
   final map = _asObject(json, field);
-  final status = _asString(map, 'status', field);
+  // A stored entry without a status is served with `status: null`
+  // (ride_summary.py `_signal_entry`): show it as unavailable instead of
+  // failing the whole summary.
+  final status = _asNullableString(map['status'], '$field.status') ?? 'unknown';
   if (status != 'computed') {
-    return UnavailableSummary.fromJson(map, field);
+    return UnavailableSummary.fromJson(map, field, status: status);
   }
   final kind = _asString(map, 'kind', field);
   return switch (kind) {
     'scalar' => ScalarSummary.fromJson(map, field),
     'binned' => BinnedSummary.fromJson(map, field),
-    _ => throw FormatException('$field.kind is unknown: $kind'),
+    // A kind added on the server later: one unavailable row, not a failed screen.
+    _ => UnavailableSummary.fromJson(map, field, status: 'unsupported kind: $kind'),
   };
 }
 

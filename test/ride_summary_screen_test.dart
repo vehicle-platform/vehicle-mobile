@@ -304,16 +304,18 @@ void main() {
     expect(find.text('defs 1.2.3'), findsOneWidget);
     expect(find.text('12.35 km'), findsOneWidget);
     expect(find.text('900.0 s'), findsOneWidget);
-    expect(find.text('— degC'), findsOneWidget);
+    expect(find.text('– degC'), findsOneWidget);
     expect(find.text('gps_fix_type_ignored'), findsOneWidget);
 
     expect(find.text('did.COOLANT_TEMP [degC]'), findsOneWidget);
     expect(find.text('0.00–40.00'), findsOneWidget);
     expect(find.text('total 7 min 00 s · outside 6 s'), findsOneWidget);
 
-    expect(find.text('ENGINE_SPEED [rpm]'), findsOneWidget);
-    expect(find.text('↑ ENGINE_LOAD [%]'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('heat-cell-operating_point_time-1-0')));
+    // Rows = axes[0], columns = axes[1], like the analyzer; cell axes [0, 1]
+    // is row 0, column 1.
+    expect(find.text('rows: ENGINE_SPEED [rpm]'), findsOneWidget);
+    expect(find.text('columns: ENGINE_LOAD [%]'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('heat-cell-operating_point_time-0-1')));
     await tester.pumpAndSettle();
     expect(find.textContaining('20.00 s · high'), findsOneWidget);
 

@@ -236,7 +236,7 @@ void main() {
 
     expect(selected(), ['rpm', 'lean']);
     expect(find.text('12.000 deg'), findsOneWidget);
-    expect(find.text('— deg'), findsOneWidget);
+    expect(find.text('– deg'), findsOneWidget);
     expect(find.text('missing'), findsOneWidget);
     expect(find.text('7000.0 rpm'), findsOneWidget);
   });
@@ -291,7 +291,7 @@ void main() {
 
     expect(requested.last.queryParameters['from'], '2026-01-01');
     expect(requested.last.queryParameters['to'], '2026-01-05');
-    expect(find.text('2026-01-01 – 2026-01-05'), findsOneWidget);
+    expect(find.text('2026-01-01 – 2026-01-05 (UTC days)'), findsOneWidget);
 
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();

@@ -158,14 +158,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
   String _rangeLabel() {
     if (_from == null || _to == null) return 'All rides';
-    return '${_dateOnly(_from!)} – ${_dateOnly(_to!)}';
+    return '${formatQueryDate(_from!)} – ${formatQueryDate(_to!)} (UTC days)';
   }
 
-  String _dateOnly(DateTime value) {
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '${value.year.toString().padLeft(4, '0')}-$month-$day';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +182,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   Widget _body() {
     final settings = _settings;
     if (settings == null || (_loading && _table == null && _error == null)) {
-      return _loadingView();
+      return const RideLoading('Loading rides...');
     }
     if (!settings.isServerConfigured) {
       return const RideMessage(
@@ -199,7 +194,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          _warning(settings),
+          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: Icons.cloud_off,
@@ -214,12 +209,12 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     }
     final table = _table;
     if (table == null) {
-      return _loadingView();
+      return const RideLoading('Loading rides...');
     }
     if (table.rows.isEmpty) {
       return Column(
         children: [
-          _warning(settings),
+          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
           _rangeBar(),
           Expanded(
             child: RefreshIndicator(
@@ -253,7 +248,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     return Column(
       children: [
         if (_loading) const LinearProgressIndicator(minHeight: 2),
-        _warning(settings),
+        RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
         _rangeBar(),
         _columnChooser(table),
         Expanded(
@@ -275,27 +270,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     );
   }
 
-  Widget _loadingView() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: Spacing.md),
-          Text('Loading rides...'),
-        ],
-      ),
-    );
-  }
 
-  Widget _warning(AppSettings settings) {
-    final warning = RideCleartextWarning(settings: settings);
-    if (!settings.sendsTokenInCleartext) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0),
-      child: warning,
-    );
-  }
 
   Widget _rangeBar() {
     return Padding(

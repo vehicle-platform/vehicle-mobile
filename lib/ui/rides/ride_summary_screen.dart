@@ -83,27 +83,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     });
   }
 
-  Widget _loadingView() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: Spacing.md),
-          Text('Loading ride summary...'),
-        ],
-      ),
-    );
-  }
 
-  Widget _warning(AppSettings settings) {
-    final warning = RideCleartextWarning(settings: settings);
-    if (!settings.sendsTokenInCleartext) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0),
-      child: warning,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +105,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Widget _body() {
     final settings = _settings;
     if (settings == null || (_loading && _summary == null && _error == null)) {
-      return _loadingView();
+      return const RideLoading('Loading ride summary...');
     }
     if (!settings.isServerConfigured) {
       return const RideMessage(
@@ -137,7 +117,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          _warning(settings),
+          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: _notFound ? Icons.search_off : Icons.cloud_off,
@@ -150,7 +130,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         ],
       );
     }
-    if (_summary == null) return _loadingView();
+    if (_summary == null) return const RideLoading('Loading ride summary...');
     return _content(settings, _summary!);
   }
 
@@ -290,8 +270,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             const SizedBox(height: Spacing.sm),
             if (signal.axes.length == 1)
               _oneAxisChart(signal)
-            else if (signal.axes.length >= 2)
-              _HeatGrid(signal: signal),
+            else if (signal.axes.length == 2)
+              _HeatGrid(signal: signal)
+            else
+              Text('${signal.axes.length}-axis summaries are not shown on the phone yet.',
+                  style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
               'total ${formatDurationS(signal.totalS)} · outside ${formatDurationS(signal.outsideS)}',
@@ -445,17 +428,19 @@ class _HeatGridState extends State<_HeatGrid> {
   @override
   Widget build(BuildContext context) {
     final signal = widget.signal;
-    final columns = signal.axes[0];
-    final rows = signal.axes[1];
+    // Rows = axes[0], columns = axes[1]: the server's row-major cell order
+    // and the analyzer's grid (RideSummary.tsx).
+    final rows = signal.axes[0];
+    final columns = signal.axes[1];
     final max = maxCellValue(signal.cells);
     final theme = Theme.of(context);
     final selected = _selectedRow != null && _selectedColumn != null
-        ? _cellAt(signal, [_selectedColumn!, _selectedRow!])
+        ? _cellAt(signal, [_selectedRow!, _selectedColumn!])
         : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('${columns.input} [${columns.unit}]',
+        Text('columns: ${columns.input} [${columns.unit}]',
             style: theme.textTheme.bodySmall),
         const SizedBox(height: Spacing.xs),
         LayoutBuilder(
@@ -510,7 +495,7 @@ class _HeatGridState extends State<_HeatGrid> {
           },
         ),
         const SizedBox(height: Spacing.xs),
-        Text('↑ ${rows.input} [${rows.unit}]',
+        Text('rows: ${rows.input} [${rows.unit}]',
             style: theme.textTheme.bodySmall),
         if (selected != null || _selectedRow != null)
           Padding(
@@ -533,7 +518,7 @@ class _HeatGridState extends State<_HeatGrid> {
     int column,
     double max,
   ) {
-    final cell = _cellAt(signal, [column, row]);
+    final cell = _cellAt(signal, [row, column]);
     final opacity = heatOpacity(cell?.value, max);
     final isSelected = _selectedRow == row && _selectedColumn == column;
     return Tooltip(

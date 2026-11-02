@@ -11,9 +11,18 @@ void main() {
       expect(precisionForRange(5, 5), 3);
       expect(precisionForRange(-100, -50), 3);
       expect(formatRideValue(12.345, 0, 200), '12.35');
-      expect(formatRideValue(null, 0, 200), '—');
-      expect(formatRideValue(double.nan, 0, 200), '—');
+      expect(formatRideValue(null, 0, 200), '–');
+      expect(formatRideValue(double.nan, 0, 200), '–');
       expect(formatRideRangeValue(42, const RideRange(0, 86400)), '42');
+    });
+
+    test('is exact at powers of ten like the analyzer (Math.log10)', () {
+      // log(1000) / ln10 is 2.9999999999999996 in doubles; floor must still be 3.
+      expect(precisionForRange(0, 10), 3);
+      expect(precisionForRange(0, 100), 2);
+      expect(precisionForRange(0, 1000), 1);
+      expect(precisionForRange(0, 0.001), 6);
+      expect(precisionForRange(0, 999.9999), 2);
     });
   });
 
@@ -23,8 +32,8 @@ void main() {
       expect(formatDurationS(42), '42 s');
       expect(formatDurationS(185), '3 min 05 s');
       expect(formatDurationS(3720), '1 h 02 min');
-      expect(formatDurationS(null), '—');
-      expect(formatDurationS(-1), '—');
+      expect(formatDurationS(null), '–');
+      expect(formatDurationS(-1), '–');
     });
   });
 

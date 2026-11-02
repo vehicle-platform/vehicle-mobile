@@ -125,8 +125,8 @@ class RideClient {
 
 Uri _ridesUri(String baseUrl, DateTime? from, DateTime? to, List<String>? names) {
   final query = <String, String>{};
-  if (from != null) query['from'] = _dateOnly(from);
-  if (to != null) query['to'] = _dateOnly(to);
+  if (from != null) query['from'] = formatQueryDate(from);
+  if (to != null) query['to'] = formatQueryDate(to);
   if (names != null && names.isNotEmpty) query['names'] = names.join(',');
   final uri = Uri.parse('${_withoutTrailingSlash(baseUrl)}/rides');
   return query.isEmpty ? uri : uri.replace(queryParameters: query);
@@ -137,7 +137,9 @@ Uri _summaryUri(String baseUrl, String sessionId) {
   return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/summary');
 }
 
-String _dateOnly(DateTime value) {
+/// `YYYY-MM-DD` of the calendar date as picked; vehicle-server reads it as
+/// that whole UTC day (`/rides` `from`/`to`, inclusive).
+String formatQueryDate(DateTime value) {
   final year = value.year.toString().padLeft(4, '0');
   final month = value.month.toString().padLeft(2, '0');
   final day = value.day.toString().padLeft(2, '0');

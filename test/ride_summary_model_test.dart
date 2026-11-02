@@ -239,14 +239,6 @@ void main() {
       expect(error.missing, ['did.FUEL_LEVEL']);
     });
 
-    test('rejects an unknown computed kind', () {
-      final json = summaryFixture();
-      ((json['signals'] as List).first as Map<String, Object?>)['kind'] = 'matrix';
-      expect(
-        () => RideSummary.fromJson(json),
-        throwsA(isA<FormatException>().having((error) => error.message, 'message', contains('kind'))),
-      );
-    });
   });
 
   group('strict required fields', () {
@@ -273,7 +265,6 @@ void main() {
       ('session_id', 'session_id', summaryWithout('session_id')),
       ('signals', 'signals', summaryWithout('signals')),
       ('name', 'name', summarySignalWithout(0, 'name')),
-      ('status', 'status', summarySignalWithout(0, 'status')),
       ('kind', 'kind', summarySignalWithout(0, 'kind')),
       ('unit', 'unit', summarySignalWithout(0, 'unit')),
       ('range', 'range', summarySignalWithout(0, 'range')),
@@ -287,7 +278,6 @@ void main() {
       ('index', 'index', summaryCellWithout(1, 0, 'index')),
       ('cell axes', 'cells[0].axes', summaryCellWithout(1, 0, 'axes')),
       ('name (unavailable)', 'signals[3].name', summarySignalWithout(3, 'name')),
-      ('status (unavailable)', 'signals[3].status', summarySignalWithout(3, 'status')),
     ];
     for (final (description, expected, payload) in summaryCases) {
       test('RideSummary rejects a missing $description', () {
@@ -320,6 +310,27 @@ void main() {
           as Map<String, Object?>;
       axis['edges'] = 'not a list';
       expect(() => RideSummary.fromJson(badEdges), throwsFormatException);
+    });
+  });
+
+  group('lenient signal entries', () {
+    test('a signal without a status is unavailable, not a failed summary', () {
+      final payload = summarySignalWithout(3, 'status');
+      final summary = RideSummary.fromJson(payload);
+      final signal = summary.signals[3] as UnavailableSummary;
+      expect(signal.status, 'unknown');
+      expect(summary.signals, hasLength((summaryFixture()['signals'] as List).length));
+    });
+
+    test('a computed signal of an unknown kind is unavailable, not a failed summary', () {
+      final payload = copy(summaryFixture());
+      final signals = payload['signals'] as List;
+      final first = Map<String, Object?>.from(signals[0] as Map)..['kind'] = 'histogram3d';
+      signals[0] = first;
+      final summary = RideSummary.fromJson(payload);
+      final signal = summary.signals[0] as UnavailableSummary;
+      expect(signal.status, 'unsupported kind: histogram3d');
+      expect(signal.name, first['name']);
     });
   });
 }
