@@ -81,6 +81,18 @@ at any time; uploading them to a configured `vehicle-server` is a separate,
 optional action (Settings screen sets the server URL/API token) and never
 blocks recording or sharing.
 
+## Ride history
+
+The Record screen's app-bar **Server rides** action opens the read-only ride
+history. It lists the sessions stored by `vehicle-server`, newest first, with
+up to two chosen columns; a date range filters the request and a row opens that
+session's stored ride summary (scalars, binned charts and the not-available
+signals). An uploaded local session also shows a **Ride summary** action.
+
+Both screens read `GET /rides` and `GET /sessions/{id}/summary` from the server
+URL and API token set in Settings. They are read-only: nothing is written,
+recomputed or deleted on the server.
+
 ## Commands
 
 ```

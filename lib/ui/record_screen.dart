@@ -16,6 +16,8 @@ import '../services/ble_service.dart';
 import '../services/session_recorder.dart';
 import '../services/session_store.dart';
 import '../services/session_upload.dart';
+import 'rides/ride_history_screen.dart';
+import 'rides/ride_summary_screen.dart';
 import 'telemetry/link_status.dart';
 import 'theme/app_theme.dart';
 import 'widgets/common.dart';
@@ -290,6 +292,18 @@ class _RecordScreenState extends State<RecordScreen> {
     );
   }
 
+  void _openRideHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const RideHistoryScreen()),
+    );
+  }
+
+  void _openRideSummary(String sessionId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => RideSummaryScreen(sessionId: sessionId)),
+    );
+  }
+
   Future<void> _confirmDeleteSession(String sessionId) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -319,6 +333,11 @@ class _RecordScreenState extends State<RecordScreen> {
         appBar: AppBar(
           title: const Text('Record'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.history),
+              tooltip: 'Server rides',
+              onPressed: _openRideHistory,
+            ),
             if (_recorder.isRecording)
               Padding(
                 padding: const EdgeInsets.only(right: Spacing.lg),
@@ -720,6 +739,12 @@ class _RecordScreenState extends State<RecordScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (uploadStatus.state == SessionUploadState.uploaded && _settings.isServerConfigured)
+                          IconButton(
+                            icon: const Icon(Icons.insights_outlined),
+                            tooltip: 'Ride summary',
+                            onPressed: () => _openRideSummary(s.sessionId),
+                          ),
                         _buildUploadButton(s.sessionId, uploadStatus),
                         IconButton(
                           icon: const Icon(Icons.share),
