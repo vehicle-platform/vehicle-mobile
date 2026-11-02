@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+
+import 'http_message.dart';
 
 /// TCP connect limit of the default client. A server that is unreachable from
 /// this network (wrong IP after a DHCP change, client isolation on a school or
@@ -90,19 +91,19 @@ class UploadClient {
           return UploadResult(
             UploadOutcome.conflict,
             statusCode: 409,
-            message: _extractMessage(response) ?? 'session id already exists with different content',
+            message: extractHttpMessage(response) ?? 'session id already exists with different content',
           );
         case 401:
           return UploadResult(
             UploadOutcome.unauthorized,
             statusCode: 401,
-            message: _extractMessage(response) ?? 'unauthorized (check the API token in Settings)',
+            message: extractHttpMessage(response) ?? 'unauthorized (check the API token in Settings)',
           );
         default:
           return UploadResult(
             UploadOutcome.failed,
             statusCode: response.statusCode,
-            message: _extractMessage(response) ?? 'HTTP ${response.statusCode}',
+            message: extractHttpMessage(response) ?? 'HTTP ${response.statusCode}',
           );
       }
     } on TimeoutException {
@@ -117,19 +118,6 @@ class UploadClient {
     }
   }
 
-  String? _extractMessage(http.Response response) {
-    if (response.body.isEmpty) return null;
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map) {
-        final message = decoded['message'] ?? decoded['detail'] ?? decoded['error'];
-        if (message is String && message.isNotEmpty) return message;
-      }
-    } catch (_) {
-      // Not JSON: fall through to the raw body.
-    }
-    return response.body.length > 200 ? '${response.body.substring(0, 200)}...' : response.body;
-  }
 }
 
 String _withoutTrailingSlash(String url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url;
