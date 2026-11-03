@@ -18,6 +18,12 @@ int _floorLog10(double x) {
   return exponent;
 }
 
+/// The range of a binned axis: its first edge min .. its last edge max.
+RideRange rideAxisRange(List<RideRange> edges) {
+  if (edges.isEmpty) return const RideRange(0, 0);
+  return RideRange(edges.first.min, edges.last.max);
+}
+
 String formatRideValue(double? value, double min, double max) {
   if (value == null || !value.isFinite) return '–';
   return value.toStringAsFixed(precisionForRange(min, max));

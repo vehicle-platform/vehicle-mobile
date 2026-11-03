@@ -16,6 +16,31 @@ void main() {
       expect(formatRideRangeValue(42, const RideRange(0, 86400)), '42');
     });
 
+    test('derives edge precision from the axis range, not the signal range', () {
+      const rpm = [
+        RideRange(0, 3000),
+        RideRange(3000, 6000),
+        RideRange(6000, 9000),
+        RideRange(9000, 12000),
+      ];
+      final rpmRange = rideAxisRange(rpm);
+      expect(rpmRange.min, 0);
+      expect(rpmRange.max, 12000);
+      expect(precisionForRange(rpmRange.min, rpmRange.max), 0);
+
+      final subUnit = rideAxisRange(const [RideRange(0, 0.25), RideRange(0.25, 0.5), RideRange(0.5, 1)]);
+      expect(precisionForRange(subUnit.min, subUnit.max), 4);
+
+      final single = rideAxisRange(const [RideRange(-10, 10)]);
+      expect(precisionForRange(single.min, single.max), 3);
+
+      final negative = rideAxisRange(const [RideRange(-1000, -500), RideRange(-500, 0)]);
+      expect(precisionForRange(negative.min, negative.max), 1);
+
+      final empty = rideAxisRange(const []);
+      expect(precisionForRange(empty.min, empty.max), 3);
+    });
+
     test('is exact at powers of ten like the analyzer (Math.log10)', () {
       // log(1000) / ln10 is 2.9999999999999996 in doubles; floor must still be 3.
       expect(precisionForRange(0, 10), 3);
