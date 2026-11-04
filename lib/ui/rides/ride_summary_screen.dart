@@ -133,8 +133,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          RideCleartextWarning(
-              settings: settings, padding: RideCleartextWarning.screenPadding),
+          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: _notFound ? Icons.search_off : Icons.cloud_off,
@@ -290,8 +289,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             else if (signal.axes.length == 2)
               _HeatGrid(signal: signal)
             else
-              Text(
-                  '${signal.axes.length}-axis summaries are not shown on the phone yet.',
+              Text('${signal.axes.length}-axis summaries are not shown on the phone yet.',
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
@@ -545,7 +543,8 @@ class _HeatGridState extends State<_HeatGrid> {
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);
     return Tooltip(
-      message: '${_edgeText(rows.edges[row], rowRange)} / '
+      message:
+          '${_edgeText(rows.edges[row], rowRange)} / '
           '${_edgeText(columns.edges[column], columnRange)}: '
           '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}'
           '${cell?.flag != null ? ' · ${cell!.flag}' : ''}',

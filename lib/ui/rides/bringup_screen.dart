@@ -256,7 +256,12 @@ class _BringupScreenState extends State<BringupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          StatusPill(icon: style.icon, label: result.verdict, tone: style.tone),
+          StatusPill(
+            key: const ValueKey('bringup-verdict'),
+            icon: style.icon,
+            label: result.verdict,
+            tone: style.tone,
+          ),
           if (pending > 0) ...[
             const SizedBox(height: Spacing.sm),
             Text('$pending manual check${pending == 1 ? '' : 's'} pending'),
@@ -285,6 +290,7 @@ class _BringupScreenState extends State<BringupScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.md),
       child: SectionCard(
+        key: ValueKey('bringup-check-${check.id}'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

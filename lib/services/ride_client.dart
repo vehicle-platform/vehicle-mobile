@@ -16,15 +16,7 @@ const Duration rideConnectTimeout = Duration(seconds: 10);
 const Duration rideTotalTimeout = Duration(seconds: 30);
 
 /// Outcome of one read-only ride request against vehicle-server.
-enum RideOutcome {
-  ok,
-  unauthorized,
-  notFound,
-  invalid,
-  unavailable,
-  failed,
-  unsupported
-}
+enum RideOutcome { ok, unauthorized, notFound, invalid, unavailable, failed, unsupported }
 
 class RideResult<T> {
   const RideResult(this.outcome, {this.data, this.statusCode, this.message});
@@ -42,10 +34,8 @@ class RideResult<T> {
 /// The [http.Client] is injectable so this is unit-testable with
 /// `package:http/testing.dart`'s `MockClient`.
 class RideClient {
-  RideClient(
-      {http.Client? httpClient, Duration totalTimeout = rideTotalTimeout})
-      : _httpClient = httpClient ??
-            IOClient(HttpClient()..connectionTimeout = rideConnectTimeout),
+  RideClient({http.Client? httpClient, Duration totalTimeout = rideTotalTimeout})
+      : _httpClient = httpClient ?? IOClient(HttpClient()..connectionTimeout = rideConnectTimeout),
         _totalTimeout = totalTimeout;
 
   final http.Client _httpClient;
@@ -58,8 +48,7 @@ class RideClient {
     DateTime? to,
     List<String>? names,
   }) {
-    return _get(
-        _ridesUri(baseUrl, from, to, names), apiToken, RidesTable.fromJson);
+    return _get(_ridesUri(baseUrl, from, to, names), apiToken, RidesTable.fromJson);
   }
 
   Future<RideResult<RideSummary>> getSummary({
@@ -67,8 +56,7 @@ class RideClient {
     required String apiToken,
     required String sessionId,
   }) {
-    return _get(
-        _summaryUri(baseUrl, sessionId), apiToken, RideSummary.fromJson);
+    return _get(_summaryUri(baseUrl, sessionId), apiToken, RideSummary.fromJson);
   }
 
   Future<RideResult<BringupResult>> getBringup({
@@ -77,20 +65,12 @@ class RideClient {
     required String sessionId,
     required String gate,
   }) {
-    return _get(
-      _bringupUri(baseUrl, sessionId, gate),
-      apiToken,
-      BringupResult.fromJson,
-      notFoundMeansUnsupported: true,
-    );
+    return _get(_bringupUri(baseUrl, sessionId, gate), apiToken, BringupResult.fromJson,
+        notFoundMeansUnsupported: true);
   }
 
-  Future<RideResult<T>> _get<T>(
-    Uri uri,
-    String apiToken,
-    T Function(Object? json) parse, {
-    bool notFoundMeansUnsupported = false,
-  }) async {
+  Future<RideResult<T>> _get<T>(Uri uri, String apiToken, T Function(Object? json) parse,
+      {bool notFoundMeansUnsupported = false}) async {
     try {
       final response = await _httpClient.get(
         uri,
@@ -109,20 +89,17 @@ class RideClient {
               statusCode: 200,
             );
           } on FormatException catch (error) {
-            return RideResult(RideOutcome.failed,
-                statusCode: 200, message: error.message);
+            return RideResult(RideOutcome.failed, statusCode: 200, message: error.message);
           }
         case 401:
           return RideResult(
             RideOutcome.unauthorized,
             statusCode: 401,
-            message: extractHttpMessage(response) ??
-                'unauthorized (check the API token in Settings)',
+            message: extractHttpMessage(response) ?? 'unauthorized (check the API token in Settings)',
           );
         case 404:
           final detail = extractHttpMessage(response);
-          if (notFoundMeansUnsupported &&
-              detail?.trim().toLowerCase() == 'not found') {
+          if (notFoundMeansUnsupported && detail?.trim().toLowerCase() == 'not found') {
             return RideResult(
               RideOutcome.unsupported,
               statusCode: 404,
@@ -144,34 +121,29 @@ class RideClient {
           return RideResult(
             RideOutcome.unavailable,
             statusCode: 503,
-            message: extractHttpMessage(response) ??
-                'server has no API token configured',
+            message: extractHttpMessage(response) ?? 'server has no API token configured',
           );
         default:
           return RideResult(
             RideOutcome.failed,
             statusCode: response.statusCode,
-            message:
-                extractHttpMessage(response) ?? 'HTTP ${response.statusCode}',
+            message: extractHttpMessage(response) ?? 'HTTP ${response.statusCode}',
           );
       }
     } on TimeoutException {
       return RideResult(
         RideOutcome.failed,
-        message:
-            'timed out after ${_totalTimeout.inSeconds} s (is the server reachable from this network?)',
+        message: 'timed out after ${_totalTimeout.inSeconds} s (is the server reachable from this network?)',
       );
     } on SocketException catch (error) {
-      return RideResult(RideOutcome.failed,
-          message: 'network error: ${error.message}');
+      return RideResult(RideOutcome.failed, message: 'network error: ${error.message}');
     } catch (error) {
       return RideResult(RideOutcome.failed, message: error.toString());
     }
   }
 }
 
-Uri _ridesUri(
-    String baseUrl, DateTime? from, DateTime? to, List<String>? names) {
+Uri _ridesUri(String baseUrl, DateTime? from, DateTime? to, List<String>? names) {
   final query = <String, String>{};
   if (from != null) query['from'] = formatQueryDate(from);
   if (to != null) query['to'] = formatQueryDate(to);
@@ -200,5 +172,4 @@ String formatQueryDate(DateTime value) {
   return '$year-$month-$day';
 }
 
-String _withoutTrailingSlash(String url) =>
-    url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+String _withoutTrailingSlash(String url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url;
