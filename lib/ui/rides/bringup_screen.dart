@@ -40,6 +40,7 @@ class _BringupScreenState extends State<BringupScreen> {
   String? _error;
   String _gate = _defaultGate;
   bool _loading = true;
+  bool _settingsFailed = false;
   int _requestId = 0;
 
   @override
@@ -52,13 +53,19 @@ class _BringupScreenState extends State<BringupScreen> {
   bool _isConfigured(AppSettings settings) =>
       settings.isServerConfigured && (settings.apiToken?.isNotEmpty ?? false);
 
-  Future<void> _load({bool reloadSettings = false}) async {
+  /// Loads the answer. The previous result stays visible while refreshing;
+  /// pass [clearResult] when it no longer applies (gate or settings change).
+  Future<void> _load({
+    bool reloadSettings = false,
+    bool clearResult = false,
+  }) async {
     final requestId = ++_requestId;
     setState(() {
       _loading = true;
       _error = null;
       _outcome = null;
-      _result = null;
+      _settingsFailed = false;
+      if (clearResult) _result = null;
     });
 
     AppSettings settings;
@@ -66,19 +73,24 @@ class _BringupScreenState extends State<BringupScreen> {
       settings = (reloadSettings || _settings == null)
           ? await widget.settingsStore.load()
           : _settings!;
-    } catch (error) {
+    } catch (_) {
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _settings = const AppSettings();
         _loading = false;
-        _error = 'Could not read the server settings: $error';
+        _result = null;
+        _settingsFailed = true;
+        _error = 'Could not read the server settings.';
       });
       return;
     }
     if (!mounted || requestId != _requestId) return;
     setState(() => _settings = settings);
     if (!_isConfigured(settings)) {
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _result = null;
+      });
       return;
     }
 
@@ -94,6 +106,7 @@ class _BringupScreenState extends State<BringupScreen> {
       if (result.isSuccess) {
         _result = result.data;
       } else {
+        _result = null;
         _outcome = result.outcome;
         _error = _errorText(result);
       }
@@ -106,8 +119,11 @@ class _BringupScreenState extends State<BringupScreen> {
         'this server has no bring-up check (needs vehicle-server with the bring-up route, server#50)',
       RideOutcome.unauthorized =>
         'Unauthorized: check the API token in Settings.',
-      RideOutcome.notFound =>
-        'the server does not have this session (upload it first)',
+      RideOutcome.notFound => [
+          'the server does not have this session (upload it first)',
+          if (result.message != null && result.message!.trim().isNotEmpty)
+            result.message!.trim(),
+        ].join(': '),
       RideOutcome.invalid => result.message ?? 'invalid request',
       RideOutcome.unavailable => result.message ?? 'server unavailable',
       RideOutcome.failed => result.message ?? 'request failed',
@@ -117,8 +133,11 @@ class _BringupScreenState extends State<BringupScreen> {
 
   void _selectGate(String gate) {
     if (gate == _gate) return;
-    setState(() => _gate = gate);
-    _load();
+    setState(() {
+      _gate = gate;
+      _result = null;
+    });
+    _load(clearResult: true);
   }
 
   Future<void> _openSettings() async {
@@ -126,7 +145,7 @@ class _BringupScreenState extends State<BringupScreen> {
       MaterialPageRoute<void>(
           builder: (_) => SettingsScreen(store: widget.settingsStore)),
     );
-    if (mounted) await _load(reloadSettings: true);
+    if (mounted) await _load(reloadSettings: true, clearResult: true);
   }
 
   @override
@@ -179,17 +198,8 @@ class _BringupScreenState extends State<BringupScreen> {
   }
 
   Widget _body(AppSettings? settings) {
-    if (settings == null || _loading) {
+    if (settings == null || (_loading && _result == null)) {
       return const RideLoading('Loading bring-up check...');
-    }
-    if (!_isConfigured(settings)) {
-      return RideMessage(
-        icon: Icons.settings_ethernet,
-        message:
-            'No vehicle-server configured. Set the server URL and API token in Settings.',
-        actionLabel: 'Open Settings',
-        onAction: _openSettings,
-      );
     }
     if (_error != null) {
       final settingsAction = _outcome == RideOutcome.unauthorized;
@@ -208,10 +218,21 @@ class _BringupScreenState extends State<BringupScreen> {
                   : Tone.error,
               message: _error!,
               actionLabel: settingsAction ? 'Open Settings' : 'Retry',
-              onAction: settingsAction ? _openSettings : _load,
+              onAction: settingsAction
+                  ? _openSettings
+                  : () => _load(reloadSettings: _settingsFailed),
             ),
           ),
         ],
+      );
+    }
+    if (!_isConfigured(settings)) {
+      return RideMessage(
+        icon: Icons.settings_ethernet,
+        message:
+            'No vehicle-server configured. Set the server URL and API token in Settings.',
+        actionLabel: 'Open Settings',
+        onAction: _openSettings,
       );
     }
     if (_result == null) {
@@ -264,19 +285,21 @@ class _BringupScreenState extends State<BringupScreen> {
           ),
           if (pending > 0) ...[
             const SizedBox(height: Spacing.sm),
-            Text('$pending manual check${pending == 1 ? '' : 's'} pending'),
+            Text('$pending manual check${pending == 1 ? '' : 's'} pending: '
+                '${result.needsYou.join(', ')}'),
           ],
           if (warnings > 0) ...[
             const SizedBox(height: Spacing.xs),
             Text(
-              '$warnings warning${warnings == 1 ? '' : 's'}',
+              '$warnings warning${warnings == 1 ? '' : 's'}: '
+              '${result.warnings.join(', ')}',
               style: TextStyle(color: context.vehicle.warning),
             ),
           ],
           const SizedBox(height: Spacing.sm),
           Text(
-            'manual: you judge this one at the bike (V1 throttle blip, B0 at rest). '
-            'unknown: the session has no data for it.',
+            'manual = you judge it at the bike; '
+            'unknown = the session has no data for it.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

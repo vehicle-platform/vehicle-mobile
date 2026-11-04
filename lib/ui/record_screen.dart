@@ -806,9 +806,7 @@ class VehicleSignalStatusLine extends StatelessWidget {
 
   /// "Vehicle signals: ..." text of the current state.
   String get label {
-    if (!connected || blockCount == 0 || latest.isEmpty) {
-      return 'Vehicle signals: no data';
-    }
+    if (!connected || blockCount == 0 || latest.isEmpty) return 'Vehicle signals: no data';
     int count(int state) => latest.values.where((r) => r.state == state).length;
     final other = latest.values
         .where((r) => r.state < BleVehicleSignalState.neverReceived || r.state > BleVehicleSignalState.negativeResponse)

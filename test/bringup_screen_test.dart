@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -27,6 +28,17 @@ class _MemorySecrets implements SecretStore {
   Future<void> delete(String key) async {
     token = null;
   }
+}
+
+class _ThrowingSecrets implements SecretStore {
+  @override
+  Future<String?> read(String key) async => throw Exception('secret-boom');
+
+  @override
+  Future<void> write(String key, String value) async {}
+
+  @override
+  Future<void> delete(String key) async {}
 }
 
 Widget _host(Widget child, {double textScale = 1.0}) => MaterialApp(
@@ -205,9 +217,10 @@ void main() {
 
     expect(find.descendant(of: verdict(), matching: find.text('incomplete')),
         findsOneWidget);
-    expect(find.text('2 manual checks pending'), findsOneWidget);
-    expect(
-        find.textContaining('you judge this one at the bike'), findsOneWidget);
+    expect(find.text('2 manual checks pending: at_rest, rpm_throttle_blip'),
+        findsOneWidget);
+    expect(find.textContaining('you judge it at the bike'), findsOneWidget);
+    expect(find.textContaining('V1 throttle blip'), findsNothing);
     expect(
         find.textContaining('the session has no data for it'), findsOneWidget);
     expect(find.text('—'), findsWidgets);
@@ -233,7 +246,7 @@ void main() {
       store: _store('https://vehicle-server.example.com', 't'),
     );
 
-    expect(find.text('1 warning'), findsOneWidget);
+    expect(find.text('1 warning: step_gap'), findsOneWidget);
     expect(
       find.descendant(of: checkCard('step_gap'), matching: find.text('warn')),
       findsOneWidget,
@@ -326,8 +339,107 @@ void main() {
       store: _store('https://vehicle-server.example.com', 't'),
     );
 
-    expect(find.text('the server does not have this session (upload it first)'),
+    expect(
+        find.text(
+            'the server does not have this session (upload it first): unknown session: 20260116-090000-bbbb'),
         findsOneWidget);
+  });
+
+  testWidgets('lists several warning ids in server order', (tester) async {
+    final client = RideClient(
+      httpClient: MockClient((request) async => _ok(_body(
+            checks: [_check(id: 'b_check'), _check(id: 'a_check')],
+            warnings: ['b_check', 'a_check'],
+          ))),
+    );
+
+    await _pumpScreen(
+      tester,
+      client: client,
+      store: _store('https://vehicle-server.example.com', 't'),
+    );
+
+    expect(find.text('2 warnings: b_check, a_check'), findsOneWidget);
+  });
+
+  testWidgets('pull-to-refresh keeps the old content until the new answer',
+      (tester) async {
+    var calls = 0;
+    final second = Completer<http.Response>();
+    final client = RideClient(httpClient: MockClient((request) {
+      calls++;
+      if (calls == 1) return Future.value(_ok(_body(verdict: 'pass')));
+      return second.future;
+    }));
+
+    await _pumpScreen(
+      tester,
+      client: client,
+      store: _store('https://vehicle-server.example.com', 't'),
+    );
+    expect(find.descendant(of: verdict(), matching: find.text('pass')),
+        findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 400));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(calls, 2);
+    expect(find.text('Loading bring-up check...'), findsNothing);
+    expect(find.descendant(of: verdict(), matching: find.text('pass')),
+        findsOneWidget);
+
+    second.complete(_ok(_body(verdict: 'fail')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: verdict(), matching: find.text('fail')),
+        findsOneWidget);
+    expect(find.descendant(of: verdict(), matching: find.text('pass')),
+        findsNothing);
+  });
+
+  testWidgets('a gate change clears the old result while loading',
+      (tester) async {
+    final b0 = Completer<http.Response>();
+    final client = RideClient(httpClient: MockClient((request) {
+      if (request.url.queryParameters['gate'] == 'B0') return b0.future;
+      return Future.value(_ok(_body(verdict: 'pass')));
+    }));
+
+    await _pumpScreen(
+      tester,
+      client: client,
+      store: _store('https://vehicle-server.example.com', 't'),
+    );
+    expect(find.descendant(of: verdict(), matching: find.text('pass')),
+        findsOneWidget);
+
+    await tester.tap(find.text('B0'));
+    await tester.pump();
+
+    expect(verdict(), findsNothing);
+    expect(find.text('Loading bring-up check...'), findsOneWidget);
+
+    b0.complete(_ok(_body(gate: 'B0', verdict: 'fail')));
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: verdict(), matching: find.text('fail')),
+        findsOneWidget);
+  });
+
+  testWidgets('a settings read failure shows no exception text',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'settings.server_base_url': 'https://vehicle-server.example.com',
+    });
+    final store = AppSettingsStore(secrets: _ThrowingSecrets());
+    final client =
+        RideClient(httpClient: MockClient((request) async => _ok(_body())));
+
+    await _pumpScreen(tester, client: client, store: store);
+
+    expect(find.text('Could not read the server settings.'), findsOneWidget);
+    expect(find.textContaining('secret-boom'), findsNothing);
+    expect(find.textContaining('Exception'), findsNothing);
   });
 
   testWidgets('no settings means no request and a link to Settings',
