@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
+import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
@@ -33,7 +34,8 @@ class _MemorySecrets implements SecretStore {
 Widget _host(Widget child, {double textScale = 1.0}) => MaterialApp(
       theme: buildAppTheme(),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
       home: child,
@@ -96,9 +98,24 @@ Map<String, Object?> _summaryFixture({bool mismatch = true}) => {
             }
           ],
           'cells': [
-            {'index': 0, 'axes': [0], 'value': 120.0, 'flag': null},
-            {'index': 1, 'axes': [1], 'value': 300.0, 'flag': null},
-            {'index': 2, 'axes': [2], 'value': null, 'flag': 'missing'},
+            {
+              'index': 0,
+              'axes': [0],
+              'value': 120.0,
+              'flag': null
+            },
+            {
+              'index': 1,
+              'axes': [1],
+              'value': 300.0,
+              'flag': null
+            },
+            {
+              'index': 2,
+              'axes': [2],
+              'value': null,
+              'flag': 'missing'
+            },
           ],
           'total_s': 420.0,
           'outside_s': 6.0,
@@ -128,10 +145,30 @@ Map<String, Object?> _summaryFixture({bool mismatch = true}) => {
             },
           ],
           'cells': [
-            {'index': 0, 'axes': [0, 0], 'value': 10.0, 'flag': null},
-            {'index': 1, 'axes': [1, 0], 'value': 30.0, 'flag': null},
-            {'index': 2, 'axes': [0, 1], 'value': 20.0, 'flag': 'high'},
-            {'index': 3, 'axes': [1, 1], 'value': 40.0, 'flag': null},
+            {
+              'index': 0,
+              'axes': [0, 0],
+              'value': 10.0,
+              'flag': null
+            },
+            {
+              'index': 1,
+              'axes': [1, 0],
+              'value': 30.0,
+              'flag': null
+            },
+            {
+              'index': 2,
+              'axes': [0, 1],
+              'value': 20.0,
+              'flag': 'high'
+            },
+            {
+              'index': 3,
+              'axes': [1, 1],
+              'value': 40.0,
+              'flag': null
+            },
           ],
           'total_s': 60.0,
           'outside_s': 0.0,
@@ -153,6 +190,24 @@ Map<String, Object?> _summaryFixture({bool mismatch = true}) => {
           'message': 'stored value is unusable',
         },
       ],
+    };
+
+Map<String, Object?> _bringupFixture() => {
+      'session_id': '20260116-090000-bbbb',
+      'gate': 'V0',
+      'verdict': 'pass',
+      'checks': [
+        {
+          'id': 'ecu_present',
+          'status': 'pass',
+          'measured': {'present_rows': 12, 'absent_rows': 0},
+          'expected': 'ecuPresent set on every CAN health row',
+          'source': 'hardware-integration.md §6 V0',
+          'note': 'Synthetic test check.',
+        },
+      ],
+      'needs_you': <String>[],
+      'warnings': <String>[],
     };
 
 Map<String, Object?> _wideSummaryFixture() => {
@@ -207,7 +262,8 @@ Map<String, Object?> _wideSummaryFixture() => {
     };
 
 http.Response _ok(Map<String, Object?> body) =>
-    http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(body), 200,
+        headers: {'content-type': 'application/json'});
 
 Future<void> _drain(WidgetTester tester) async {
   for (var index = 0; index < 6; index++) {
@@ -220,7 +276,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('shows a server-not-configured message without making a request', (tester) async {
+  testWidgets('shows a server-not-configured message without making a request',
+      (tester) async {
     var requests = 0;
     final client = RideClient(httpClient: MockClient((request) async {
       requests++;
@@ -238,9 +295,12 @@ void main() {
     expect(requests, 0);
   });
 
-  testWidgets('shows loading, then the server message when the summary is missing', (tester) async {
+  testWidgets(
+      'shows loading, then the server message when the summary is missing',
+      (tester) async {
     final completer = Completer<http.Response>();
-    final client = RideClient(httpClient: MockClient((request) => completer.future));
+    final client =
+        RideClient(httpClient: MockClient((request) => completer.future));
 
     await tester.pumpWidget(_host(RideSummaryScreen(
       sessionId: '20260116-090000-bbbb',
@@ -252,7 +312,8 @@ void main() {
     expect(find.text('Loading ride summary...'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    completer.complete(http.Response(jsonEncode({'message': 'session has no ride summary'}), 404));
+    completer.complete(http.Response(
+        jsonEncode({'message': 'session has no ride summary'}), 404));
     await tester.pumpAndSettle();
 
     expect(find.text('session has no ride summary'), findsOneWidget);
@@ -285,12 +346,15 @@ void main() {
     expect(find.text('HTTP 500'), findsNothing);
   });
 
-  testWidgets('renders the header, scalar values, one-axis chart, heat grid, mismatch and unavailable list', (tester) async {
+  testWidgets(
+      'renders the header, scalar values, one-axis chart, heat grid, mismatch and unavailable list',
+      (tester) async {
     tester.view.physicalSize = const Size(360, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    final client = RideClient(httpClient: MockClient((request) async => _ok(_summaryFixture())));
+    final client = RideClient(
+        httpClient: MockClient((request) async => _ok(_summaryFixture())));
 
     await tester.pumpWidget(_host(RideSummaryScreen(
       sessionId: '20260116-090000-bbbb',
@@ -315,11 +379,13 @@ void main() {
     // is row 0, column 1.
     expect(find.text('rows: ENGINE_SPEED [rpm]'), findsOneWidget);
     expect(find.text('columns: ENGINE_LOAD [%]'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('heat-cell-operating_point_time-0-1')));
+    await tester
+        .tap(find.byKey(const ValueKey('heat-cell-operating_point_time-0-1')));
     await tester.pumpAndSettle();
     expect(find.textContaining('20.00 s · high'), findsOneWidget);
 
-    expect(find.textContaining('Decoded with other defs bin edges'), findsOneWidget);
+    expect(find.textContaining('Decoded with other defs bin edges'),
+        findsOneWidget);
     expect(find.textContaining('operating_point_time'), findsWidgets);
 
     expect(find.text('Not available (2)'), findsOneWidget);
@@ -333,12 +399,15 @@ void main() {
     expect(find.textContaining('stored value is unusable'), findsOneWidget);
   });
 
-  testWidgets('the heat grid scrolls horizontally on a wide 360 px screen without overflow', (tester) async {
+  testWidgets(
+      'the heat grid scrolls horizontally on a wide 360 px screen without overflow',
+      (tester) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    final client = RideClient(httpClient: MockClient((request) async => _ok(_wideSummaryFixture())));
+    final client = RideClient(
+        httpClient: MockClient((request) async => _ok(_wideSummaryFixture())));
 
     await tester.pumpWidget(_host(
       RideSummaryScreen(
@@ -357,8 +426,10 @@ void main() {
     expect(horizontal, isNotEmpty);
   });
 
-  testWidgets('shows the cleartext warning for a remote http server', (tester) async {
-    final client = RideClient(httpClient: MockClient((request) async => _ok(_summaryFixture())));
+  testWidgets('shows the cleartext warning for a remote http server',
+      (tester) async {
+    final client = RideClient(
+        httpClient: MockClient((request) async => _ok(_summaryFixture())));
 
     await tester.pumpWidget(_host(RideSummaryScreen(
       sessionId: '20260116-090000-bbbb',
@@ -370,9 +441,11 @@ void main() {
     expect(find.textContaining('unencrypted'), findsOneWidget);
   });
 
-  testWidgets('does not call setState after the screen is disposed', (tester) async {
+  testWidgets('does not call setState after the screen is disposed',
+      (tester) async {
     final completer = Completer<http.Response>();
-    final client = RideClient(httpClient: MockClient((request) => completer.future));
+    final client =
+        RideClient(httpClient: MockClient((request) => completer.future));
 
     await tester.pumpWidget(_host(RideSummaryScreen(
       sessionId: '20260116-090000-bbbb',
@@ -386,5 +459,34 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the app-bar action opens the bring-up check for this session',
+      (tester) async {
+    final client = RideClient(httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('/bringup')) {
+        return _ok(_bringupFixture());
+      }
+      return _ok(_summaryFixture());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Bring-up check'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BringupScreen), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BringupScreen),
+        matching: find.text('20260116-090000-bbbb'),
+      ),
+      findsOneWidget,
+    );
   });
 }

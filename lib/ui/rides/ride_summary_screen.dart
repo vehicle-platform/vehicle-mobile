@@ -8,6 +8,7 @@ import '../../services/ride_client.dart';
 import '../telemetry/link_status.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import 'bringup_screen.dart';
 import 'ride_format.dart';
 import 'ride_widgets.dart';
 
@@ -83,7 +84,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     });
   }
 
-
+  void _openBringup() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BringupScreen(
+          sessionId: widget.sessionId,
+          settingsStore: widget.settingsStore,
+          client: widget.client,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +102,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       appBar: AppBar(
         title: const Text('Ride summary'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fact_check_outlined),
+            tooltip: 'Bring-up check',
+            onPressed: _openBringup,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -117,7 +133,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
+          RideCleartextWarning(
+              settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: _notFound ? Icons.search_off : Icons.cloud_off,
@@ -273,7 +290,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             else if (signal.axes.length == 2)
               _HeatGrid(signal: signal)
             else
-              Text('${signal.axes.length}-axis summaries are not shown on the phone yet.',
+              Text(
+                  '${signal.axes.length}-axis summaries are not shown on the phone yet.',
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
@@ -527,8 +545,7 @@ class _HeatGridState extends State<_HeatGrid> {
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);
     return Tooltip(
-      message:
-          '${_edgeText(rows.edges[row], rowRange)} / '
+      message: '${_edgeText(rows.edges[row], rowRange)} / '
           '${_edgeText(columns.edges[column], columnRange)}: '
           '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}'
           '${cell?.flag != null ? ' · ${cell!.flag}' : ''}',

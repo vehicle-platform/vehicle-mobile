@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/ui/record_screen.dart';
+import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 
@@ -141,6 +142,67 @@ void main() {
     expect(
       find.text(
           'No vehicle-server configured. Set the server URL and API token in Settings.'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
+      'Bring-up check appears only for an uploaded session and opens that id',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'settings.server_base_url': 'https://server.example',
+    });
+    await tester.runAsync(() async {
+      await seedSession(
+        tmp,
+        '20260116-120000-ab12',
+        uploadState: 'uploaded',
+        uploadedAtUtc: '2026-01-16T12:00:00Z',
+      );
+      await seedSession(tmp, '20260115-120000-ab12',
+          uploadState: 'notUploaded');
+      await seedSession(tmp, '20260114-120000-ab12', uploadState: 'failed');
+    });
+
+    await openSessionsTab(tester);
+
+    final uploadedCard = find.ancestor(
+      of: find.text('20260116-120000-ab12'),
+      matching: find.byType(SectionCard),
+    );
+    expect(
+      find.descendant(
+          of: uploadedCard, matching: find.byTooltip('Bring-up check')),
+      findsOneWidget,
+    );
+    for (final id in ['20260115-120000-ab12', '20260114-120000-ab12']) {
+      final card = find.ancestor(
+        of: find.text(id),
+        matching: find.byType(SectionCard),
+      );
+      expect(
+        find.descendant(of: card, matching: find.byTooltip('Bring-up check')),
+        findsNothing,
+      );
+    }
+
+    final bringupButton = find.descendant(
+      of: uploadedCard,
+      matching: find.byIcon(Icons.fact_check_outlined),
+    );
+    await tester.ensureVisible(bringupButton);
+    await tester.pumpAndSettle();
+    await tester.tap(bringupButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BringupScreen), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BringupScreen),
+        matching: find.text('20260116-120000-ab12'),
+      ),
       findsOneWidget,
     );
 

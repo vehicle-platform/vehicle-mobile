@@ -16,6 +16,7 @@ import '../services/ble_service.dart';
 import '../services/session_recorder.dart';
 import '../services/session_store.dart';
 import '../services/session_upload.dart';
+import 'rides/bringup_screen.dart';
 import 'rides/ride_history_screen.dart';
 import 'rides/ride_summary_screen.dart';
 import 'telemetry/link_status.dart';
@@ -25,7 +26,13 @@ import 'widgets/common.dart';
 const String _lastUsedMetaPrefsKey = 'session_recorder.last_used_meta';
 
 const List<String> _weatherOptions = ['dry', 'wet', 'unknown'];
-const List<String> _routeTypeOptions = ['urban', 'rural', 'highway', 'closed_course', 'stationary'];
+const List<String> _routeTypeOptions = [
+  'urban',
+  'rural',
+  'highway',
+  'closed_course',
+  'stationary'
+];
 
 /// Ride-recording screen: metadata form + start/stop + live counters on one
 /// tab, recorded-sessions list (share/delete) on the other.
@@ -92,16 +99,20 @@ class _RecordScreenState extends State<RecordScreen> {
     super.initState();
     _recorder = SessionRecorder();
     _store = SessionStore();
-    _uploader = SessionUploader(documentsDirProvider: _store.documentsDirProvider);
+    _uploader =
+        SessionUploader(documentsDirProvider: _store.documentsDirProvider);
     _recorder.addListener(_onRecorderChanged);
     _isConnected = widget.initiallyConnected;
     widget.settingsChanged?.addListener(_loadSettings);
 
-    _packetSub = widget.bleService.rawPacketStream.listen(_recorder.handleRawPacket);
-    _imuPacketSub = widget.bleService.rawImuBlockStream.listen(_recorder.handleRawImuBlock);
-    _gpsPacketSub = widget.bleService.rawGpsBlockStream.listen(_recorder.handleRawGpsBlock);
-    _vehicleSignalPacketSub =
-        widget.bleService.rawVehicleSignalBlockStream.listen(_recorder.handleRawVehicleSignalBlock);
+    _packetSub =
+        widget.bleService.rawPacketStream.listen(_recorder.handleRawPacket);
+    _imuPacketSub =
+        widget.bleService.rawImuBlockStream.listen(_recorder.handleRawImuBlock);
+    _gpsPacketSub =
+        widget.bleService.rawGpsBlockStream.listen(_recorder.handleRawGpsBlock);
+    _vehicleSignalPacketSub = widget.bleService.rawVehicleSignalBlockStream
+        .listen(_recorder.handleRawVehicleSignalBlock);
     _gpsLinkSub = widget.bleService.gpsLinkStream.listen((status) {
       _recorder.handleGpsLinkStatus(status);
       if (mounted) setState(() {});
@@ -170,15 +181,20 @@ class _RecordScreenState extends State<RecordScreen> {
       if (!mounted) return;
       setState(() {
         _riderNameCtrl.text = json['rider_name'] as String? ?? '';
-        _riderWeightCtrl.text = (json['rider_weight_kg'] as num?)?.toString() ?? '';
+        _riderWeightCtrl.text =
+            (json['rider_weight_kg'] as num?)?.toString() ?? '';
         _extraLoadCtrl.text = (json['extra_load_kg'] as num?)?.toString() ?? '';
-        _ambientTempCtrl.text = (json['ambient_temp_c'] as num?)?.toString() ?? '';
+        _ambientTempCtrl.text =
+            (json['ambient_temp_c'] as num?)?.toString() ?? '';
         _weather = json['weather'] as String? ?? 'unknown';
-        _tireFrontCtrl.text = (json['tire_pressure_front_bar'] as num?)?.toString() ?? '';
-        _tireRearCtrl.text = (json['tire_pressure_rear_bar'] as num?)?.toString() ?? '';
+        _tireFrontCtrl.text =
+            (json['tire_pressure_front_bar'] as num?)?.toString() ?? '';
+        _tireRearCtrl.text =
+            (json['tire_pressure_rear_bar'] as num?)?.toString() ?? '';
         _fuelLevelCtrl.text = json['fuel_level'] as String? ?? '';
         _vehicleConfigCtrl.text = json['vehicle_config'] as String? ?? '';
-        _conditionLabelCtrl.text = json['condition_label'] as String? ?? 'healthy';
+        _conditionLabelCtrl.text =
+            json['condition_label'] as String? ?? 'healthy';
         _routeType = json['route_type'] as String? ?? 'urban';
       });
     } catch (_) {
@@ -206,22 +222,31 @@ class _RecordScreenState extends State<RecordScreen> {
     );
   }
 
-  double? _parseDouble(String text) => text.trim().isEmpty ? null : double.tryParse(text.trim());
+  double? _parseDouble(String text) =>
+      text.trim().isEmpty ? null : double.tryParse(text.trim());
 
   SessionMeta _buildMetaFromForm() {
     return SessionMeta(
       sessionId: '', // stamped by SessionRecorder.start()
       createdUtc: '',
-      riderName: _riderNameCtrl.text.trim().isEmpty ? null : _riderNameCtrl.text.trim(),
+      riderName: _riderNameCtrl.text.trim().isEmpty
+          ? null
+          : _riderNameCtrl.text.trim(),
       riderWeightKg: _parseDouble(_riderWeightCtrl.text),
       extraLoadKg: _parseDouble(_extraLoadCtrl.text),
       ambientTempC: _parseDouble(_ambientTempCtrl.text),
       weather: _weather,
       tirePressureFrontBar: _parseDouble(_tireFrontCtrl.text),
       tirePressureRearBar: _parseDouble(_tireRearCtrl.text),
-      fuelLevel: _fuelLevelCtrl.text.trim().isEmpty ? null : _fuelLevelCtrl.text.trim(),
-      vehicleConfig: _vehicleConfigCtrl.text.trim().isEmpty ? null : _vehicleConfigCtrl.text.trim(),
-      conditionLabel: _conditionLabelCtrl.text.trim().isEmpty ? 'healthy' : _conditionLabelCtrl.text.trim(),
+      fuelLevel: _fuelLevelCtrl.text.trim().isEmpty
+          ? null
+          : _fuelLevelCtrl.text.trim(),
+      vehicleConfig: _vehicleConfigCtrl.text.trim().isEmpty
+          ? null
+          : _vehicleConfigCtrl.text.trim(),
+      conditionLabel: _conditionLabelCtrl.text.trim().isEmpty
+          ? 'healthy'
+          : _conditionLabelCtrl.text.trim(),
       routeType: _routeType,
       note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       deviceName: widget.bleService.connectedDeviceName,
@@ -270,7 +295,8 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _uploadSession(String sessionId) async {
-    setState(() => _uploadStatuses[sessionId] = const SessionUploadStatus(state: SessionUploadState.uploading));
+    setState(() => _uploadStatuses[sessionId] =
+        const SessionUploadStatus(state: SessionUploadState.uploading));
     final status = await _uploader.upload(sessionId, _settings);
     if (!mounted) return;
     setState(() => _uploadStatuses[sessionId] = status);
@@ -279,7 +305,8 @@ class _RecordScreenState extends State<RecordScreen> {
         content: Text('Upload failed: ${status.reason ?? 'unknown error'}'),
       ));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload complete.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Upload complete.')));
     }
   }
 
@@ -300,7 +327,15 @@ class _RecordScreenState extends State<RecordScreen> {
 
   void _openRideSummary(String sessionId) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => RideSummaryScreen(sessionId: sessionId)),
+      MaterialPageRoute<void>(
+          builder: (_) => RideSummaryScreen(sessionId: sessionId)),
+    );
+  }
+
+  void _openBringup(String sessionId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+          builder: (_) => BringupScreen(sessionId: sessionId)),
     );
   }
 
@@ -309,12 +344,16 @@ class _RecordScreenState extends State<RecordScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete session?'),
-        content: Text('This permanently deletes "$sessionId" and its recorded files.'),
+        content: Text(
+            'This permanently deletes "$sessionId" and its recorded files.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Delete', style: TextStyle(color: context.vehicle.error)),
+            child:
+                Text('Delete', style: TextStyle(color: context.vehicle.error)),
           ),
         ],
       ),
@@ -366,18 +405,22 @@ class _RecordScreenState extends State<RecordScreen> {
   Widget _buildRecordTab() {
     final recording = _recorder.isRecording;
     final lastPacketUtc = _recorder.lastPacketUtc;
-    final lastAgeMs = lastPacketUtc == null ? null : DateTime.now().toUtc().difference(lastPacketUtc).inMilliseconds;
+    final lastAgeMs = lastPacketUtc == null
+        ? null
+        : DateTime.now().toUtc().difference(lastPacketUtc).inMilliseconds;
     final t = context.vehicle;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.lg, Spacing.lg, Spacing.xl),
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.lg, Spacing.lg, Spacing.lg, Spacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const InfoBanner(
             icon: Icons.screen_lock_portrait,
             tone: Tone.warn,
-            text: 'Keep this screen on and the app in the foreground while recording. '
+            text:
+                'Keep this screen on and the app in the foreground while recording. '
                 'Android may kill the BLE connection if the app is backgrounded or '
                 'killed -- there is no foreground service yet.',
           ),
@@ -437,27 +480,35 @@ class _RecordScreenState extends State<RecordScreen> {
               _pair(
                 TextField(
                   controller: _riderWeightCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Rider weight (kg)'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      const InputDecoration(labelText: 'Rider weight (kg)'),
                 ),
                 TextField(
                   controller: _extraLoadCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Extra load (kg)'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration:
+                      const InputDecoration(labelText: 'Extra load (kg)'),
                 ),
               ),
               gap,
               _pair(
                 TextField(
                   controller: _ambientTempCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                  decoration: const InputDecoration(labelText: 'Ambient temp (°C)'),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true, signed: true),
+                  decoration:
+                      const InputDecoration(labelText: 'Ambient temp (°C)'),
                 ),
                 DropdownButtonFormField<String>(
                   initialValue: _weather,
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Weather'),
-                  items: _weatherOptions.map((w) => DropdownMenuItem(value: w, child: Text(w))).toList(),
+                  items: _weatherOptions
+                      .map((w) => DropdownMenuItem(value: w, child: Text(w)))
+                      .toList(),
                   onChanged: (v) => setState(() => _weather = v ?? 'unknown'),
                 ),
               ),
@@ -465,36 +516,45 @@ class _RecordScreenState extends State<RecordScreen> {
               _pair(
                 TextField(
                   controller: _tireFrontCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Tire pressure front (bar)'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Tire pressure front (bar)'),
                 ),
                 TextField(
                   controller: _tireRearCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Tire pressure rear (bar)'),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: 'Tire pressure rear (bar)'),
                 ),
               ),
               gap,
               TextField(
                 controller: _fuelLevelCtrl,
-                decoration: const InputDecoration(labelText: 'Fuel level (e.g. full, 1/2, reserve)'),
+                decoration: const InputDecoration(
+                    labelText: 'Fuel level (e.g. full, 1/2, reserve)'),
               ),
               gap,
               TextField(
                 controller: _vehicleConfigCtrl,
-                decoration: const InputDecoration(labelText: 'Vehicle config (gearing/exhaust/filter)'),
+                decoration: const InputDecoration(
+                    labelText: 'Vehicle config (gearing/exhaust/filter)'),
               ),
               gap,
               TextField(
                 controller: _conditionLabelCtrl,
-                decoration: const InputDecoration(labelText: 'Condition label (healthy or fault type)'),
+                decoration: const InputDecoration(
+                    labelText: 'Condition label (healthy or fault type)'),
               ),
               gap,
               DropdownButtonFormField<String>(
                 initialValue: _routeType,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Route type'),
-                items: _routeTypeOptions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                items: _routeTypeOptions
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                    .toList(),
                 onChanged: (v) => setState(() => _routeType = v),
               ),
               gap,
@@ -533,9 +593,11 @@ class _RecordScreenState extends State<RecordScreen> {
       return Text(label, style: style);
     }
     final kmh = (block.groundSpeedMps * 3.6).toStringAsFixed(1);
-    return Text('GPS: ${block.fixTypeLabel}${block.gnssFixOk ? '' : ' (not OK)'}   '
+    return Text(
+        'GPS: ${block.fixTypeLabel}${block.gnssFixOk ? '' : ' (not OK)'}   '
         'Sats: ${block.numSv}   $kmh km/h   '
-        'Lost/skipped: ${_recorder.gpsLostOrSkippedBlocks}', style: style);
+        'Lost/skipped: ${_recorder.gpsLostOrSkippedBlocks}',
+        style: style);
   }
 
   Widget _statCell(String label, String value, {Color? color}) {
@@ -546,7 +608,8 @@ class _RecordScreenState extends State<RecordScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
-          Text(value, style: theme.textTheme.headlineSmall!.copyWith(color: color)),
+          Text(value,
+              style: theme.textTheme.headlineSmall!.copyWith(color: color)),
         ],
       ),
     );
@@ -566,14 +629,16 @@ class _RecordScreenState extends State<RecordScreen> {
               Icon(Icons.fiber_manual_record, color: t.record, size: 18),
               const SizedBox(width: Spacing.sm),
               Expanded(
-                child: Text('Session: ${_recorder.currentSessionId ?? '-'}', style: theme.textTheme.titleSmall),
+                child: Text('Session: ${_recorder.currentSessionId ?? '-'}',
+                    style: theme.textTheme.titleSmall),
               ),
             ],
           ),
           const SizedBox(height: Spacing.sm),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(_formatDuration(_recorder.elapsed), style: theme.textTheme.displayMedium),
+            child: Text(_formatDuration(_recorder.elapsed),
+                style: theme.textTheme.displayMedium),
           ),
           Text('ELAPSED', style: theme.textTheme.labelSmall),
           const SizedBox(height: Spacing.md),
@@ -588,7 +653,8 @@ class _RecordScreenState extends State<RecordScreen> {
                   color: _recorder.decodeErrorCount > 0 ? t.error : null),
               _statCell('Disconnects', '${_recorder.disconnectCount}',
                   color: _recorder.disconnectCount > 0 ? t.stale : null),
-              if (_recorder.imuBlockCount > 0 || _recorder.imuMissingSamples > 0) ...[
+              if (_recorder.imuBlockCount > 0 ||
+                  _recorder.imuMissingSamples > 0) ...[
                 _statCell('IMU samples', '${_recorder.imuSampleCount}'),
                 _statCell('IMU missing', '${_recorder.imuMissingSamples}'),
                 _statCell('MTU', '${_recorder.currentMtu ?? '-'}'),
@@ -610,7 +676,8 @@ class _RecordScreenState extends State<RecordScreen> {
               child: InfoBanner(
                 icon: Icons.system_update,
                 tone: Tone.warn,
-                text: 'Only version 2 telemetry packets received so far -- the connected '
+                text:
+                    'Only version 2 telemetry packets received so far -- the connected '
                     'device firmware may be outdated. Update it to get CAN health, ages '
                     'and IMU data.',
               ),
@@ -625,16 +692,21 @@ class _RecordScreenState extends State<RecordScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _isConnected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                    _isConnected
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
                     color: _isConnected ? t.live : t.noData,
                     size: 20,
                   ),
                   const SizedBox(width: Spacing.sm),
-                  Text(_isConnected ? 'Connected' : 'Disconnected', style: theme.textTheme.bodyMedium),
+                  Text(_isConnected ? 'Connected' : 'Disconnected',
+                      style: theme.textTheme.bodyMedium),
                 ],
               ),
               Text(
-                lastAgeMs == null ? 'No packets yet' : 'Last packet: $lastAgeMs ms ago',
+                lastAgeMs == null
+                    ? 'No packets yet'
+                    : 'Last packet: $lastAgeMs ms ago',
                 style: theme.textTheme.titleSmall!.copyWith(color: ageColor),
               ),
             ],
@@ -647,7 +719,9 @@ class _RecordScreenState extends State<RecordScreen> {
   String _uploadStatusLabel(SessionUploadStatus status) {
     switch (status.state) {
       case SessionUploadState.notUploaded:
-        return _settings.isServerConfigured ? 'not uploaded' : 'not uploaded (no server configured)';
+        return _settings.isServerConfigured
+            ? 'not uploaded'
+            : 'not uploaded (no server configured)';
       case SessionUploadState.uploading:
         return 'uploading...';
       case SessionUploadState.uploaded:
@@ -672,7 +746,11 @@ class _RecordScreenState extends State<RecordScreen> {
       return const SizedBox(
         width: Spacing.touchTarget,
         height: Spacing.touchTarget,
-        child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+        child: Center(
+            child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2))),
       );
     }
 
@@ -711,17 +789,20 @@ class _RecordScreenState extends State<RecordScreen> {
           final s = _sessions[index];
           final duration = s.duration;
           final loss = s.lossPercent;
-          final uploadStatus = _uploadStatuses[s.sessionId] ?? const SessionUploadStatus();
+          final uploadStatus =
+              _uploadStatuses[s.sessionId] ?? const SessionUploadStatus();
           return Padding(
             padding: const EdgeInsets.only(bottom: Spacing.md),
             child: SectionCard(
-              padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.md, Spacing.sm, Spacing.sm),
+              padding: const EdgeInsets.fromLTRB(
+                  Spacing.lg, Spacing.md, Spacing.sm, Spacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(s.sessionId, style: theme.textTheme.titleSmall),
                   const SizedBox(height: Spacing.xs),
-                  Text(s.createdUtc?.toLocal().toString() ?? 'unknown time', style: theme.textTheme.bodySmall),
+                  Text(s.createdUtc?.toLocal().toString() ?? 'unknown time',
+                      style: theme.textTheme.bodySmall),
                   const SizedBox(height: Spacing.xs),
                   Text(
                     'duration: ${duration == null ? '-' : _formatDuration(duration)}  '
@@ -732,18 +813,26 @@ class _RecordScreenState extends State<RecordScreen> {
                   const SizedBox(height: Spacing.xs),
                   Text(
                     'upload: ${_uploadStatusLabel(uploadStatus)}',
-                    style: theme.textTheme.bodyMedium!.copyWith(color: _uploadStatusColor(uploadStatus)),
+                    style: theme.textTheme.bodyMedium!
+                        .copyWith(color: _uploadStatusColor(uploadStatus)),
                   ),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (uploadStatus.state == SessionUploadState.uploaded && _settings.isServerConfigured)
+                        if (uploadStatus.state == SessionUploadState.uploaded &&
+                            _settings.isServerConfigured)
                           IconButton(
                             icon: const Icon(Icons.insights_outlined),
                             tooltip: 'Ride summary',
                             onPressed: () => _openRideSummary(s.sessionId),
+                          ),
+                        if (uploadStatus.state == SessionUploadState.uploaded)
+                          IconButton(
+                            icon: const Icon(Icons.fact_check_outlined),
+                            tooltip: 'Bring-up check',
+                            onPressed: () => _openBringup(s.sessionId),
                           ),
                         _buildUploadButton(s.sessionId, uploadStatus),
                         IconButton(
@@ -793,10 +882,14 @@ class VehicleSignalStatusLine extends StatelessWidget {
 
   /// "Vehicle signals: ..." text of the current state.
   String get label {
-    if (!connected || blockCount == 0 || latest.isEmpty) return 'Vehicle signals: no data';
+    if (!connected || blockCount == 0 || latest.isEmpty) {
+      return 'Vehicle signals: no data';
+    }
     int count(int state) => latest.values.where((r) => r.state == state).length;
     final other = latest.values
-        .where((r) => r.state < BleVehicleSignalState.neverReceived || r.state > BleVehicleSignalState.negativeResponse)
+        .where((r) =>
+            r.state < BleVehicleSignalState.neverReceived ||
+            r.state > BleVehicleSignalState.negativeResponse)
         .length;
     final problems = [
       (count(BleVehicleSignalState.stale), 'stale'),
@@ -819,7 +912,10 @@ class VehicleSignalStatusLine extends StatelessWidget {
     final t = context.vehicle;
     final style = Theme.of(context).textTheme.bodyMedium!;
     final problem = lostBlocks > 0 || latest.values.any((r) => !r.isValid);
-    return Text(label, style: blockCount > 0 && problem ? style.copyWith(color: t.warning) : style);
+    return Text(label,
+        style: blockCount > 0 && problem
+            ? style.copyWith(color: t.warning)
+            : style);
   }
 }
 
