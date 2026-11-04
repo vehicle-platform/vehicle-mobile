@@ -84,8 +84,9 @@ Map<String, Object?> _asObject(Object? value, String field) {
   if (value is! Map) throw FormatException('$field is not an object');
   final result = <String, Object?>{};
   for (final entry in value.entries) {
-    if (entry.key is! String)
+    if (entry.key is! String) {
       throw FormatException('$field has a non-string key');
+    }
     result[entry.key as String] = entry.value;
   }
   return result;
@@ -133,8 +134,9 @@ Object? _asJsonValue(Object? value, String field) {
   if (value is Map) {
     final result = <String, Object?>{};
     for (final entry in value.entries) {
-      if (entry.key is! String)
+      if (entry.key is! String) {
         throw FormatException('$field has a non-string key');
+      }
       result[entry.key as String] =
           _asJsonValue(entry.value, '$field.${entry.key}');
     }
