@@ -121,7 +121,10 @@ class _BringupScreenState extends State<BringupScreen> {
         'Unauthorized: check the API token in Settings.',
       RideOutcome.notFound => [
           'the server does not have this session (upload it first)',
-          if (result.message != null && result.message!.trim().isNotEmpty)
+          // ride_client falls back to the literal "not found" without a server detail.
+          if (result.message != null &&
+              result.message!.trim().isNotEmpty &&
+              result.message!.trim().toLowerCase() != 'not found')
             result.message!.trim(),
         ].join(': '),
       RideOutcome.invalid => result.message ?? 'invalid request',
