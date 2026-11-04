@@ -16,6 +16,7 @@ import '../services/ble_service.dart';
 import '../services/session_recorder.dart';
 import '../services/session_store.dart';
 import '../services/session_upload.dart';
+import 'rides/bringup_screen.dart';
 import 'rides/ride_history_screen.dart';
 import 'rides/ride_summary_screen.dart';
 import 'telemetry/link_status.dart';
@@ -301,6 +302,12 @@ class _RecordScreenState extends State<RecordScreen> {
   void _openRideSummary(String sessionId) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => RideSummaryScreen(sessionId: sessionId)),
+    );
+  }
+
+  void _openBringup(String sessionId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => BringupScreen(sessionId: sessionId)),
     );
   }
 
@@ -744,6 +751,12 @@ class _RecordScreenState extends State<RecordScreen> {
                             icon: const Icon(Icons.insights_outlined),
                             tooltip: 'Ride summary',
                             onPressed: () => _openRideSummary(s.sessionId),
+                          ),
+                        if (uploadStatus.state == SessionUploadState.uploaded)
+                          IconButton(
+                            icon: const Icon(Icons.fact_check_outlined),
+                            tooltip: 'Bring-up check',
+                            onPressed: () => _openBringup(s.sessionId),
                           ),
                         _buildUploadButton(s.sessionId, uploadStatus),
                         IconButton(

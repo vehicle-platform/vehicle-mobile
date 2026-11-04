@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
+import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
@@ -206,6 +207,24 @@ Map<String, Object?> _wideSummaryFixture() => {
       ],
     };
 
+Map<String, Object?> _bringupFixture() => {
+      'session_id': '20260116-090000-bbbb',
+      'gate': 'V0',
+      'verdict': 'pass',
+      'checks': [
+        {
+          'id': 'ecu_present',
+          'status': 'pass',
+          'measured': {'present_rows': 12, 'absent_rows': 0},
+          'expected': 'ecuPresent set on every CAN health row',
+          'source': 'hardware-integration.md §6 V0',
+          'note': 'Synthetic test check.',
+        },
+      ],
+      'needs_you': <String>[],
+      'warnings': <String>[],
+    };
+
 http.Response _ok(Map<String, Object?> body) =>
     http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
@@ -386,5 +405,28 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the app-bar action opens the bring-up check for this session', (tester) async {
+    final client = RideClient(httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('/bringup')) return _ok(_bringupFixture());
+      return _ok(_summaryFixture());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Bring-up check'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BringupScreen), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(BringupScreen), matching: find.text('20260116-090000-bbbb')),
+      findsOneWidget,
+    );
   });
 }

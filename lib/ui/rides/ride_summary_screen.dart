@@ -8,6 +8,7 @@ import '../../services/ride_client.dart';
 import '../telemetry/link_status.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import 'bringup_screen.dart';
 import 'ride_format.dart';
 import 'ride_widgets.dart';
 
@@ -83,7 +84,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     });
   }
 
-
+  void _openBringup() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BringupScreen(
+          sessionId: widget.sessionId,
+          settingsStore: widget.settingsStore,
+          client: widget.client,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +102,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       appBar: AppBar(
         title: const Text('Ride summary'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.fact_check_outlined),
+            tooltip: 'Bring-up check',
+            onPressed: _openBringup,
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',

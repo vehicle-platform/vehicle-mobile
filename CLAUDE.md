@@ -5,6 +5,7 @@
 ## What this repo is
 
 The phone companion app, in **Flutter** (D-022). Starting point: the legacy `HondaCl250_Telemetry/mobile_app/flutter_app` (BLE client + decoder + dashboard), ported per D-023. Scope: settings, ride history/reports, park-mode alarm notifications, profile selection. Talks to the vehicle over BLE/Wi-Fi via `vehicle-connectivity-node`, and to the `vehicle-server` API for historical data.
+- **Bring-up check** (Record screen action on an uploaded session, ride-summary app bar): renders vehicle-server's B0/V0/V1 answer from `GET /sessions/{id}/bringup` (`lib/ui/rides/bringup_screen.dart`, `RideClient.getBringup`) and computes nothing on the phone; a 404 "Not Found" means an older server without the route.
 
 ## What this repo is NOT / rules
 

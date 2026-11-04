@@ -93,6 +93,17 @@ Both screens read `GET /rides` and `GET /sessions/{id}/summary` from the server
 URL and API token set in Settings. They are read-only: nothing is written,
 recomputed or deleted on the server.
 
+## Bring-up check
+
+A session that was uploaded to `vehicle-server` also has a read-only **Bring-up check**:
+from the Record screen's session actions, or from the ride summary's app bar. The phone
+shows the server's answer for one gate -- B0 (bench: report status, IMU gaps and the
+at-rest check), V0 (vehicle: ECU present, every polled DID valid, no latch or bus-off) and
+V1 (the V0 CAN health over at least 5 min plus the manual throttle blip); the exact
+criteria are in `external/vehicle-defs/docs/hardware-integration.md` §6. The screen renders
+the server's `verdict`, `checks`, `needs_you` and `warnings` and computes nothing itself.
+It needs a `vehicle-server` with the bring-up route (`GET /sessions/{id}/bringup`, server#50).
+
 ## Commands
 
 ```

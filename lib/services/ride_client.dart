@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import '../models/bringup_result.dart';
 import '../models/ride_summary.dart';
 import 'http_message.dart';
 
@@ -15,7 +16,7 @@ const Duration rideConnectTimeout = Duration(seconds: 10);
 const Duration rideTotalTimeout = Duration(seconds: 30);
 
 /// Outcome of one read-only ride request against vehicle-server.
-enum RideOutcome { ok, unauthorized, notFound, invalid, unavailable, failed }
+enum RideOutcome { ok, unauthorized, notFound, invalid, unavailable, failed, unsupported }
 
 class RideResult<T> {
   const RideResult(this.outcome, {this.data, this.statusCode, this.message});
@@ -28,7 +29,7 @@ class RideResult<T> {
   bool get isSuccess => outcome == RideOutcome.ok && data != null;
 }
 
-/// Read-only client for `GET /rides` and `GET /sessions/{id}/summary`.
+/// Read-only client for the vehicle-server GET routes used by the app.
 ///
 /// The [http.Client] is injectable so this is unit-testable with
 /// `package:http/testing.dart`'s `MockClient`.
@@ -58,7 +59,18 @@ class RideClient {
     return _get(_summaryUri(baseUrl, sessionId), apiToken, RideSummary.fromJson);
   }
 
-  Future<RideResult<T>> _get<T>(Uri uri, String apiToken, T Function(Object? json) parse) async {
+  Future<RideResult<BringupResult>> getBringup({
+    required String baseUrl,
+    required String apiToken,
+    required String sessionId,
+    required String gate,
+  }) {
+    return _get(_bringupUri(baseUrl, sessionId, gate), apiToken, BringupResult.fromJson,
+        notFoundMeansUnsupported: true);
+  }
+
+  Future<RideResult<T>> _get<T>(Uri uri, String apiToken, T Function(Object? json) parse,
+      {bool notFoundMeansUnsupported = false}) async {
     try {
       final response = await _httpClient.get(
         uri,
@@ -86,10 +98,18 @@ class RideClient {
             message: extractHttpMessage(response) ?? 'unauthorized (check the API token in Settings)',
           );
         case 404:
+          final detail = extractHttpMessage(response);
+          if (notFoundMeansUnsupported && detail?.trim().toLowerCase() == 'not found') {
+            return RideResult(
+              RideOutcome.unsupported,
+              statusCode: 404,
+              message: 'this server has no bring-up check',
+            );
+          }
           return RideResult(
             RideOutcome.notFound,
             statusCode: 404,
-            message: extractHttpMessage(response) ?? 'not found',
+            message: detail ?? 'not found',
           );
         case 422:
           return RideResult(
@@ -135,6 +155,12 @@ Uri _ridesUri(String baseUrl, DateTime? from, DateTime? to, List<String>? names)
 Uri _summaryUri(String baseUrl, String sessionId) {
   final base = _withoutTrailingSlash(baseUrl);
   return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/summary');
+}
+
+Uri _bringupUri(String baseUrl, String sessionId, String gate) {
+  final base = _withoutTrailingSlash(baseUrl);
+  return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/bringup')
+      .replace(queryParameters: {'gate': gate});
 }
 
 /// `YYYY-MM-DD` of the calendar date as picked; vehicle-server reads it as
