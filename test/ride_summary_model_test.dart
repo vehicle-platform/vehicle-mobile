@@ -110,6 +110,17 @@ Map<String, Object?> summaryFixture() => {
           'message': 'no fuel input',
           'missing': ['did.FUEL_LEVEL'],
         },
+        {
+          'name': 'ride_final_drive_ratio',
+          'status': 'computed',
+          'unit': 'ratio',
+          'range': [2.0, 3.5],
+          'kind': 'per_gear',
+          'gears': [
+            {'gear': 1, 'value': 2.64, 'flag': null},
+            {'gear': 4, 'value': null, 'flag': 'no_steady_samples'},
+          ],
+        },
       ],
       'ignored': false,
     };
@@ -195,13 +206,14 @@ void main() {
       expect(summary.sessionId, '20260115-120000-abcd');
       expect(summary.rideDefinition, 'session');
       expect(summary.defsVersion, 'v0.19.1');
-      expect(summary.signals, hasLength(5));
+      expect(summary.signals, hasLength(6));
       expect(summary.signals.map((signal) => signal.name), [
         'ride_distance',
         'ride_coolant_time_at_temp',
         'derived.operating_point_time',
         'ride_idle_time',
         'ride_fuel_used',
+        'ride_final_drive_ratio',
       ]);
 
       final scalar = summary.signals[0] as ScalarSummary;
@@ -237,6 +249,36 @@ void main() {
       expect(error.status, 'error');
       expect(error.message, 'no fuel input');
       expect(error.missing, ['did.FUEL_LEVEL']);
+
+      final perGear = summary.signals[5] as PerGearSummary;
+      expect(perGear.unit, 'ratio');
+      expect(perGear.range.min, 2);
+      expect(perGear.range.max, 3.5);
+      expect(perGear.gears.map((gear) => gear.gear), [1, 4]);
+      expect(perGear.gears[0].value, 2.64);
+      expect(perGear.gears[0].flag, isNull);
+      expect(perGear.gears[1].value, isNull);
+      expect(perGear.gears[1].flag, 'no_steady_samples');
+    });
+
+    test('accepts an empty per-gear list', () {
+      final payload = copy(summaryFixture());
+      final signal = (payload['signals'] as List).last as Map<String, Object?>;
+      signal['gears'] = <Object?>[];
+      final parsed = RideSummary.fromJson(payload).signals.last as PerGearSummary;
+      expect(parsed.gears, isEmpty);
+    });
+
+    test('a malformed per-gear entry is unavailable, not a failed summary', () {
+      final payload = copy(summaryFixture());
+      final signal = (payload['signals'] as List).last as Map<String, Object?>;
+      signal['gears'] = [
+        {'gear': 1.5, 'value': 2.64, 'flag': null},
+      ];
+      final parsed = RideSummary.fromJson(payload).signals.last as UnavailableSummary;
+      expect(parsed.status, 'malformed per_gear');
+      expect(parsed.reason, contains('gear'));
+      expect(() => PerGearSummary.fromJson(signal, 'summary.signals[5]'), throwsFormatException);
     });
 
   });

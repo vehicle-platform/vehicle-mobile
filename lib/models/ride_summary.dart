@@ -218,6 +218,51 @@ class BinnedSummary extends RideSummarySignal {
   }
 }
 
+class PerGearValue {
+  const PerGearValue({required this.gear, required this.value, required this.flag});
+
+  final int gear;
+  final double? value;
+  final String? flag;
+
+  factory PerGearValue.fromJson(Object? json, String field) {
+    final map = _asObject(json, field);
+    return PerGearValue(
+      gear: _asInt(map, 'gear', field),
+      value: _asNullableDouble(map['value'], '$field.value'),
+      flag: _asNullableString(map['flag'], '$field.flag'),
+    );
+  }
+}
+
+class PerGearSummary extends RideSummarySignal {
+  const PerGearSummary({
+    required super.name,
+    required super.status,
+    required this.unit,
+    required this.range,
+    required this.gears,
+  });
+
+  final String unit;
+  final RideRange range;
+  final List<PerGearValue> gears;
+
+  factory PerGearSummary.fromJson(Map<String, Object?> map, String field) {
+    return PerGearSummary(
+      name: _asString(map, 'name', field),
+      status: _asString(map, 'status', field),
+      unit: _asString(map, 'unit', field, allowEmpty: true),
+      range: _asRange(map['range'], '$field.range'),
+      gears: _asList(map['gears'], '$field.gears')
+          .asMap()
+          .entries
+          .map((entry) => PerGearValue.fromJson(entry.value, '$field.gears[${entry.key}]'))
+          .toList(growable: false),
+    );
+  }
+}
+
 class UnavailableSummary extends RideSummarySignal {
   const UnavailableSummary({
     required super.name,
@@ -287,9 +332,25 @@ RideSummarySignal _parseSignal(Object? json, String field) {
   return switch (kind) {
     'scalar' => ScalarSummary.fromJson(map, field),
     'binned' => BinnedSummary.fromJson(map, field),
+    'per_gear' => _parsePerGearSummary(map, field),
     // A kind added on the server later: one unavailable row, not a failed screen.
     _ => UnavailableSummary.fromJson(map, field, status: 'unsupported kind: $kind'),
   };
+}
+
+RideSummarySignal _parsePerGearSummary(Map<String, Object?> map, String field) {
+  try {
+    return PerGearSummary.fromJson(map, field);
+  } on FormatException catch (error) {
+    return UnavailableSummary(
+      name: _asString(map, 'name', field),
+      status: 'malformed per_gear',
+      reason: error.message,
+      pendingInputs: const [],
+      missing: const [],
+      message: null,
+    );
+  }
 }
 
 Map<String, Object?> _asObject(Object? value, String field) {
