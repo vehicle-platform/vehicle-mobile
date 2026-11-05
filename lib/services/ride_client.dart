@@ -59,6 +59,14 @@ class RideClient {
     return _get(_summaryUri(baseUrl, sessionId), apiToken, RideSummary.fromJson);
   }
 
+  Future<RideResult<Map<String, Object?>>> getReport({
+    required String baseUrl,
+    required String apiToken,
+    required String sessionId,
+  }) {
+    return _get(_reportUri(baseUrl, sessionId), apiToken, _reportObject);
+  }
+
   Future<RideResult<BringupResult>> getBringup({
     required String baseUrl,
     required String apiToken,
@@ -157,6 +165,11 @@ Uri _summaryUri(String baseUrl, String sessionId) {
   return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/summary');
 }
 
+Uri _reportUri(String baseUrl, String sessionId) {
+  final base = _withoutTrailingSlash(baseUrl);
+  return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/report');
+}
+
 Uri _bringupUri(String baseUrl, String sessionId, String gate) {
   final base = _withoutTrailingSlash(baseUrl);
   return Uri.parse('$base/sessions/${Uri.encodeComponent(sessionId)}/bringup')
@@ -173,3 +186,13 @@ String formatQueryDate(DateTime value) {
 }
 
 String _withoutTrailingSlash(String url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+
+Map<String, Object?> _reportObject(Object? json) {
+  if (json is! Map) throw const FormatException('report is not an object');
+  final result = <String, Object?>{};
+  for (final entry in json.entries) {
+    if (entry.key is! String) throw const FormatException('report has a non-string key');
+    result[entry.key as String] = entry.value;
+  }
+  return result;
+}

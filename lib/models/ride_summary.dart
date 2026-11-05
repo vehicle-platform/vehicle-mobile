@@ -297,6 +297,7 @@ class RideSummary {
     required this.rideDefinition,
     required this.defsVersion,
     required this.signals,
+    required this.signalWindowKeys,
   });
 
   final String sessionId;
@@ -304,19 +305,36 @@ class RideSummary {
   final String? defsVersion;
   final List<RideSummarySignal> signals;
 
+  /// Signal name -> window key, only when the response itself carries a `window` field.
+  final Map<String, String> signalWindowKeys;
+
   factory RideSummary.fromJson(Object? json) {
     final map = _asObject(json, 'summary');
+    final signalEntries = _asList(map['signals'], 'summary.signals');
     return RideSummary(
       sessionId: _asString(map, 'session_id', 'summary'),
       rideDefinition: _asNullableString(map['ride_definition'], 'summary.ride_definition'),
       defsVersion: _asNullableString(map['defs_version'], 'summary.defs_version'),
-      signals: _asList(map['signals'], 'summary.signals')
+      signals: signalEntries
           .asMap()
           .entries
           .map((entry) => _parseSignal(entry.value, 'summary.signals[${entry.key}]'))
           .toList(growable: false),
+      signalWindowKeys: _signalWindowKeys(signalEntries),
     );
   }
+}
+
+Map<String, String> _signalWindowKeys(List<Object?> entries) {
+  final result = <String, String>{};
+  for (var index = 0; index < entries.length; index++) {
+    final field = 'summary.signals[$index]';
+    final map = _asObject(entries[index], field);
+    final window = _asNullableString(map['window'], '$field.window');
+    if (window == null) continue;
+    result[_asString(map, 'name', field)] = window;
+  }
+  return result;
 }
 
 RideSummarySignal _parseSignal(Object? json, String field) {
