@@ -156,6 +156,25 @@ Map<String, Object?> _summaryFixture({bool mismatch = true}) => {
       ],
     };
 
+Map<String, Object?> _perGearSummaryFixture() => {
+      'session_id': '20260116-090000-bbbb',
+      'ride_definition': 'cl250_ride.yaml',
+      'defs_version': '1.2.3',
+      'signals': [
+        {
+          'name': 'ride_final_drive_ratio',
+          'status': 'computed',
+          'unit': 'ratio',
+          'range': [2.0, 3.5],
+          'kind': 'per_gear',
+          'gears': [
+            {'gear': 4, 'value': null, 'flag': 'no_steady_samples'},
+            {'gear': 1, 'value': 2.64, 'flag': null},
+          ],
+        },
+      ],
+    };
+
 Map<String, Object?> _wideSummaryFixture() => {
       'session_id': '20260116-090000-bbbb',
       'ride_definition': 'cl250_ride.yaml',
@@ -374,6 +393,30 @@ void main() {
         .widgetList<SingleChildScrollView>(find.byType(SingleChildScrollView))
         .where((view) => view.scrollDirection == Axis.horizontal);
     expect(horizontal, isNotEmpty);
+  });
+
+  testWidgets('renders per-gear rows at a 360x690 phone size without overflow', (tester) async {
+    tester.view.physicalSize = const Size(360, 690);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async => _ok(_perGearSummaryFixture())));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PER-GEAR SIGNALS'), findsOneWidget);
+    expect(find.text('ride_final_drive_ratio'), findsOneWidget);
+    expect(find.text('Gear 1'), findsOneWidget);
+    expect(find.text('2.6400 ratio'), findsOneWidget);
+    expect(find.text('Gear 4'), findsOneWidget);
+    expect(find.text('– ratio'), findsOneWidget);
+    expect(find.text('no_steady_samples'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('shows the cleartext warning for a remote http server', (tester) async {

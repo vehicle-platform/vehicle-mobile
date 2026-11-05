@@ -155,6 +155,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         .where((signal) => signal.status == 'computed')
         .toList(growable: false);
     final scalars = computed.whereType<ScalarSummary>().toList(growable: false);
+    final perGear = computed.whereType<PerGearSummary>().toList(growable: false);
     final binned = computed.whereType<BinnedSummary>().toList(growable: false);
     final unavailable = summary.signals
         .whereType<UnavailableSummary>()
@@ -185,6 +186,10 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
           if (scalars.isNotEmpty) ...[
             const SectionLabel('Signals'),
             _scalarList(scalars),
+          ],
+          if (perGear.isNotEmpty) ...[
+            const SectionLabel('Per-gear signals'),
+            for (final signal in perGear) _perGearSection(signal),
           ],
           if (binned.isNotEmpty) ...[
             const SectionLabel('Binned signals'),
@@ -261,6 +266,69 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _perGearSection(PerGearSummary signal) {
+    final theme = Theme.of(context);
+    final gears = [...signal.gears]..sort((a, b) => a.gear.compareTo(b.gear));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.md),
+      child: SectionCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: Spacing.md,
+              runSpacing: Spacing.xs,
+              children: [
+                Text(signal.name, style: theme.textTheme.titleSmall),
+                Text(signal.unit, style: theme.textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: Spacing.sm),
+            if (gears.isEmpty)
+              Text('No stored gears.', style: theme.textTheme.bodySmall)
+            else
+              for (var index = 0; index < gears.length; index++) ...[
+                if (index > 0)
+                  Divider(height: Spacing.lg, color: context.vehicle.outline),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 64,
+                      child: Text('Gear ${gears[index].gear}',
+                          style: theme.textTheme.bodyMedium),
+                    ),
+                    Expanded(
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: Spacing.sm,
+                        runSpacing: Spacing.xs,
+                        children: [
+                          Text(
+                            '${formatRideRangeValue(gears[index].value, signal.range)} ${signal.unit}',
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          if (gears[index].flag != null)
+                            Text(
+                              gears[index].flag!,
+                              style: theme.textTheme.bodySmall!
+                                  .copyWith(color: context.vehicle.warning),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+          ],
+        ),
       ),
     );
   }
