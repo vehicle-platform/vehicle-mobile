@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
+import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
@@ -226,6 +227,54 @@ Map<String, Object?> _wideSummaryFixture() => {
       ],
     };
 
+Map<String, Object?> _healthReportFixture() => {
+      'derived_summary': {
+        'health_windows': {
+          'rule': "provisional: Claude's reading of D-079 (vehicle-server README)",
+          't0_device_ms': 1000,
+          'windows': {
+            'W3_WARM_IDLE': {
+              'qualifying_count': 1,
+              'instances': [
+                {
+                  'start_ms': 3000,
+                  'end_ms': 30000,
+                  'duration_ms': 27000,
+                  'close_reason': 'condition',
+                  'qualifies': true,
+                  'first_qualifying': true,
+                },
+                {
+                  'start_ms': 40000,
+                  'end_ms': 41000,
+                  'duration_ms': 1000,
+                  'close_reason': 'session_end',
+                  'qualifies': false,
+                  'first_qualifying': false,
+                },
+              ],
+            },
+            'W1_KEY_ON': {'qualifying_count': 0, 'instances': <Object?>[]},
+          },
+        },
+      },
+    };
+
+Map<String, Object?> _summaryWithWindowSignal() {
+  final summary = _summaryFixture();
+  (summary['signals'] as List).insert(0, {
+    'name': 'window_warm_idle_count',
+    'status': 'computed',
+    'unit': 'count',
+    'range': [0, 10],
+    'kind': 'scalar',
+    'value': 1,
+    'flag': null,
+    'window': 'W3_WARM_IDLE',
+  });
+  return summary;
+}
+
 Map<String, Object?> _bringupFixture() => {
       'session_id': '20260116-090000-bbbb',
       'gate': 'V0',
@@ -318,7 +367,7 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
 
-    expect(requests, 2);
+    expect(requests, 3);
     expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
     expect(find.text('HTTP 500'), findsNothing);
   });
@@ -447,6 +496,146 @@ void main() {
     completer.complete(_ok(_summaryFixture()));
     await tester.pump();
 
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('renders the report health windows with one request per route', (tester) async {
+    tester.view.physicalSize = const Size(360, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final paths = <String>[];
+    final client = RideClient(httpClient: MockClient((request) async {
+      paths.add(request.url.path);
+      if (request.url.path.endsWith('/report')) return _ok(_healthReportFixture());
+      return _ok(_summaryWithWindowSignal());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(paths, [
+      '/sessions/20260116-090000-bbbb/summary',
+      '/sessions/20260116-090000-bbbb/report',
+    ]);
+    expect(find.text('HEALTH WINDOWS'), findsOneWidget);
+    expect(find.textContaining('provisional:'), findsOneWidget);
+    expect(find.text('W3_WARM_IDLE'), findsOneWidget);
+    expect(find.text('2 instances, 1 qualifying'), findsOneWidget);
+    expect(find.text('27 s'), findsOneWidget);
+    expect(find.text('condition'), findsOneWidget);
+    expect(find.text('yes'), findsOneWidget);
+    expect(find.text('no'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(HealthWindowsSection),
+        matching: find.text('window_warm_idle_count'),
+      ),
+      findsOneWidget,
+    );
+
+    final timeline = tester.widget<CustomPaint>(
+      find.byKey(const ValueKey('health-window-timeline-W3_WARM_IDLE')),
+    );
+    final painter = timeline.painter! as WindowTimelinePainter;
+    expect(painter.instances, hasLength(2));
+    expect(painter.firstQualifyingIndex, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows the missing-report message without hiding the summary', (tester) async {
+    tester.view.physicalSize = const Size(360, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('/report')) {
+        return _ok({'derived_summary': <String, Object?>{}});
+      }
+      return _ok(_summaryFixture());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
+    expect(find.text(HealthWindowsSection.missingReportMessage), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows a malformed-report reason without hiding the summary', (tester) async {
+    tester.view.physicalSize = const Size(360, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('/report')) {
+        return _ok({
+          'derived_summary': {
+            'health_windows': {
+              'rule': 'provisional',
+              't0_device_ms': 0,
+              'windows': {
+                'W3_WARM_IDLE': {
+                  'qualifying_count': 0,
+                  'instances': [
+                    {
+                      'start_ms': 10,
+                      'end_ms': 5,
+                      'duration_ms': -5,
+                      'close_reason': 'condition',
+                      'qualifies': false,
+                      'first_qualifying': false,
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        });
+      }
+      return _ok(_summaryFixture());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
+    expect(find.textContaining('malformed:'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a failed report request never hides the summary', (tester) async {
+    tester.view.physicalSize = const Size(360, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('/report')) return http.Response('', 500);
+      return _ok(_summaryFixture());
+    }));
+
+    await tester.pumpWidget(_host(RideSummaryScreen(
+      sessionId: '20260116-090000-bbbb',
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
+    expect(find.text('HTTP 500'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

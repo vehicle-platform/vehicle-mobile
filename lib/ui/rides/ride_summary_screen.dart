@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../models/health_windows.dart';
 import '../../models/ride_summary.dart';
 import '../../services/app_settings.dart';
 import '../../services/ride_client.dart';
@@ -9,6 +10,7 @@ import '../telemetry/link_status.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'bringup_screen.dart';
+import 'health_windows_section.dart';
 import 'ride_format.dart';
 import 'ride_widgets.dart';
 
@@ -32,6 +34,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   late final RideClient _client;
   AppSettings? _settings;
   RideSummary? _summary;
+  HealthWindowsResult? _healthWindows;
+  bool _healthWindowsLoading = false;
   String? _error;
   bool _notFound = false;
   bool _loading = true;
@@ -51,6 +55,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         _loading = true;
         _error = null;
         _notFound = false;
+        _healthWindows = null;
+        _healthWindowsLoading = false;
       });
     }
     final settings = await widget.settingsStore.load();
@@ -81,6 +87,25 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         _error = result.message ?? result.outcome.name;
         _notFound = false;
       }
+    });
+    if (result.isSuccess) {
+      await _loadHealthWindows(settings, requestId);
+    }
+  }
+
+  Future<void> _loadHealthWindows(AppSettings settings, int requestId) async {
+    setState(() => _healthWindowsLoading = true);
+    final result = await _client.getReport(
+      baseUrl: settings.serverBaseUrl!,
+      apiToken: settings.apiToken ?? '',
+      sessionId: widget.sessionId,
+    );
+    if (!mounted || requestId != _requestId) return;
+    setState(() {
+      _healthWindowsLoading = false;
+      _healthWindows = result.isSuccess
+          ? parseHealthWindows(result.data)
+          : HealthWindowsResult.unavailable(result.message ?? result.outcome.name);
     });
   }
 
@@ -200,6 +225,13 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             _unavailableList(unavailable),
           ],
         ],
+        const SizedBox(height: Spacing.lg),
+        const SectionLabel('Health windows'),
+        HealthWindowsSection(
+          result: _healthWindows,
+          loading: _healthWindowsLoading,
+          summary: summary,
+        ),
       ],
     );
   }
