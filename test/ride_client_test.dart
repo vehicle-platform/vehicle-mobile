@@ -41,6 +41,16 @@ const summaryBody = {
   ],
 };
 
+const reportBody = {
+  'derived_summary': {
+    'health_windows': {
+      'rule': 'provisional',
+      't0_device_ms': 1000,
+      'windows': <String, Object?>{},
+    },
+  },
+};
+
 const bringupBody = {
   'session_id': '20260105-100000-abcd',
   'gate': 'V0',
@@ -204,6 +214,71 @@ void main() {
       final result = await client.getSummary(baseUrl: 'https://s', apiToken: 't', sessionId: 'id');
       expect(result.outcome, RideOutcome.failed);
       expect(result.message, contains('network error'));
+    });
+  });
+
+  group('RideClient.getReport', () {
+    test('sends one GET to the report route with the encoded id and token', () async {
+      late http.Request captured;
+      final client = RideClient(httpClient: MockClient((request) async {
+        captured = request;
+        return jsonResponse(reportBody, 200);
+      }));
+
+      final result = await client.getReport(
+        baseUrl: 'https://vehicle-server.example.com/',
+        apiToken: 'secret-token',
+        sessionId: 'a/b',
+      );
+
+      expect(result.outcome, RideOutcome.ok);
+      expect(result.data!['derived_summary'], isA<Map>());
+      expect(captured.method, 'GET');
+      expect(captured.headers['Authorization'], 'Bearer secret-token');
+      expect(captured.headers['Accept'], 'application/json');
+      expect(captured.url.toString(), 'https://vehicle-server.example.com/sessions/a%2Fb/report');
+      expect(captured.url.pathSegments, ['sessions', 'a/b', 'report']);
+    });
+
+    Future<RideResult<Map<String, Object?>>> withStatus(int status, {String body = '{}'}) {
+      final client = RideClient(httpClient: MockClient((_) async => http.Response(body, status)));
+      return client.getReport(baseUrl: 'https://s', apiToken: 't', sessionId: 'id');
+    }
+
+    test('maps 401 to unauthorized', () async {
+      final result = await withStatus(401, body: jsonEncode({'detail': 'bad token'}));
+      expect(result.outcome, RideOutcome.unauthorized);
+      expect(result.message, 'bad token');
+    });
+
+    test('maps 404 to notFound with the server detail', () async {
+      final result = await withStatus(404, body: jsonEncode({'detail': 'unknown session: id'}));
+      expect(result.outcome, RideOutcome.notFound);
+      expect(result.statusCode, 404);
+      expect(result.message, 'unknown session: id');
+    });
+
+    test('a server that never answers times out as a failure', () async {
+      final neverAnswers = Completer<http.Response>();
+      final client = RideClient(
+        httpClient: MockClient((_) => neverAnswers.future),
+        totalTimeout: const Duration(milliseconds: 50),
+      );
+      final result = await client.getReport(baseUrl: 'https://s', apiToken: 't', sessionId: 'id');
+      expect(result.outcome, RideOutcome.failed);
+      expect(result.message, contains('timed out'));
+    });
+
+    test('malformed JSON is a failure', () async {
+      final result = await withStatus(200, body: '{not json');
+      expect(result.outcome, RideOutcome.failed);
+      expect(result.message, isNotEmpty);
+    });
+
+    test('a report that is not an object is a failure', () async {
+      final result = await withStatus(200, body: '[]');
+      expect(result.outcome, RideOutcome.failed);
+      expect(result.message, contains('report is not an object'));
     });
   });
 
