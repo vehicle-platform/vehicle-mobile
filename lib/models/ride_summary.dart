@@ -325,14 +325,18 @@ class RideSummary {
   }
 }
 
+/// Reads the optional per-signal `window` key. It is display metadata only, so a
+/// missing or malformed value (not a non-empty string) is ignored for that signal
+/// and never fails the summary; `_parseSignal` still validates the entry itself.
 Map<String, String> _signalWindowKeys(List<Object?> entries) {
   final result = <String, String>{};
-  for (var index = 0; index < entries.length; index++) {
-    final field = 'summary.signals[$index]';
-    final map = _asObject(entries[index], field);
-    final window = _asNullableString(map['window'], '$field.window');
-    if (window == null) continue;
-    result[_asString(map, 'name', field)] = window;
+  for (final entry in entries) {
+    if (entry is! Map) continue;
+    final name = entry['name'];
+    final window = entry['window'];
+    if (name is String && window is String && window.isNotEmpty) {
+      result[name] = window;
+    }
   }
   return result;
 }

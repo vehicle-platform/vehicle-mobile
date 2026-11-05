@@ -181,10 +181,8 @@ String _asString(Map<String, Object?> map, String key, String field) {
 
 int _asInt(Map<String, Object?> map, String key, String field) {
   final value = map[key];
+  // jsonDecode yields `int` for 5 and `double` for 5.0; only the former is an integer time.
   if (value is int) return value;
-  if (value is num && value.isFinite && value == value.roundToDouble()) {
-    return value.toInt();
-  }
   throw FormatException('$field.$key is missing or not an integer');
 }
 

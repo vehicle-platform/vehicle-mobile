@@ -101,7 +101,7 @@ void main() {
         'rule is missing or not a string':
             _parseBlock({..._block(), 'rule': 1}),
         't0_device_ms is missing or not an integer':
-            _parseBlock({..._block(), 't0_device_ms': 1.5}),
+            _parseBlock({..._block(), 't0_device_ms': 1000.0}),
         'windows is not an object':
             _parseBlock({..._block(), 'windows': <Object?>[]}),
         'W3_WARM_IDLE is not an object': _parseBlock({
@@ -141,7 +141,7 @@ void main() {
             'W3_WARM_IDLE': {
               ..._window(),
               'instances': [
-                {..._instance(), 'start_ms': 1.5}
+                {..._instance(), 'start_ms': 3000.0}
               ],
             },
           },
@@ -174,7 +174,7 @@ void main() {
             'W3_WARM_IDLE': {
               ..._window(),
               'instances': [
-                {..._instance(), 'duration_ms': 27000.5}
+                {..._instance(), 'duration_ms': 27000.0}
               ],
             },
           },

@@ -374,5 +374,18 @@ void main() {
       expect(signal.status, 'unsupported kind: histogram3d');
       expect(signal.name, first['name']);
     });
+
+    test('a non-string window on one signal is ignored, the summary still parses', () {
+      final payload = copy(summaryFixture());
+      final signals = payload['signals'] as List;
+      signals[0] = Map<String, Object?>.from(signals[0] as Map)..['window'] = 5;
+      signals[1] = Map<String, Object?>.from(signals[1] as Map)..['window'] = 'W3_WARM_IDLE';
+      final summary = RideSummary.fromJson(payload);
+      expect(summary.signals, hasLength(signals.length));
+      final first = (signals[0] as Map)['name'] as String;
+      final second = (signals[1] as Map)['name'] as String;
+      expect(summary.signalWindowKeys.containsKey(first), isFalse);
+      expect(summary.signalWindowKeys[second], 'W3_WARM_IDLE');
+    });
   });
 }

@@ -544,6 +544,14 @@ void main() {
     final painter = timeline.painter! as WindowTimelinePainter;
     expect(painter.instances, hasLength(2));
     expect(painter.firstQualifyingIndex, 0);
+    final segments = painter.segments(const Size(300, 18));
+    expect(segments, hasLength(painter.instances.length));
+    expect(segments.map((s) => s.qualifies), [true, false]);
+    expect(segments.map((s) => s.firstQualifying), [true, false]);
+    expect(segments.every((s) => s.right >= s.left), isTrue);
+    // The instance table marks the first qualifying row (header 'First' + one 'first').
+    expect(find.text('First'), findsOneWidget);
+    expect(find.text('first'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

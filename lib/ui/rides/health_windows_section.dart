@@ -162,7 +162,8 @@ class HealthWindowsSection extends StatelessWidget {
                 'End',
                 'Duration',
                 'Close reason',
-                'Qualifies'
+                'Qualifies',
+                'First'
               ])
                 Padding(
                   padding: const EdgeInsets.only(
@@ -182,6 +183,7 @@ class HealthWindowsSection extends StatelessWidget {
                 cell(formatDurationS(instance.durationMs / 1000)),
                 cell(instance.closeReason),
                 cell(instance.qualifies ? 'yes' : 'no'),
+                cell(instance.firstQualifying ? 'first' : ''),
               ],
             ),
         ],
@@ -238,29 +240,49 @@ class WindowTimelinePainter extends CustomPainter {
     return index < 0 ? null : index;
   }
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (instances.isEmpty || size.width <= 0 || size.height <= 0) return;
+  /// The segments [paint] draws on a canvas of [size]: exactly one per instance, in order.
+  List<WindowTimelineSegment> segments(Size size) {
+    if (instances.isEmpty || size.width <= 0 || size.height <= 0) {
+      return const [];
+    }
     final lastEndMs =
         instances.map((instance) => instance.endMs).reduce(math.max);
     final axisMs = lastEndMs <= 0 ? 1 : lastEndMs;
+    return [
+      for (final instance in instances)
+        () {
+          final left =
+              (size.width * instance.startMs / axisMs).clamp(0.0, size.width);
+          final right =
+              (size.width * instance.endMs / axisMs).clamp(left, size.width);
+          return WindowTimelineSegment(
+            left: left,
+            right: right,
+            qualifies: instance.qualifies,
+            firstQualifying: instance.firstQualifying,
+          );
+        }(),
+    ];
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final segments = this.segments(size);
+    if (segments.isEmpty) return;
     final track = RRect.fromRectAndRadius(
       Rect.fromLTWH(0, size.height / 2 - 3, size.width, 6),
       const Radius.circular(3),
     );
     canvas.drawRRect(track, Paint()..color = trackColor);
 
-    for (final instance in instances) {
-      final left =
-          (size.width * instance.startMs / axisMs).clamp(0.0, size.width);
-      final right =
-          (size.width * instance.endMs / axisMs).clamp(left, size.width);
+    for (final segment in segments) {
+      final left = segment.left;
       final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-            left, size.height / 2 - 5, math.max(right - left, 1.0), 10),
+        Rect.fromLTWH(left, size.height / 2 - 5,
+            math.max(segment.right - left, 1.0), 10),
         const Radius.circular(2),
       );
-      if (instance.qualifies) {
+      if (segment.qualifies) {
         canvas.drawRRect(rect, Paint()..color = qualifyingColor);
       } else {
         canvas.drawRRect(
@@ -271,7 +293,7 @@ class WindowTimelinePainter extends CustomPainter {
             ..strokeWidth = 1.5,
         );
       }
-      if (instance.firstQualifying) {
+      if (segment.firstQualifying) {
         canvas.drawLine(
           Offset(left, 0),
           Offset(left, size.height),
@@ -291,4 +313,19 @@ class WindowTimelinePainter extends CustomPainter {
         oldDelegate.qualifyingColor != qualifyingColor ||
         oldDelegate.markerColor != markerColor;
   }
+}
+
+/// One drawn timeline segment (x range in canvas pixels) of a health-window instance.
+class WindowTimelineSegment {
+  const WindowTimelineSegment({
+    required this.left,
+    required this.right,
+    required this.qualifies,
+    required this.firstQualifying,
+  });
+
+  final double left;
+  final double right;
+  final bool qualifies;
+  final bool firstQualifying;
 }
