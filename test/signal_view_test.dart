@@ -199,7 +199,9 @@ void main() {
         expect(recordOnly, isNotEmpty);
         for (final v in recordOnly) {
           // Polled by the node but nothing received yet: NO DATA, not NOT POLLED.
-          expect(v.state, SignalState.noData, reason: v.signal.name);
+          // A catalog candidate (D-078 item 2, uds/obd_catalog.yaml) is NOT POLLED.
+          expect(v.state, v.signal.isPolled ? SignalState.noData : SignalState.notPolled,
+              reason: v.signal.name);
           expect(v.isLive, isFalse);
           expect(v.value, isNull);
           expect(v.valueText, noValueText);
