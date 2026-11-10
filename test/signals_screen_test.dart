@@ -49,12 +49,14 @@ VehicleSignalRecord record(VehicleSignal s, int state, {int raw = 0, int ageMs =
     VehicleSignalRecord(did: s.did, state: state, ageMs: ageMs, raw: raw);
 
 void main() {
-  // Since defs v0.12.0 (D-068) the catalog has no candidates: every signal is
-  // polled. [recordOnly] are those the v4 packet does not carry, so they get a
-  // value only from a vehicle-signal record.
+  // Since defs v0.17.0 (D-078 item 2) the catalog also lists the unpolled
+  // candidates of uds/obd_catalog.yaml, shown as NOT POLLED. [recordOnly] are the
+  // polled signals the v4 packet does not carry, so they get a value only from a
+  // vehicle-signal record.
   final recordOnly =
       vehicleSignalCatalog.where((s) => s.isPolled && !boundSignalNames.contains(s.name)).toList();
-  final total = vehicleSignalCatalog.length;
+  final polledCount = vehicleSignalCatalog.where((s) => s.isPolled).length;
+  final candidateCount = vehicleSignalCatalog.length - polledCount;
 
   Finder chipsOf(SignalState state) => find.byWidgetPredicate((w) => w is StateChip && w.state == state);
 
@@ -72,10 +74,8 @@ void main() {
     store.updateConnection(true);
     await pumpScreen(tester, store);
 
-    expect(chipsOf(SignalState.noData), findsNWidgets(total));
-    expect(chipsOf(SignalState.notPolled), findsNothing);
-    expect(find.text('NOT POLLED'), findsNothing);
-    expect(find.text('Not polled'), findsNothing);
+    expect(chipsOf(SignalState.noData), findsNWidgets(polledCount));
+    expect(chipsOf(SignalState.notPolled), findsNWidgets(candidateCount));
     expect(chipsOf(SignalState.live), findsNothing);
   });
 
@@ -95,7 +95,7 @@ void main() {
     expect(find.descendant(of: find.byType(StateChip), matching: find.text('LIVE')), findsOneWidget);
     expect(find.text(expected), findsOneWidget);
     expect(find.text(displayUnit(candidate.unit)), findsWidgets);
-    expect(chipsOf(SignalState.noData), findsNWidgets(total - 1));
+    expect(chipsOf(SignalState.noData), findsNWidgets(polledCount - 1));
     expect(find.textContaining('Poll every ${candidate.pollPeriodMs} ms'), findsWidgets);
   });
 
@@ -134,7 +134,7 @@ void main() {
     expect(chipsOf(SignalState.negativeResponse), findsOneWidget);
     expect(find.text('SKIPPED'), findsOneWidget);
     expect(chipsOf(SignalState.live), findsNothing);
-    expect(chipsOf(SignalState.noData), findsNWidgets(total - 2));
+    expect(chipsOf(SignalState.noData), findsNWidgets(polledCount - 2));
   });
 
   testWidgets('a v4 telemetry packet keeps the packet-bound signals LIVE alongside vehicle-signal records',
@@ -197,7 +197,7 @@ void main() {
     await tester.pumpWidget(host(SignalsScreen(store: store)));
 
     final polled = vehicleSignalCatalog.where((s) => s.isPolled).length;
-    final candidates = vehicleSignalCatalog.length - polled; // 0 since D-068
+    final candidates = vehicleSignalCatalog.length - polled; // obd_catalog.yaml candidates (D-078)
     expect(find.text('4'), findsWidgets); // four live (battery is stale)
     expect(find.text('$polled'), findsWidgets);
     expect(find.text('$candidates'), findsWidgets);
@@ -210,7 +210,7 @@ void main() {
     expect(find.text('62'), findsOneWidget);
   });
 
-  testWidgets('filter shows only candidates (none in the current catalog)', (tester) async {
+  testWidgets('filter shows only candidates', (tester) async {
     tester.view.physicalSize = const Size(800, 12000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
