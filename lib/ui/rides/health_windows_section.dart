@@ -2,12 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../models/health_windows.dart';
-import '../../models/ride_summary.dart';
-import '../telemetry/link_status.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
-import 'ride_format.dart';
+import 'package:vehicle_mobile/models/health_windows.dart';
+import 'package:vehicle_mobile/models/ride_summary.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 
 /// The ride-summary health-window section; it renders only what the report block holds.
 class HealthWindowsSection extends StatelessWidget {

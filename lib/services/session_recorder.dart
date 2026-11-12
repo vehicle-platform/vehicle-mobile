@@ -7,11 +7,11 @@ import 'package:flutter/foundation.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../models/gps_block.dart';
-import '../models/imu_block.dart';
-import '../models/session_meta.dart';
-import '../models/telemetry_data.dart';
-import '../models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/imu_block.dart';
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
 
 /// Provides the platform's app-documents directory. Overridden in tests so
 /// [SessionRecorder] never touches a real device path_provider channel.

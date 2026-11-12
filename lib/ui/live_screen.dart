@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
-import '../services/ble_service.dart';
-import 'telemetry/link_status.dart';
-import 'telemetry/signal_view.dart';
-import 'telemetry/telemetry_store.dart';
-import 'theme/app_theme.dart';
-import 'widgets/common.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Live dashboard: hero speed, RPM and throttle, secondary tiles, and a
 /// compact status strip showing which links and sources are healthy.

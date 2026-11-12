@@ -2,17 +2,17 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../models/health_windows.dart';
-import '../../models/ride_summary.dart';
-import '../../services/app_settings.dart';
-import '../../services/ride_client.dart';
-import '../telemetry/link_status.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
-import 'bringup_screen.dart';
-import 'health_windows_section.dart';
-import 'ride_format.dart';
-import 'ride_widgets.dart';
+import 'package:vehicle_mobile/models/health_windows.dart';
+import 'package:vehicle_mobile/models/ride_summary.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/ride_client.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
+import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
+import 'package:vehicle_mobile/ui/rides/ride_format.dart';
+import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 
 class RideSummaryScreen extends StatefulWidget {
   const RideSummaryScreen({

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../telemetry/link_status.dart';
-import '../telemetry/signal_view.dart';
-import '../theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 /// Colour of a signal state (tokens only).
 Color stateColor(BuildContext context, SignalState state) {

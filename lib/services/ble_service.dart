@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
-import '../models/gps_block.dart';
-import '../models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
 
 /// BLE client. GATT UUIDs and the requested ATT MTU come from the generated
 /// [BleGatt] (vehicle-defs `ble/ble_schema.json`, D-061); nothing about

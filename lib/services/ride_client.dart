@@ -5,9 +5,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
-import '../models/bringup_result.dart';
-import '../models/ride_summary.dart';
-import 'http_message.dart';
+import 'package:vehicle_mobile/models/bringup_result.dart';
+import 'package:vehicle_mobile/models/ride_summary.dart';
+import 'package:vehicle_mobile/services/http_message.dart';
 
 /// TCP connect limit of the default client, like the upload client.
 const Duration rideConnectTimeout = Duration(seconds: 10);

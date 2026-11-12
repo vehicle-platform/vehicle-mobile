@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
-import '../models/telemetry_data.dart';
-import 'telemetry/link_status.dart';
-import 'telemetry/telemetry_store.dart';
-import 'theme/app_theme.dart';
-import 'widgets/common.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Link, packet, CAN and tester health. Read-only; everything comes from the
 /// newest BLE telemetry packet and the decoder's counters.

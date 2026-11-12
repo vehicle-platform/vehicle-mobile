@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../models/gps_block.dart';
-import '../../models/telemetry_data.dart';
-import '../../models/vehicle_signal_block.dart';
-import '../../services/ble_service.dart';
-import 'signal_view.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 
 /// Shared, read-only view of the live BLE state for every screen.
 ///

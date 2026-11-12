@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'telemetry/link_status.dart';
-import 'telemetry/signal_view.dart';
-import 'telemetry/telemetry_store.dart';
-import 'theme/app_theme.dart';
-import 'widgets/common.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 enum _Filter { all, polled, candidates }
 
