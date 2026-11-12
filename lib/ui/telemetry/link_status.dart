@@ -1,5 +1,5 @@
-import '../../models/gps_block.dart';
-import '../../models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
 
 // Pure-Dart helpers that turn link / CAN / GPS state into short display text
 // and a tone. No Flutter imports, so they are unit tested directly.

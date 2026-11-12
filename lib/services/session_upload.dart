@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 
-import 'app_settings.dart';
-import 'network_info.dart';
-import 'session_recorder.dart' show DocumentsDirProvider, resolveSessionsRootDir;
-import 'upload_client.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/network_info.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart' show DocumentsDirProvider, resolveSessionsRootDir;
+import 'package:vehicle_mobile/services/upload_client.dart';
 
 /// Per-session upload state, persisted as `<session>/upload.json`. This file
 /// is intentionally NOT one of the files zipped up for upload (see

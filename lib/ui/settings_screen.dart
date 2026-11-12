@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../services/app_settings.dart';
-import 'telemetry/link_status.dart';
-import 'theme/app_theme.dart';
-import 'widgets/common.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Server-upload settings: base URL, API token, and the Wi-Fi-only upload
 /// policy. Recording and sharing sessions never depend on any of this being

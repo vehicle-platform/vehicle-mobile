@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../services/ble_service.dart';
-import 'diagnostics_screen.dart';
-import 'live_screen.dart';
-import 'record_screen.dart';
-import 'settings_screen.dart';
-import 'signals_screen.dart';
-import 'telemetry/telemetry_store.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/diagnostics_screen.dart';
+import 'package:vehicle_mobile/ui/live_screen.dart';
+import 'package:vehicle_mobile/ui/record_screen.dart';
+import 'package:vehicle_mobile/ui/settings_screen.dart';
+import 'package:vehicle_mobile/ui/signals_screen.dart';
+import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
 
 /// Top-level destinations, in navigation-bar order.
 enum ShellTab { live, signals, record, diagnostics, settings }

@@ -1,6 +1,6 @@
 import 'package:vehicle_defs/vehicle_defs.dart';
 
-import 'telemetry_data.dart' show TelemetryVersion;
+import 'package:vehicle_mobile/models/telemetry_data.dart' show TelemetryVersion;
 
 /// App version string. Keep in sync with the `version:` field in
 /// pubspec.yaml. Recorded in every session's meta.json so a CSV export can

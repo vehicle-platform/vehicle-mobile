@@ -8,20 +8,20 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../models/gps_block.dart';
-import '../models/session_meta.dart';
-import '../models/vehicle_signal_block.dart';
-import '../services/app_settings.dart';
-import '../services/ble_service.dart';
-import '../services/session_recorder.dart';
-import '../services/session_store.dart';
-import '../services/session_upload.dart';
-import 'rides/bringup_screen.dart';
-import 'rides/ride_history_screen.dart';
-import 'rides/ride_summary_screen.dart';
-import 'telemetry/link_status.dart';
-import 'theme/app_theme.dart';
-import 'widgets/common.dart';
+import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart';
+import 'package:vehicle_mobile/services/session_store.dart';
+import 'package:vehicle_mobile/services/session_upload.dart';
+import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
+import 'package:vehicle_mobile/ui/rides/ride_history_screen.dart';
+import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 const String _lastUsedMetaPrefsKey = 'session_recorder.last_used_meta';
 

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../../models/ride_summary.dart';
+import 'package:vehicle_mobile/models/ride_summary.dart';
 
 /// Decimals for a value, derived only from the response range.
 int precisionForRange(double min, double max) {

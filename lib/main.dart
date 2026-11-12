@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'services/ble_service.dart';
-import 'ui/app_shell.dart';
-import 'ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/app_shell.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 void main() {
   runApp(Cl250TelemetryApp());

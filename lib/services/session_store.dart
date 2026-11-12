@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-import '../models/session_meta.dart';
-import 'session_recorder.dart' show DocumentsDirProvider, resolveSessionsRootDir;
+import 'package:vehicle_mobile/models/session_meta.dart';
+import 'package:vehicle_mobile/services/session_recorder.dart' show DocumentsDirProvider, resolveSessionsRootDir;
 
 /// Read-only view of one recorded session's directory, combining `meta.json`
 /// and `summary.json` (either may be missing, e.g. a session that crashed

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../models/bringup_result.dart';
-import '../../services/app_settings.dart';
-import '../../services/ride_client.dart';
-import '../settings_screen.dart';
-import '../telemetry/link_status.dart';
-import '../theme/app_theme.dart';
-import '../widgets/common.dart';
-import 'ride_widgets.dart';
+import 'package:vehicle_mobile/models/bringup_result.dart';
+import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/ride_client.dart';
+import 'package:vehicle_mobile/ui/settings_screen.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 
 /// Read-only server bring-up gate answer for one stored session.
 ///

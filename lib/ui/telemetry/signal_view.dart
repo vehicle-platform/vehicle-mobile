@@ -1,8 +1,8 @@
 import 'package:vehicle_defs/vehicle_defs.dart';
 
-import '../../models/telemetry_data.dart';
-import '../../models/vehicle_signal_block.dart';
-import 'link_status.dart';
+import 'package:vehicle_mobile/models/telemetry_data.dart';
+import 'package:vehicle_mobile/models/vehicle_signal_block.dart';
+import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 
 // Signal view-model layer. Pure Dart (no Flutter imports) so it is unit
 // tested without a widget tree.
