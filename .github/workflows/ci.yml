@@ -43,6 +43,12 @@ jobs:
         with:
           submodules: recursive
 
+      # The runner image's default JDK moved to 25, which Gradle 8.14 rejects; pin the JDK.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
