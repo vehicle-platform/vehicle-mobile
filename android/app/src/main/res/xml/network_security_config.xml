@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext (http://) is permitted at the platform level because the workshop
+  setup talks to a laptop on the local Wi-Fi by IP address, and Android's
+  network security config cannot express IP ranges (192.168.0.0/16,
+  10.0.0.0/8, ...). The real restriction is in Dart: lib/services/token_guard.dart
+  refuses to send the API token over http:// unless the host is loopback,
+  private (RFC 1918 / ULA), link-local or a .local name. Everything else needs
+  https://. User-installed CAs are not trusted (system CAs only).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

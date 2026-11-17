@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   flutter:
     runs-on: ubuntu-latest
@@ -56,13 +59,15 @@ jobs:
 
       - run: flutter pub get
 
-      # Release build signed with the default debug key (android/app/build.gradle.kts
-      # already points the release signingConfig at signingConfigs.debug). Good enough
-      # for workshop/field testing; a real release key is a separate concern.
+      # Release build signed with the default DEBUG key (android/app/build.gradle.kts
+      # points the release signingConfig at signingConfigs.debug). Good enough for
+      # workshop/field testing only: anyone can re-sign such an APK, so a real
+      # release keystore (from secrets, never committed) is needed before any
+      # distribution. The artifact name says so.
       - run: flutter build apk --release
 
       - uses: actions/upload-artifact@v4
         with:
-          name: vehicle-mobile-apk
+          name: vehicle-mobile-apk-debug-signed
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14

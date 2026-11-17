@@ -81,6 +81,32 @@ at any time; uploading them to a configured `vehicle-server` is a separate,
 optional action (Settings screen sets the server URL/API token) and never
 blocks recording or sharing.
 
+### Security notes and known limitations
+
+- **Cleartext http (C-2).** The manifest permits cleartext because Android's
+  network security config cannot express IP ranges, and the desk setup talks
+  to a laptop by LAN IP. The restriction is in Dart
+  (`lib/services/token_guard.dart`): the bearer token and ride data are sent
+  over `http://` only to loopback, private (RFC 1918 / ULA), link-local or
+  `.local` hosts; anything else needs `https://`. User-installed CAs are not
+  trusted.
+- **Backups (C-3).** `allowBackup` is off and the data-extraction rules
+  exclude everything: sessions hold GPS tracks (D-063).
+- **Signing (C-3).** The release build, and the CI artifact
+  `vehicle-mobile-apk-debug-signed`, use the Android **debug** key. That is
+  fine for workshop installs only; a real release keystore (kept in CI
+  secrets, never committed) is required before any distribution, and
+  existing installs cannot be updated across a signing-key change.
+- **BLE peer selection (C-10, known limitation).** The app connects to the
+  first advertiser whose name contains `Honda-CL250`; telemetry and IMU
+  characteristics need no bond, so a nearby device with that name could feed
+  fake data into a recorded ride. Only the GPS characteristic requires
+  bonding (D-062). Not a safety issue (the phone is not safety-relevant), but
+  pinning the bonded device id / filtering by service UUID is a follow-up.
+- **Telematics write (C-11).** `|` and line breaks are replaced by a space in
+  song/artist text because the receiver has no escape for them; the BLE
+  schema is unchanged.
+
 ## Ride history
 
 The Record screen's app-bar **Server rides** action opens the read-only ride
