@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import 'package:vehicle_mobile/services/http_message.dart';
+import 'package:vehicle_mobile/services/token_guard.dart';
 
 /// TCP connect limit of the default client. A server that is unreachable from
 /// this network (wrong IP after a DHCP change, client isolation on a school or
@@ -67,6 +68,10 @@ class UploadClient {
     required String sessionId,
     required List<int> archiveBytes,
   }) async {
+    final refusal = tokenSendRefusal(baseUrl);
+    if (refusal != null) {
+      return UploadResult(UploadOutcome.failed, message: refusal);
+    }
     final uri = Uri.parse('${_withoutTrailingSlash(baseUrl)}/sessions');
     final request = http.MultipartRequest('POST', uri);
     request.headers['Authorization'] = 'Bearer $apiToken';

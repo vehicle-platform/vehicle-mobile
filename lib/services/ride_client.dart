@@ -8,6 +8,7 @@ import 'package:http/io_client.dart';
 import 'package:vehicle_mobile/models/bringup_result.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/http_message.dart';
+import 'package:vehicle_mobile/services/token_guard.dart';
 
 /// TCP connect limit of the default client, like the upload client.
 const Duration rideConnectTimeout = Duration(seconds: 10);
@@ -79,6 +80,10 @@ class RideClient {
 
   Future<RideResult<T>> _get<T>(Uri uri, String apiToken, T Function(Object? json) parse,
       {bool notFoundMeansUnsupported = false}) async {
+    final refusal = tokenSendRefusal(uri.toString());
+    if (refusal != null) {
+      return RideResult(RideOutcome.failed, message: refusal);
+    }
     try {
       final response = await _httpClient.get(
         uri,

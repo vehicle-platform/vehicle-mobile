@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show utf8;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -292,11 +293,17 @@ class BleService {
     }
   }
 
+  /// `|` separates the fields of the telematics write and the receiver
+  /// (vehicle-connectivity-node `TelematicsParser`) has no escape for it, so a
+  /// title containing `|` would inject fields: replace it (and line breaks)
+  /// with a space (audit C-11).
+  static String _telematicsText(String text) => text.replaceAll(RegExp(r'[|\r\n]'), ' ');
+
   Future<void> syncTelematics(String songTitle, String artistName, int navDist) async {
     if (_rxCharacteristic != null && _targetDevice != null) {
       try {
-        final payload = "SONG:$songTitle|ARTIST:$artistName|DIST:$navDist|ICON:1";
-        await _rxCharacteristic!.write(payload.codeUnits, withoutResponse: true);
+        final payload = "SONG:${_telematicsText(songTitle)}|ARTIST:${_telematicsText(artistName)}|DIST:$navDist|ICON:1";
+        await _rxCharacteristic!.write(utf8.encode(payload), withoutResponse: true);
       } catch (e) {
         debugPrint("BLE sync write error: $e");
       }
