@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show MaxLengthEnforcement;
 
@@ -5,7 +7,11 @@ import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/chat_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
+import 'package:vehicle_mobile/services/voice/critical_announcer.dart';
+import 'package:vehicle_mobile/services/voice/voice_controller.dart';
+import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
+import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 /// Example questions of the empty state (the rider talks Turkish to the bike).
@@ -26,10 +32,20 @@ class AssistantScreen extends StatefulWidget {
     this.settingsStore = const AppSettingsStore(),
     this.client,
     this.sessionId,
+    this.voice,
+    this.voiceBus,
   });
 
   final AppSettingsStore settingsStore;
   final ChatClient? client;
+
+  /// Voice front end (microphone, reading answers aloud, intercom routing);
+  /// tests inject one with fake STT/TTS. Created and owned here when null.
+  final VoiceController? voice;
+
+  /// Where handlebar push-to-talk and the voice-command button arrive;
+  /// defaults to [VoiceTriggerBus.instance].
+  final VoiceTriggerBus? voiceBus;
 
   /// Ride the question is about (opened from a ride screen), sent as `session_id`.
   final String? sessionId;
@@ -49,16 +65,44 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
   /// Pulse of the placeholder card while waiting (no typing dots).
   late final AnimationController _pulse;
 
+  late final VoiceController _voice;
+  late final bool _ownsVoice;
+  late final VoiceTriggerBus _bus;
+  late final CriticalAnnouncer _announcer;
+
   @override
   void initState() {
     super.initState();
     _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
     _client = widget.client ?? ChatClient();
     _sessionId = widget.sessionId;
+    _ownsVoice = widget.voice == null;
+    _voice = widget.voice ?? VoiceController();
+    _voice.onTranscript = _onTranscript;
+    _voice.onEmptyTap = _repeatLast;
+    _voice.addListener(_onVoiceChanged);
+    _announcer = CriticalAnnouncer(speak: _voice.speak);
+    _bus = widget.voiceBus ?? VoiceTriggerBus.instance;
+    // Triggers that arrived before this screen existed are delivered after
+    // the first frame (starting to listen sets state).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _bus.attach(_onTrigger);
+    });
+    _voice.refreshIntercom();
   }
 
   @override
   void dispose() {
+    _bus.detach(_onTrigger);
+    _voice.removeListener(_onVoiceChanged);
+    _voice.onTranscript = null;
+    _voice.onEmptyTap = null;
+    if (_ownsVoice) {
+      _voice.dispose();
+    } else {
+      _voice.cancelListening();
+      _voice.stopSpeaking();
+    }
     _pulse.dispose();
     _controller.dispose();
     _scroll.dispose();
@@ -68,6 +112,10 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
   Future<void> _send(String raw) async {
     final text = raw.trim();
     if (text.isEmpty || _sending) return;
+    // A new question silences the previous answer (and any listening).
+    await _voice.cancelListening();
+    await _voice.stopSpeaking();
+    if (!mounted) return;
     _controller.clear();
     setState(() {
       _messages.add(ChatMessage.user(text));
@@ -89,6 +137,57 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
       _sending = false;
     });
     _scrollToEnd();
+    if (!reply.isFailure) unawaited(_speakReply(reply));
+  }
+
+  /// Reads the answer text only (never the tool card), then the fixed stop
+  /// sentence when the tool result advises it (D-085 item 4): offline, not
+  /// phrased by the LLM, informational only.
+  Future<void> _speakReply(ChatMessage reply) async {
+    final spoken = await _voice.speak(reply.text);
+    if (spoken && CriticalAnnouncer.resultAdvisesStop(reply.result)) {
+      await _announcer.announce(const AdviseStopEvent());
+    }
+  }
+
+  void _onTranscript(String text) {
+    _controller.text = text;
+    _send(text);
+  }
+
+  void _onVoiceChanged() {
+    if (!mounted) return;
+    if (_voice.isListening || _voice.state == VoiceState.preparing) {
+      final partial = _voice.partial;
+      if (partial.isNotEmpty && _controller.text != partial) {
+        _controller.value = TextEditingValue(
+          text: partial,
+          selection: TextSelection.collapsed(offset: partial.length),
+        );
+      }
+    }
+    setState(() {});
+  }
+
+  void _onTrigger(VoiceTrigger trigger) {
+    switch (trigger) {
+      case VoiceTrigger.startListening:
+        if (!_sending) _voice.startListening();
+      case VoiceTrigger.stopAndSend:
+        _voice.stopListening(onEmpty: EmptyTranscript.nothing);
+      case VoiceTrigger.stopAfterTap:
+        _voice.stopListening(onEmpty: EmptyTranscript.repeat);
+    }
+  }
+
+  /// A tap of the handlebar button heard nothing: read the last answer again.
+  Future<void> _repeatLast() async {
+    for (final message in _messages.reversed) {
+      if (message.role == ChatRole.assistant && !message.isFailure) {
+        await _voice.speak(message.text, force: true);
+        return;
+      }
+    }
   }
 
   Future<ChatMessage> _ask(String text) async {
@@ -197,13 +296,62 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                   ),
                 Expanded(child: _messages.isEmpty ? _emptyState(context) : _messageList()),
                 if (_sending) const LinearProgressIndicator(minHeight: 2),
+                if (_voice.error != null) _voiceError(context),
+                if (_voice.routeLabel != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.xs, Spacing.lg, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: VoiceRouteChip(
+                        label: _voice.routeLabel!,
+                        connected: _voice.routeLabel == intercomConnectedLabel,
+                      ),
+                    ),
+                  ),
                 AssistantComposer(
                   controller: _controller,
                   sending: _sending,
                   onSend: _send,
+                  hintText: _voice.isListening ? 'Dinliyorum...' : 'Bir soru yaz',
+                  micButton: MicButton(
+                    state: _voice.state,
+                    onPressed: _sending ? null : _voice.toggleMic,
+                  ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _voiceError(BuildContext context) {
+    final t = context.vehicle;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.xs, Spacing.lg, 0),
+      child: Material(
+        color: t.error.withValues(alpha: 0.10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: t.error.withValues(alpha: 0.5)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.xs, Spacing.xs, Spacing.xs),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 20, color: t.error),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Text(_voice.error!, style: Theme.of(context).textTheme.bodyMedium),
+              ),
+              IconButton(
+                tooltip: 'Kapat',
+                icon: const Icon(Icons.close),
+                style: IconButton.styleFrom(fixedSize: const Size(48, 48)),
+                onPressed: _voice.clearError,
+              ),
+            ],
           ),
         ),
       ),
@@ -300,7 +448,7 @@ class PendingAnswerCard extends StatelessWidget {
 }
 
 /// Rounded input bar pinned at the bottom with a large circular send button.
-/// [micButton] is the reserved slot for the voice button of the next PR.
+/// [micButton] is the voice button slot (hold or tap to talk).
 class AssistantComposer extends StatelessWidget {
   const AssistantComposer({
     super.key,
@@ -308,14 +456,17 @@ class AssistantComposer extends StatelessWidget {
     required this.sending,
     required this.onSend,
     this.micButton,
+    this.hintText = 'Bir soru yaz',
   });
 
   final TextEditingController controller;
   final bool sending;
   final ValueChanged<String> onSend;
 
-  /// Reserved for the push-to-talk / microphone button (voice is a later PR).
+  /// The microphone button (see `MicButton`); omitted when voice is unavailable.
   final Widget? micButton;
+
+  final String hintText;
 
   @override
   Widget build(BuildContext context) {
@@ -342,8 +493,8 @@ class AssistantComposer extends StatelessWidget {
                   maxLengthEnforcement: MaxLengthEnforcement.enforced,
                   textInputAction: TextInputAction.send,
                   onSubmitted: onSend,
-                  decoration: const InputDecoration(
-                    hintText: 'Bir soru yaz',
+                  decoration: InputDecoration(
+                    hintText: hintText,
                     counterText: '',
                     filled: false,
                     border: InputBorder.none,
