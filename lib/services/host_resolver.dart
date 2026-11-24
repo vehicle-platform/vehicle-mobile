@@ -61,7 +61,7 @@ class HostResolver {
         if (await _reachable(client, host)) {
           _cachedId = host.id;
           _cachedFingerprint = fingerprint;
-          return _withToken(host);
+          return await _withToken(host);
         }
       }
     } finally {
