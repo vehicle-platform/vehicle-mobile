@@ -6,6 +6,9 @@
 
 The phone companion app, in **Flutter** (D-022). Starting point: the legacy `HondaCl250_Telemetry/mobile_app/flutter_app` (BLE client + decoder + dashboard), ported per D-023. Scope: settings, ride history/reports, park-mode alarm notifications, profile selection. Talks to the vehicle over BLE/Wi-Fi via `vehicle-connectivity-node`, and to the `vehicle-server` API for historical data.
 - **Bring-up check** (Record screen action on an uploaded session, ride-summary app bar): renders vehicle-server's B0/V0/V1 answer from `GET /sessions/{id}/bringup` (`lib/ui/rides/bringup_screen.dart`, `RideClient.getBringup`) and computes nothing on the phone; a 404 "Not Found" means an older server without the route.
+- **Rider assistant (D-121):** `lib/ui/assistant/` + `lib/services/chat_client.dart` (`POST /chat`) + `lib/models/chat_message.dart`. Shows the server's answer, a source badge and the "computed by <tool>" card; computes nothing, adds no safety advice, keeps no history on disk.
+- **Host list (D-121 item 4):** `lib/models/host.dart`, `lib/services/host_store.dart` (prefs + per-host keystore token, migrates the old single URL/token), `host_resolver.dart` (`GET /health` probe in list order). `AppSettingsStore.load()` returns the active host's URL/token, so every client follows it.
+- **Web + macOS (D-121 item 3):** phone-only tabs (BLE, record, diagnostics) sit behind `lib/ui/phone/phone_tabs_factory.dart` (conditional import; the web build never sees `dart:io`/BLE). Computer shows Assistant, Rides, Faults, Settings. CI builds web with `--base-href /app/`.
 
 ## What this repo is NOT / rules
 

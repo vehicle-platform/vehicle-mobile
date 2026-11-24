@@ -74,11 +74,37 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
 
+  # D-121 item 3: the computer client. Built with the /app/ base href because
+  # vehicle-server serves the web build at /app (VEHICLE_WEB_APP_DIR).
+  build-web:
+    needs: flutter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.5
+
+      - run: flutter pub get
+
+      - run: flutter build web --release --base-href /app/
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vehicle-mobile-web
+          path: build/web
+          retention-days: 14
+
   # Aggregate required check (QUALITY CI-4): one stable name for the ruleset.
   # `skipped` counts as OK; `failure` and `cancelled` fail it.
   ci-ok:
     if: always()
-    needs: [flutter, build-apk]
+    needs: [flutter, build-apk, build-web]
     runs-on: ubuntu-latest
     steps:
       - name: Every needed job succeeded or was skipped

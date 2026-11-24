@@ -21,7 +21,8 @@ fallback).
 ## App screens
 
 Dark, high-contrast Material 3 theme; every color and text style lives in
-`lib/ui/theme/app_theme.dart`. Five destinations (`lib/ui/app_shell.dart`):
+`lib/ui/theme/app_theme.dart`. Six destinations on the phone (`lib/ui/app_shell.dart`);
+the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-121):
 
 - **Live:** speed, RPM, throttle, coolant and battery with their state, and a
   status strip (BLE, ECU, CAN state, latches, mock data, IMU, GPS).
@@ -37,7 +38,39 @@ Dark, high-contrast Material 3 theme; every color and text style lives in
   behaviour, D-063 still applies).
 - **Diagnostics:** link, packet loss, vehicle CAN counters and the D-058 tester
   statistics.
-- **Settings:** server URL and API token.
+- **Assistant (D-121):** text chat against `POST /chat` of the active host. The
+  server picks one read-only vehicle-mcp tool and phrases its result; each answer
+  shows a source badge (LLM / template) and an expandable "computed by `<tool>`"
+  card with the tool arguments and result as key/value rows. The app never
+  computes or rephrases a number and adds no advice. The conversation is kept in
+  memory only. Opened from a ride summary it sends that ride's `session_id`.
+- **Rides / Faults (computer tabs):** the server's ride history and fault
+  catalogue (also reachable on the phone through Record and the ride screens).
+- **Settings:** the host list (below) and the Wi-Fi-only upload switch.
+
+## Hosts (D-121 item 4)
+
+Settings keeps a per-user list of hosts (`name`, `baseUrl`), for example the local
+Raspi and a remote server. The list is in shared_preferences; each host's device
+token is in flutter_secure_storage under `host.<id>.token` (never in prefs, never
+logged). The first start migrates the old single URL/token into the first host.
+Every server client uses the *active host*: hosts are probed in list order with
+`GET /health` (2 s), the first that answers wins, and the choice is cached until
+a pull-to-refresh or a failed request probes again. Each host keeps the token
+guard rules (https, or http only on the local network).
+
+## Web and macOS builds
+
+```
+flutter build web --release --base-href /app/
+flutter build macos
+```
+
+vehicle-server serves the web build at `/app` on the same origin: point
+`VEHICLE_WEB_APP_DIR` at `build/web`. On web, an empty host list defaults to the
+page's own origin. BLE telemetry, signals, recording and diagnostics are
+phone-only (Android/iOS) and not compiled into the web build; the macOS sandbox
+has `com.apple.security.network.client`. Voice/intercom is a later PR.
 
 `lib/ui/telemetry/signal_view.dart` maps the polled catalog signals to the
 decoded telemetry fields, keyed by the generated `VehicleSignalNames`; a test
