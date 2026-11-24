@@ -9,6 +9,7 @@ import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
@@ -105,7 +106,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       _healthWindowsLoading = false;
       _healthWindows = result.isSuccess
           ? parseHealthWindows(result.data)
-          : HealthWindowsResult.unavailable(result.message ?? result.outcome.name);
+          : HealthWindowsResult.unavailable(
+              result.message ?? result.outcome.name);
     });
   }
 
@@ -121,12 +123,26 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     );
   }
 
+  void _openAssistant() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AssistantScreen(
+            sessionId: widget.sessionId, settingsStore: widget.settingsStore),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ride summary'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.forum_outlined),
+            tooltip: 'Ask the assistant',
+            onPressed: _openAssistant,
+          ),
           IconButton(
             icon: const Icon(Icons.fact_check_outlined),
             tooltip: 'Bring-up check',
@@ -158,7 +174,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
+          RideCleartextWarning(
+              settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: _notFound ? Icons.search_off : Icons.cloud_off,
@@ -180,7 +197,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         .where((signal) => signal.status == 'computed')
         .toList(growable: false);
     final scalars = computed.whereType<ScalarSummary>().toList(growable: false);
-    final perGear = computed.whereType<PerGearSummary>().toList(growable: false);
+    final perGear =
+        computed.whereType<PerGearSummary>().toList(growable: false);
     final binned = computed.whereType<BinnedSummary>().toList(growable: false);
     final unavailable = summary.signals
         .whereType<UnavailableSummary>()
@@ -389,7 +407,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             else if (signal.axes.length == 2)
               _HeatGrid(signal: signal)
             else
-              Text('${signal.axes.length}-axis summaries are not shown on the phone yet.',
+              Text(
+                  '${signal.axes.length}-axis summaries are not shown on the phone yet.',
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
@@ -643,8 +662,7 @@ class _HeatGridState extends State<_HeatGrid> {
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);
     return Tooltip(
-      message:
-          '${_edgeText(rows.edges[row], rowRange)} / '
+      message: '${_edgeText(rows.edges[row], rowRange)} / '
           '${_edgeText(columns.edges[column], columnRange)}: '
           '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}'
           '${cell?.flag != null ? ' · ${cell!.flag}' : ''}',

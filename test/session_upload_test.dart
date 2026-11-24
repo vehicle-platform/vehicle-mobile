@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/network_info.dart';
 import 'package:vehicle_mobile/services/session_upload.dart';
@@ -28,12 +29,15 @@ void main() {
     tempDir = Directory.systemTemp.createTempSync('session_upload_test_');
     sessionDir = Directory('${tempDir.path}/sessions/20260927-120000-ab12');
     await sessionDir.create(recursive: true);
-    await File('${sessionDir.path}/meta.json').writeAsString('{"session_id":"x"}');
+    await File('${sessionDir.path}/meta.json')
+        .writeAsString('{"session_id":"x"}');
     await File('${sessionDir.path}/telemetry.csv').writeAsString('a,b\n1,2\n');
     await File('${sessionDir.path}/events.csv').writeAsString('a,b\n1,2\n');
-    await File('${sessionDir.path}/summary.json').writeAsString('{"packet_count":1}');
+    await File('${sessionDir.path}/summary.json')
+        .writeAsString('{"packet_count":1}');
     // upload.json must never end up in the archive, even if present.
-    await File('${sessionDir.path}/upload.json').writeAsString('{"state":"notUploaded"}');
+    await File('${sessionDir.path}/upload.json')
+        .writeAsString('{"state":"notUploaded"}');
   });
 
   tearDown(() {
@@ -41,12 +45,15 @@ void main() {
   });
 
   group('buildSessionArchiveBytes', () {
-    test('zips exactly the known session files that exist, and never upload.json', () async {
+    test(
+        'zips exactly the known session files that exist, and never upload.json',
+        () async {
       final bytes = await buildSessionArchiveBytes(sessionDir);
       final archive = ZipDecoder().decodeBytes(bytes);
       final names = archive.files.map((f) => f.name).toSet();
 
-      expect(names, {'meta.json', 'telemetry.csv', 'events.csv', 'summary.json'});
+      expect(
+          names, {'meta.json', 'telemetry.csv', 'events.csv', 'summary.json'});
       expect(names.contains('upload.json'), isFalse);
       expect(names.contains('imu.csv'), isFalse); // not present on disk
     });
@@ -84,23 +91,28 @@ void main() {
   });
 
   group('SessionUploader', () {
-    test('readStatus returns notUploaded when no upload.json-equivalent state has been written yet', () async {
+    test(
+        'readStatus returns notUploaded when no upload.json-equivalent state has been written yet',
+        () async {
       // Overwrite the pre-seeded upload.json from setUp with nothing written
       // by the uploader itself -- readStatus should still parse it fine.
-      final uploader = SessionUploader(documentsDirProvider: () async => tempDir);
+      final uploader =
+          SessionUploader(documentsDirProvider: () async => tempDir);
       final status = await uploader.readStatus('20260927-120000-ab12');
       expect(status.state, SessionUploadState.notUploaded);
     });
 
-    test('a successful upload (201) is persisted as uploaded with a timestamp', () async {
+    test('a successful upload (201) is persisted as uploaded with a timestamp',
+        () async {
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
-        uploadClient: UploadClient(httpClient: MockClient((_) async => http.Response('', 201))),
+        uploadClient: UploadClient(
+            httpClient: MockClient((_) async => http.Response('', 201))),
         networkInfo: _FixedNetworkInfo(true),
       );
 
-      final status =
-          await uploader.upload('20260927-120000-ab12', const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
+      final status = await uploader.upload('20260927-120000-ab12',
+          const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
       expect(status.state, SessionUploadState.uploaded);
       expect(status.uploadedAtUtc, isNotNull);
 
@@ -108,46 +120,57 @@ void main() {
       expect(persisted.state, SessionUploadState.uploaded);
     });
 
-    test('a 409 conflict is persisted as failed with the server message', () async {
+    test('a 409 conflict is persisted as failed with the server message',
+        () async {
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
         uploadClient: UploadClient(
-          httpClient: MockClient((_) async => http.Response(jsonEncode({'message': 'content differs'}), 409)),
+          httpClient: MockClient((_) async =>
+              http.Response(jsonEncode({'message': 'content differs'}), 409)),
         ),
         networkInfo: _FixedNetworkInfo(true),
       );
 
-      final status =
-          await uploader.upload('20260927-120000-ab12', const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
+      final status = await uploader.upload('20260927-120000-ab12',
+          const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
       expect(status.state, SessionUploadState.failed);
       expect(status.reason, contains('content differs'));
     });
 
-    test('an "uploading" state left on disk by a killed app reads as failed, so a retry is offered', () async {
-      await File('${sessionDir.path}/upload.json').writeAsString('{"state":"uploading"}');
-      final uploader = SessionUploader(documentsDirProvider: () async => tempDir);
+    test(
+        'an "uploading" state left on disk by a killed app reads as failed, so a retry is offered',
+        () async {
+      await File('${sessionDir.path}/upload.json')
+          .writeAsString('{"state":"uploading"}');
+      final uploader =
+          SessionUploader(documentsDirProvider: () async => tempDir);
       final status = await uploader.readStatus('20260927-120000-ab12');
       expect(status.state, SessionUploadState.failed);
       expect(status.reason, contains('interrupted'));
     });
 
-    test('readStatus keeps "uploading" while the upload is still running in this process', () async {
+    test(
+        'readStatus keeps "uploading" while the upload is still running in this process',
+        () async {
       final answer = Completer<http.Response>();
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
-        uploadClient: UploadClient(httpClient: MockClient((_) => answer.future)),
+        uploadClient:
+            UploadClient(httpClient: MockClient((_) => answer.future)),
         networkInfo: _FixedNetworkInfo(true),
       );
 
-      final pending =
-          uploader.upload('20260927-120000-ab12', const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
-      while ((await uploader.readStatus('20260927-120000-ab12')).state != SessionUploadState.uploading) {
+      final pending = uploader.upload('20260927-120000-ab12',
+          const AppSettings(serverBaseUrl: 'https://s', apiToken: 't'));
+      while ((await uploader.readStatus('20260927-120000-ab12')).state !=
+          SessionUploadState.uploading) {
         await Future<void>.delayed(const Duration(milliseconds: 1));
       }
 
       answer.complete(http.Response('', 201));
       expect((await pending).state, SessionUploadState.uploaded);
-      expect((await uploader.readStatus('20260927-120000-ab12')).state, SessionUploadState.uploaded);
+      expect((await uploader.readStatus('20260927-120000-ab12')).state,
+          SessionUploadState.uploaded);
     });
 
     test('no server configured fails without making a network call', () async {
@@ -161,12 +184,14 @@ void main() {
         networkInfo: _FixedNetworkInfo(true),
       );
 
-      final status = await uploader.upload('20260927-120000-ab12', const AppSettings());
+      final status =
+          await uploader.upload('20260927-120000-ab12', const AppSettings());
       expect(status.state, SessionUploadState.failed);
       expect(called, isFalse);
     });
 
-    test('Wi-Fi-only setting blocks upload when known to be off Wi-Fi', () async {
+    test('Wi-Fi-only setting blocks upload when known to be off Wi-Fi',
+        () async {
       var called = false;
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
@@ -179,41 +204,51 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: true),
+        const AppSettings(
+            serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: true),
       );
       expect(status.state, SessionUploadState.failed);
       expect(called, isFalse);
     });
 
-    test('Wi-Fi-only setting blocks upload when Wi-Fi state is unknown', () async {
+    test('Wi-Fi-only setting blocks upload when Wi-Fi state is unknown',
+        () async {
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
-        uploadClient: UploadClient(httpClient: MockClient((_) async => http.Response('', 201))),
+        uploadClient: UploadClient(
+            httpClient: MockClient((_) async => http.Response('', 201))),
         networkInfo: _FixedNetworkInfo(null),
       );
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: true),
+        const AppSettings(
+            serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: true),
       );
       expect(status.state, SessionUploadState.failed);
     });
 
-    test('an unknown Wi-Fi state is allowed through when the Wi-Fi-only setting is off', () async {
+    test(
+        'an unknown Wi-Fi state is allowed through when the Wi-Fi-only setting is off',
+        () async {
       final uploader = SessionUploader(
         documentsDirProvider: () async => tempDir,
-        uploadClient: UploadClient(httpClient: MockClient((_) async => http.Response('', 201))),
+        uploadClient: UploadClient(
+            httpClient: MockClient((_) async => http.Response('', 201))),
         networkInfo: _FixedNetworkInfo(null),
       );
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: false),
+        const AppSettings(
+            serverBaseUrl: 'https://s', apiToken: 't', uploadOnlyOnWifi: false),
       );
       expect(status.state, SessionUploadState.uploaded);
     });
 
-    test('a session with gps.csv is never sent to a server that is not local (D-063)', () async {
+    test(
+        'a session with gps.csv is never sent to a server that is not local (D-063)',
+        () async {
       await File('${sessionDir.path}/gps.csv').writeAsString('a,b\n1,2\n');
       var called = false;
       final uploader = SessionUploader(
@@ -227,15 +262,18 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
+        const AppSettings(
+            serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
       );
       expect(status.state, SessionUploadState.failed);
       expect(status.reason, contains('D-063'));
       expect(called, isFalse);
-      expect((await uploader.readStatus('20260927-120000-ab12')).state, SessionUploadState.failed);
+      expect((await uploader.readStatus('20260927-120000-ab12')).state,
+          SessionUploadState.failed);
     });
 
-    test('a session with gps.csv uploads to a local server, gps.csv included', () async {
+    test('a session with gps.csv uploads to a local server, gps.csv included',
+        () async {
       await File('${sessionDir.path}/gps.csv').writeAsString('a,b\n1,2\n');
       String? body;
       final uploader = SessionUploader(
@@ -249,13 +287,15 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'http://192.168.1.20:8000', apiToken: 't'),
+        const AppSettings(
+            serverBaseUrl: 'http://192.168.1.20:8000', apiToken: 't'),
       );
       expect(status.state, SessionUploadState.uploaded);
       expect(body, contains('gps.csv'));
     });
 
-    test('a session with signals.csv (no gps.csv) uploads to a non-local server: engine data only, no D-063 block',
+    test(
+        'a session with signals.csv (no gps.csv) uploads to a non-local server: engine data only, no D-063 block',
         () async {
       await File('${sessionDir.path}/signals.csv').writeAsString('a,b\n1,2\n');
       String? body;
@@ -270,7 +310,8 @@ void main() {
 
       final status = await uploader.upload(
         '20260927-120000-ab12',
-        const AppSettings(serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
+        const AppSettings(
+            serverBaseUrl: 'https://vehicle.example.com', apiToken: 't'),
       );
       expect(status.state, SessionUploadState.uploaded);
       expect(body, contains('signals.csv'));
@@ -317,35 +358,44 @@ void main() {
     // shared_preferences needs its platform channel mocked; the widget test
     // binding used by flutter_test provides a working in-memory default for
     // it in recent versions, so a plain round-trip works here.
-    test('round-trips, keeps the token out of shared_preferences, empty strings become null', () async {
+    test(
+        'loads the active host, keeps the token out of shared_preferences, saves the Wi-Fi switch',
+        () async {
       SharedPreferences.setMockInitialValues({});
       final secrets = _MemorySecretStore();
       final store = AppSettingsStore(secrets: secrets);
-      await store.save(const AppSettings(serverBaseUrl: 'https://s', apiToken: 'tok', uploadOnlyOnWifi: false));
+      expect((await store.load()).isServerConfigured, isFalse);
+
+      await store.hosts.saveHosts(
+          const [Host(id: 'h1', name: 'Bike', baseUrl: 'https://s')]);
+      await store.hosts.writeToken('h1', 'tok');
+      await store.save(const AppSettings(uploadOnlyOnWifi: false));
       final loaded = await store.load();
       expect(loaded.serverBaseUrl, 'https://s');
       expect(loaded.apiToken, 'tok');
+      expect(loaded.hostId, 'h1');
       expect(loaded.uploadOnlyOnWifi, isFalse);
       expect(loaded.isServerConfigured, isTrue);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('settings.api_token'), isNull);
-      expect(secrets.values['settings.api_token'], 'tok');
-
-      await store.save(const AppSettings());
-      final cleared = await store.load();
-      expect(cleared.serverBaseUrl, isNull);
-      expect(cleared.isServerConfigured, isFalse);
-      expect(cleared.apiToken, isNull);
+      expect(prefs.getString('hosts.v1'), isNot(contains('tok')));
+      expect(secrets.values['host.h1.token'], 'tok');
     });
 
-    test('moves a token saved by an older build out of shared_preferences', () async {
-      SharedPreferences.setMockInitialValues({'settings.api_token': 'old'});
+    test('moves a token saved by an older build into the first host', () async {
+      SharedPreferences.setMockInitialValues({
+        'settings.server_base_url': 'https://old.example.com',
+        'settings.api_token': 'old',
+      });
       final secrets = _MemorySecretStore();
       final loaded = await AppSettingsStore(secrets: secrets).load();
+      expect(loaded.serverBaseUrl, 'https://old.example.com');
       expect(loaded.apiToken, 'old');
-      expect(secrets.values['settings.api_token'], 'old');
+      expect(secrets.values['host.primary.token'], 'old');
+      expect(secrets.values.containsKey('settings.api_token'), isFalse);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('settings.api_token'), isNull);
+      expect(prefs.getString('settings.server_base_url'), isNull);
     });
 
     test('flags plain http to a remote host only', () {
@@ -353,7 +403,10 @@ void main() {
       expect(isCleartextRemoteUrl('https://vehicle.example.com'), isFalse);
       expect(isCleartextRemoteUrl('http://localhost:8000'), isFalse);
       expect(isCleartextRemoteUrl(null), isFalse);
-      expect(const AppSettings(serverBaseUrl: 'http://10.0.0.5').sendsTokenInCleartext, isTrue);
+      expect(
+          const AppSettings(serverBaseUrl: 'http://10.0.0.5')
+              .sendsTokenInCleartext,
+          isTrue);
     });
   });
 }

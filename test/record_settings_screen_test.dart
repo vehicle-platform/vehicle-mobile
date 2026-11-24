@@ -73,7 +73,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Save'), findsOneWidget);
+      expect(find.text('Upload only on Wi-Fi'), findsOneWidget);
     });
   }
 }

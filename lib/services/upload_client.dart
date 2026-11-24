@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 
+import 'package:vehicle_mobile/services/http_client_factory.dart';
 import 'package:vehicle_mobile/services/http_message.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
 
@@ -45,7 +44,9 @@ class UploadResult {
   final String? message;
   final int? statusCode;
 
-  bool get isSuccess => outcome == UploadOutcome.created || outcome == UploadOutcome.alreadyUploaded;
+  bool get isSuccess =>
+      outcome == UploadOutcome.created ||
+      outcome == UploadOutcome.alreadyUploaded;
 }
 
 /// Uploads a session archive to vehicle-server.
@@ -55,8 +56,10 @@ class UploadResult {
 /// this is unit-testable with `package:http/testing.dart`'s `MockClient`
 /// instead of a real network call.
 class UploadClient {
-  UploadClient({http.Client? httpClient, Duration totalTimeout = uploadTotalTimeout})
-      : _httpClient = httpClient ?? IOClient(HttpClient()..connectionTimeout = uploadConnectTimeout),
+  UploadClient(
+      {http.Client? httpClient, Duration totalTimeout = uploadTotalTimeout})
+      : _httpClient = httpClient ??
+            createHttpClient(connectTimeout: uploadConnectTimeout),
         _totalTimeout = totalTimeout;
 
   final http.Client _httpClient;
@@ -91,38 +94,44 @@ class UploadClient {
         case 201:
           return const UploadResult(UploadOutcome.created, statusCode: 201);
         case 200:
-          return const UploadResult(UploadOutcome.alreadyUploaded, statusCode: 200);
+          return const UploadResult(UploadOutcome.alreadyUploaded,
+              statusCode: 200);
         case 409:
           return UploadResult(
             UploadOutcome.conflict,
             statusCode: 409,
-            message: extractHttpMessage(response) ?? 'session id already exists with different content',
+            message: extractHttpMessage(response) ??
+                'session id already exists with different content',
           );
         case 401:
           return UploadResult(
             UploadOutcome.unauthorized,
             statusCode: 401,
-            message: extractHttpMessage(response) ?? 'unauthorized (check the API token in Settings)',
+            message: extractHttpMessage(response) ??
+                'unauthorized (check the API token in Settings)',
           );
         default:
           return UploadResult(
             UploadOutcome.failed,
             statusCode: response.statusCode,
-            message: extractHttpMessage(response) ?? 'HTTP ${response.statusCode}',
+            message:
+                extractHttpMessage(response) ?? 'HTTP ${response.statusCode}',
           );
       }
     } on TimeoutException {
       return UploadResult(
         UploadOutcome.failed,
-        message: 'timed out after ${_totalTimeout.inSeconds} s (is the server reachable from this network?)',
+        message:
+            'timed out after ${_totalTimeout.inSeconds} s (is the server reachable from this network?)',
       );
-    } on SocketException catch (e) {
-      return UploadResult(UploadOutcome.failed, message: 'network error: ${e.message}');
     } catch (e) {
+      if (isNetworkError(e)) {
+        return UploadResult(UploadOutcome.failed, message: 'network error: $e');
+      }
       return UploadResult(UploadOutcome.failed, message: e.toString());
     }
   }
-
 }
 
-String _withoutTrailingSlash(String url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+String _withoutTrailingSlash(String url) =>
+    url.endsWith('/') ? url.substring(0, url.length - 1) : url;

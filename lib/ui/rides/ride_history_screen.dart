@@ -49,7 +49,11 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     _load();
   }
 
-  Future<void> _load() async {
+  /// Pull-to-refresh, the refresh button and Retry: also probe the host list
+  /// again (D-121 item 4).
+  Future<void> _refresh() => _load(reprobe: true);
+
+  Future<void> _load({bool reprobe = false}) async {
     final requestId = ++_requestId;
     if (mounted) {
       setState(() {
@@ -57,7 +61,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
         _error = null;
       });
     }
-    final settings = await widget.settingsStore.load();
+    final settings = await widget.settingsStore.load(reprobe: reprobe);
     if (!mounted || requestId != _requestId) return;
     setState(() => _settings = settings);
     if (!settings.isServerConfigured) {
@@ -161,7 +165,6 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     return '${formatQueryDate(_from!)} – ${formatQueryDate(_to!)} (UTC days)';
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,7 +174,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
-            onPressed: _loading ? null : _load,
+            onPressed: _loading ? null : _refresh,
           ),
         ],
       ),
@@ -194,14 +197,15 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     if (_error != null) {
       return Column(
         children: [
-          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
+          RideCleartextWarning(
+              settings: settings, padding: RideCleartextWarning.screenPadding),
           Expanded(
             child: RideMessage(
               icon: Icons.cloud_off,
               tone: Tone.error,
               message: _error!,
               actionLabel: 'Retry',
-              onAction: _load,
+              onAction: _refresh,
             ),
           ),
         ],
@@ -214,11 +218,12 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     if (table.rows.isEmpty) {
       return Column(
         children: [
-          RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
+          RideCleartextWarning(
+              settings: settings, padding: RideCleartextWarning.screenPadding),
           _rangeBar(),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _load,
+              onRefresh: _refresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(Spacing.xl),
@@ -248,12 +253,13 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     return Column(
       children: [
         if (_loading) const LinearProgressIndicator(minHeight: 2),
-        RideCleartextWarning(settings: settings, padding: RideCleartextWarning.screenPadding),
+        RideCleartextWarning(
+            settings: settings, padding: RideCleartextWarning.screenPadding),
         _rangeBar(),
         _columnChooser(table),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: _load,
+            onRefresh: _refresh,
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
@@ -269,8 +275,6 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       ],
     );
   }
-
-
 
   Widget _rangeBar() {
     return Padding(
