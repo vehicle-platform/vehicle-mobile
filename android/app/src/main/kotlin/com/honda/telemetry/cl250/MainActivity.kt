@@ -85,4 +85,8 @@ class MainActivity : FlutterActivity() {
     private fun consume(intent: Intent?) {
         if (isVoiceCommand(intent)) intent?.action = Intent.ACTION_MAIN
     }
+
+    companion object {
+        private const val CHANNEL = "vehicle_mobile/intercom_audio"
+    }
 }
