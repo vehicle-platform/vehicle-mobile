@@ -76,21 +76,41 @@ class VehicleTokens extends ThemeExtension<VehicleTokens> {
   /// Warning tone for caution banners (same hue as [stale]).
   Color get warning => stale;
 
+  /// Graphite base, cool greys and one teal accent (D-121 visual identity).
   static const VehicleTokens dark = VehicleTokens(
-    background: Color(0xFF050607),
-    surface: Color(0xFF101318),
-    surfaceRaised: Color(0xFF1A1E25),
-    outline: Color(0xFF2E343E),
-    textPrimary: Color(0xFFF7F9FC),
-    textSecondary: Color(0xFFB7C0CC),
-    accent: Color(0xFF19D3FF),
-    onAccent: Color(0xFF00141A),
-    live: Color(0xFF3DF07A),
+    background: Color(0xFF0B0D10),
+    surface: Color(0xFF14181D),
+    surfaceRaised: Color(0xFF1C2127),
+    outline: Color(0xFF2B323A),
+    textPrimary: Color(0xFFF2F5F7),
+    textSecondary: Color(0xFFA9B4BE),
+    accent: Color(0xFF14B8A6),
+    onAccent: Color(0xFF031A17),
+    live: Color(0xFF3DDC84),
     stale: Color(0xFFFFB82E),
-    noData: Color(0xFF9AA4B2),
+    noData: Color(0xFF93A0AD),
     notPolled: Color(0xFF8C9CC8),
-    error: Color(0xFFFF5468),
+    error: Color(0xFFFF6B7A),
     record: Color(0xFFFF3B4E),
+  );
+
+  /// Light counterpart (follows the system setting); text and accent keep
+  /// WCAG AA contrast on the light surfaces.
+  static const VehicleTokens light = VehicleTokens(
+    background: Color(0xFFF4F6F8),
+    surface: Color(0xFFFFFFFF),
+    surfaceRaised: Color(0xFFEBEEF2),
+    outline: Color(0xFFCFD6DD),
+    textPrimary: Color(0xFF11161B),
+    textSecondary: Color(0xFF4A5661),
+    accent: Color(0xFF0F766E),
+    onAccent: Color(0xFFFFFFFF),
+    live: Color(0xFF15803D),
+    stale: Color(0xFFB45309),
+    noData: Color(0xFF5B6672),
+    notPolled: Color(0xFF4F5F8F),
+    error: Color(0xFFB42318),
+    record: Color(0xFFC81E2E),
   );
 
   @override
@@ -190,11 +210,12 @@ TextTheme _buildTextTheme(VehicleTokens t) {
   );
 }
 
-/// The app theme: dark, high contrast, Material 3.
-ThemeData buildAppTheme() {
-  const t = VehicleTokens.dark;
+/// The app theme: high contrast, Material 3; dark by default, [Brightness.light]
+/// for the system light mode.
+ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
+  final t = brightness == Brightness.dark ? VehicleTokens.dark : VehicleTokens.light;
   final scheme = ColorScheme(
-    brightness: Brightness.dark,
+    brightness: brightness,
     primary: t.accent,
     onPrimary: t.onAccent,
     secondary: t.accent,
@@ -218,12 +239,12 @@ ThemeData buildAppTheme() {
 
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: t.background,
     canvasColor: t.background,
     textTheme: textTheme,
-    extensions: const <ThemeExtension<dynamic>>[t],
+    extensions: <ThemeExtension<dynamic>>[t],
     appBarTheme: AppBarTheme(
       backgroundColor: t.background,
       surfaceTintColor: Colors.transparent,
