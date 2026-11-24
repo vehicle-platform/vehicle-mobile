@@ -1,5 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/models/rider_input.dart';
+import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
+import 'package:vehicle_mobile/services/voice/voice_controller.dart';
+import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/faults/faults_screen.dart';
 import 'package:vehicle_mobile/ui/phone/phone_tabs.dart';
@@ -29,10 +35,20 @@ enum ShellTab {
 /// [phoneTabs]. Assistant keeps its conversation in memory while the shell
 /// lives.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, this.phoneTabs});
+  const AppShell({super.key, this.phoneTabs, this.voiceBus, this.intercom, this.voice});
 
   /// Phone-only destinations; null on web and desktop, which hides them.
   final PhoneTabs? phoneTabs;
+
+  /// Where voice triggers (handlebar push-to-talk, the intercom voice-command
+  /// button) are routed; defaults to [VoiceTriggerBus.instance].
+  final VoiceTriggerBus? voiceBus;
+
+  /// Android audio/intent bridge; defaults to [IntercomAudio.instance].
+  final IntercomAudio? intercom;
+
+  /// Voice front end of the Usta tab (tests inject fakes); created there when null.
+  final VoiceController? voice;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -44,10 +60,15 @@ class _AppShellState extends State<AppShell> {
   late final List<ShellTab> _tabs;
   late ShellTab _tab;
   late final Set<ShellTab> _visited;
+  late final VoiceTriggerBus _voiceBus;
+  late final IntercomAudio _intercom;
+  StreamSubscription<RiderInputAction>? _riderInputSubscription;
 
   @override
   void initState() {
     super.initState();
+    _voiceBus = widget.voiceBus ?? VoiceTriggerBus.instance;
+    _intercom = widget.intercom ?? IntercomAudio.instance;
     final phone = widget.phoneTabs != null;
     _tabs = phone
         ? const [
@@ -66,10 +87,20 @@ class _AppShellState extends State<AppShell> {
           ];
     _tab = _tabs.first;
     _visited = {_tab};
+
+    // Voice triggers bring Usta to the front: the handlebar button (phone,
+    // BLE) and the intercom's voice-command button (Android intent).
+    _voiceBus.onNeedAssistant = () => _select(ShellTab.assistant);
+    _riderInputSubscription = widget.phoneTabs?.riderInputActions?.listen(
+        (action) => _voiceBus.emit(triggerOfRiderInput(action)));
+    unawaited(bindVoiceCommandIntent(_intercom, _voiceBus));
   }
 
   @override
   void dispose() {
+    _riderInputSubscription?.cancel();
+    _voiceBus.onNeedAssistant = null;
+    _intercom.stopListeningVoiceCommand();
     widget.phoneTabs?.dispose();
     _settingsChanged.dispose();
     super.dispose();
@@ -94,7 +125,7 @@ class _AppShellState extends State<AppShell> {
       case ShellTab.diagnostics:
         return phone!.diagnostics();
       case ShellTab.assistant:
-        return const AssistantScreen();
+        return AssistantScreen(voice: widget.voice, voiceBus: _voiceBus);
       case ShellTab.rides:
         return const RideHistoryScreen();
       case ShellTab.faults:

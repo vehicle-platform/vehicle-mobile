@@ -7,6 +7,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 import 'package:vehicle_mobile/models/gps_block.dart';
+import 'package:vehicle_mobile/models/rider_input.dart';
 import 'package:vehicle_mobile/models/telemetry_data.dart';
 
 /// BLE client. GATT UUIDs and the requested ATT MTU come from the generated
@@ -27,6 +28,7 @@ class BleService {
   StreamSubscription? _imuValueSubscription;
   StreamSubscription? _gpsValueSubscription;
   StreamSubscription? _vehicleSignalsValueSubscription;
+  StreamSubscription? _riderInputSubscription;
   StreamSubscription<int>? _mtuSubscription;
 
   final StreamController<TelemetryData> _telemetryStreamController = StreamController<TelemetryData>.broadcast();
@@ -56,6 +58,23 @@ class BleService {
   final StreamController<Uint8List> _rawVehicleSignalBlockStreamController =
       StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get rawVehicleSignalBlockStream => _rawVehicleSignalBlockStreamController.stream;
+
+  /// Handlebar push-to-talk (D-047, D-121 item 5): the `riderInput` block
+  /// stream decoded by [RiderInputTracker] (dedupe by seq, loss count,
+  /// resync from `flags.buttonDown`, stale presses ignored). Older firmware
+  /// has no such characteristic, so this simply never emits. Informational
+  /// only: no safety path reads it (invariant 3).
+  final RiderInputTracker riderInputTracker = RiderInputTracker();
+  final StreamController<RiderInputAction> _riderInputActionController =
+      StreamController<RiderInputAction>.broadcast();
+  Stream<RiderInputAction> get riderInputActionStream => _riderInputActionController.stream;
+
+  /// Feeds the freshness reference of the rider-input tracker with the node
+  /// clock of any other block. Uses only the generated offsets.
+  void _noteNodeTime(Uint8List block, int offset) {
+    if (block.length < offset + 4) return;
+    riderInputTracker.noteDeviceTime(ByteData.sublistView(block).getUint32(offset, Endian.little));
+  }
 
   /// The `gps` subscription state of the current connection (D-062: bonded
   /// link required). The latest value is also kept in [gpsLinkStatus].
@@ -135,6 +154,8 @@ class BleService {
                 _imuValueSubscription?.cancel();
                 _gpsValueSubscription?.cancel();
                 _vehicleSignalsValueSubscription?.cancel();
+                _riderInputSubscription?.cancel();
+                riderInputTracker.reset();
                 _mtuSubscription?.cancel();
                 _setGpsLink(GpsLinkStatus.disconnected);
               }
@@ -180,6 +201,8 @@ class BleService {
                         final bytes = Uint8List.fromList(value);
                         _rawPacketStreamController.add(bytes);
                         final data = TelemetryData.fromBinaryBuffer(bytes);
+                        final nodeTime = data.deviceTimeMs;
+                        if (nodeTime != null) riderInputTracker.noteDeviceTime(nodeTime);
                         _telemetryStreamController.add(data);
                       }
                     }, onError: (err) {
@@ -196,7 +219,9 @@ class BleService {
 
                     _imuValueSubscription = characteristic.lastValueStream.listen((value) {
                       if (value.isNotEmpty) {
-                        _rawImuBlockStreamController.add(Uint8List.fromList(value));
+                        final bytes = Uint8List.fromList(value);
+                        _noteNodeTime(bytes, BleImuHeaderOffsets.deviceTimeMs);
+                        _rawImuBlockStreamController.add(bytes);
                       }
                     }, onError: (err) {
                       debugPrint("BLE IMU value stream error: $err");
@@ -212,7 +237,9 @@ class BleService {
                       await _vehicleSignalsValueSubscription?.cancel();
                       _vehicleSignalsValueSubscription = characteristic.lastValueStream.listen((value) {
                         if (value.isNotEmpty) {
-                          _rawVehicleSignalBlockStreamController.add(Uint8List.fromList(value));
+                          final bytes = Uint8List.fromList(value);
+                          _noteNodeTime(bytes, BleVehicleSignalHeaderOffsets.deviceTimeMs);
+                          _rawVehicleSignalBlockStreamController.add(bytes);
                         }
                       }, onError: (err) {
                         debugPrint("BLE vehicle-signals value stream error: ${redactDeviceIds('$err')}");
@@ -222,6 +249,27 @@ class BleService {
                       await _vehicleSignalsValueSubscription?.cancel();
                       _vehicleSignalsValueSubscription = null;
                       debugPrint("BLE vehicle-signals subscribe failed: ${redactDeviceIds('$e')}");
+                    }
+                  }
+                  if (characteristic.uuid.toString().toLowerCase() == BleGatt.riderInputCharacteristicUuid.toLowerCase()) {
+                    // Handlebar push-to-talk. No bonding needed; old firmware
+                    // lacks it and never reaches this branch. A failure here
+                    // must not affect the other streams.
+                    try {
+                      await _riderInputSubscription?.cancel();
+                      _riderInputSubscription = characteristic.lastValueStream.listen((value) {
+                        if (value.isEmpty) return;
+                        for (final action in riderInputTracker.accept(Uint8List.fromList(value))) {
+                          _riderInputActionController.add(action);
+                        }
+                      }, onError: (err) {
+                        debugPrint("BLE rider-input value stream error: ${redactDeviceIds('$err')}");
+                      });
+                      await characteristic.setNotifyValue(true);
+                    } catch (e) {
+                      await _riderInputSubscription?.cancel();
+                      _riderInputSubscription = null;
+                      debugPrint("BLE rider-input subscribe failed: ${redactDeviceIds('$e')}");
                     }
                   }
                   if (characteristic.uuid.toString().toLowerCase() == BleGatt.gpsCharacteristicUuid.toLowerCase()) {
@@ -276,7 +324,9 @@ class BleService {
       await _gpsValueSubscription?.cancel();
       _gpsValueSubscription = characteristic.lastValueStream.listen((value) {
         if (value.isNotEmpty) {
-          _rawGpsBlockStreamController.add(Uint8List.fromList(value));
+          final bytes = Uint8List.fromList(value);
+          _noteNodeTime(bytes, BleGpsOffsets.deviceTimeMs);
+          _rawGpsBlockStreamController.add(bytes);
         }
       }, onError: (err) {
         debugPrint("BLE GPS value stream error: ${redactDeviceIds('$err')}");
@@ -316,6 +366,8 @@ class BleService {
     await _imuValueSubscription?.cancel();
     await _gpsValueSubscription?.cancel();
     await _vehicleSignalsValueSubscription?.cancel();
+    await _riderInputSubscription?.cancel();
+    riderInputTracker.reset();
     await _mtuSubscription?.cancel();
     await _deviceStateSubscription?.cancel();
     if (_targetDevice != null) {

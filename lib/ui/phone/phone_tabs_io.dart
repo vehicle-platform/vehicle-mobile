@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:vehicle_mobile/models/rider_input.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/ui/diagnostics_screen.dart';
 import 'package:vehicle_mobile/ui/live_screen.dart';
@@ -50,6 +51,9 @@ class IoPhoneTabs implements PhoneTabs {
 
   @override
   Widget diagnostics() => DiagnosticsScreen(store: _store);
+
+  @override
+  Stream<RiderInputAction>? get riderInputActions => bleService.riderInputActionStream;
 
   @override
   void dispose() {

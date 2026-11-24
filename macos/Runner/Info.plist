@@ -26,6 +26,10 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Usta, sesli sorularını duymak için mikrofonu kullanır.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Usta, söylediklerini yazıya çevirmek için ses tanımayı kullanır.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

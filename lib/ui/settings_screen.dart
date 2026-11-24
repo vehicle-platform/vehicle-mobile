@@ -4,6 +4,7 @@ import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
+import 'package:vehicle_mobile/services/voice/voice_settings.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
@@ -32,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final Map<String, bool> _hasToken = {};
   String? _activeId;
   bool _uploadOnlyOnWifi = true;
+  bool _readAnswers = defaultReadAnswers();
   bool _loading = true;
   bool _checking = false;
   bool _loadFailed = false;
@@ -46,6 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final hostStore = widget.store.hosts;
     List<Host> hosts;
     AppSettings settings;
+    var readAnswers = defaultReadAnswers();
     final tokens = <String, bool>{};
     try {
       hosts = await hostStore.load();
@@ -53,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       for (final host in hosts) {
         tokens[host.id] = (await hostStore.readToken(host.id)) != null;
       }
+      readAnswers = await const VoiceSettings().readAnswers();
     } catch (_) {
       // Keystore or preferences unavailable: show an empty list, never a spinner forever.
       if (!mounted) return;
@@ -71,6 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ..addAll(tokens);
       _activeId = settings.hostId;
       _uploadOnlyOnWifi = settings.uploadOnlyOnWifi;
+      _readAnswers = readAnswers;
       _loading = false;
       _checking = false;
       _loadFailed = false;
@@ -141,6 +146,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _checking = true);
     await _load(reprobe: true);
     widget.onSaved?.call();
+  }
+
+  Future<void> _setReadAnswers(bool value) async {
+    setState(() => _readAnswers = value);
+    await const VoiceSettings().setReadAnswers(value);
   }
 
   Future<void> _setWifiOnly(bool value) async {
@@ -242,6 +252,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       value: _uploadOnlyOnWifi,
                       onChanged: _setWifiOnly,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.lg),
+                  const SectionLabel('Usta'),
+                  SectionCard(
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Cevapları sesli oku',
+                          style: theme.textTheme.titleSmall),
+                      subtitle: Text(
+                        'Usta cevabın metnini sesli okur. Telefonda varsayılan açık, web ve bilgisayarda kapalı.',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      value: _readAnswers,
+                      onChanged: _setReadAnswers,
                     ),
                   ),
                 ],

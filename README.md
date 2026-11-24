@@ -44,6 +44,13 @@ the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-12
   card with the tool arguments and result as key/value rows. The app never
   computes or rephrases a number and adds no advice. The conversation is kept in
   memory only. Opened from a ride summary it sends that ride's `session_id`.
+  **Voice (D-121 items 5 and 7, D-047, D-085 item 4):** the mic button in the
+  composer listens (tr-TR, device default as fallback; teal pulsing ring and the
+  live transcript in the input); the final transcript goes down the normal
+  `POST /chat` path and the answer text (never the tool card) is read aloud when
+  Settings > "Cevapları sesli oku" is on (default on for the phone, off for web
+  and desktop). Tapping the mic again or sending a new question stops the
+  speech. Voice is informational only and never a safety output.
 - **Rides / Faults (computer tabs):** the server's ride history and fault
   catalogue (also reachable on the phone through Record and the ride screens).
 - **Settings:** the host list (below) and the Wi-Fi-only upload switch.
@@ -70,7 +77,50 @@ vehicle-server serves the web build at `/app` on the same origin: point
 `VEHICLE_WEB_APP_DIR` at `build/web`. On web, an empty host list defaults to the
 page's own origin. BLE telemetry, signals, recording and diagnostics are
 phone-only (Android/iOS) and not compiled into the web build; the macOS sandbox
-has `com.apple.security.network.client`. Voice/intercom is a later PR.
+has `com.apple.security.network.client` plus the microphone entitlement for
+voice. Speech recognition and reading aloud work on Android, web (browser
+speech APIs, Chrome) and macOS.
+
+## Voice, intercom and handlebar push-to-talk (D-121 items 5 and 7)
+
+- **Plugins:** `speech_to_text` (BSD-3-Clause) and `flutter_tts` (MIT).
+- **Intercom routing (Android only).** The rider's Bluetooth intercom is an HFP
+  headset. Before listening and while speaking, `IntercomAudio` (Kotlin method
+  channel `vehicle_mobile/intercom_audio`, framework APIs only) routes the audio
+  to it: API 31+ `AudioManager.setCommunicationDevice` with
+  `MODE_IN_COMMUNICATION`; older `startBluetoothSco()` and a 3 s wait for
+  `SCO_AUDIO_STATE_CONNECTED`. It is released after each step and the audio mode
+  restored. Speech while routed uses the framework `TextToSpeech` with
+  `USAGE_VOICE_COMMUNICATION` (flutter_tts cannot set those attributes; without
+  a headset flutter_tts is used). With no headset the phone microphone and
+  speaker are used. A small chip in Usta shows "İntercom bağlı" or "Telefon
+  mikrofonu". **An HFP session pauses the intercom's group talk, like a call
+  does**, for as long as the route is held. Android 12+ asks for
+  BLUETOOTH_CONNECT (denied: the phone is used).
+- **Intercom voice button.** The main activity answers
+  `android.intent.action.VOICE_COMMAND`. In Android Settings > Apps > Default
+  apps > Digital assistant / voice input (or the chooser the first time the
+  headset's voice-command button is pressed) select this app. Pressing the
+  button then opens Usta and starts listening; a cold start and a running app
+  are both handled.
+- **Handlebar push-to-talk (phone only).** The app subscribes to the
+  `riderInput` characteristic when the firmware offers it (older firmware:
+  ignored). Decoding and de-duplication are in `lib/models/rider_input.dart`
+  (`RiderInputTracker`) and use only the generated `BleRiderInput*` constants:
+  same seq as the previous block is dropped, lost blocks are counted
+  (`(seq - prev - 1) mod 256`), `flags.buttonDown` resynchronises, and a press
+  older than 2 s (against the latest `deviceTimeMs` of the other blocks) is
+  ignored. Press starts listening (hold to talk), release stops and sends, a
+  long press cancels the listening and repeats the last answer by voice. The
+  long-press time is a firmware constant, so a hold longer than it turns into
+  the repeat gesture.
+- **Critical warnings without the LLM.** `CriticalAnnouncer` speaks fixed Turkish
+  templates offline, never through `/chat`: when a chat answer's tool result has
+  `advise_stop: true` the app speaks "Güvenli bir yerde dur ve motoru kontrol
+  ettir." after the answer. `announce(HighSeverityFaultEvent)` (once per fault id,
+  with the server's own title) is ready, but the app has no live fault feed yet
+  (`GET /faults` is the static catalogue, `/ws/live` carries CAN frames), so
+  nothing calls it today. Informational only (invariant 3).
 
 `lib/ui/telemetry/signal_view.dart` maps the polled catalog signals to the
 decoded telemetry fields, keyed by the generated `VehicleSignalNames`; a test
