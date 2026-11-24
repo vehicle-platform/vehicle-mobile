@@ -58,25 +58,39 @@ void main() {
   });
 
   group('RiderInputTracker', () {
-    test('press starts, release sends, long press repeats', () {
+    test('tap: press starts, release without a longPress is a tap', () {
       final t = RiderInputTracker();
       expect(
           t.accept(block(seq: 1, deviceTimeMs: 1000, event: press, down: true)),
           [RiderInputAction.startListening]);
       expect(t.held, isTrue);
-      expect(t.accept(block(seq: 2, deviceTimeMs: 1500, event: release)),
-          [RiderInputAction.stopAndSend]);
+      expect(t.accept(block(seq: 2, deviceTimeMs: 1200, event: release)),
+          [RiderInputAction.stopAfterTap]);
       expect(t.held, isFalse);
-      expect(
-          t.accept(block(seq: 3, deviceTimeMs: 2000, event: press, down: true)),
-          [RiderInputAction.startListening]);
+    });
+
+    test('long hold: longPress mid-hold is ignored, release sends', () {
+      final t = RiderInputTracker();
+      t.accept(block(seq: 1, deviceTimeMs: 1000, event: press, down: true));
       expect(
           t.accept(
-              block(seq: 4, deviceTimeMs: 3000, event: longPress, down: true)),
-          [RiderInputAction.repeatLast]);
-      // The release after a long press is not a send.
+              block(seq: 2, deviceTimeMs: 1800, event: longPress, down: true)),
+          isEmpty);
+      expect(t.held, isTrue);
+      expect(t.accept(block(seq: 3, deviceTimeMs: 6000, event: release)),
+          [RiderInputAction.stopAndSend]);
+      // The next hold is a tap again.
+      t.accept(block(seq: 4, deviceTimeMs: 7000, event: press, down: true));
+      expect(t.accept(block(seq: 5, deviceTimeMs: 7100, event: release)),
+          [RiderInputAction.stopAfterTap]);
+    });
+
+    test('a longPress with no press seen does nothing', () {
+      final t = RiderInputTracker();
       expect(
-          t.accept(block(seq: 5, deviceTimeMs: 3200, event: release)), isEmpty);
+          t.accept(
+              block(seq: 1, deviceTimeMs: 1000, event: longPress, down: true)),
+          isEmpty);
     });
 
     test('a block with the same seq as the previous one is dropped', () {
@@ -98,14 +112,19 @@ void main() {
       expect(t.lostBlocks, 2);
     });
 
-    test('a lost press followed by a long press still repeats', () {
+    test(
+        'a lost press: the longPress block shows the button down and starts listening',
+        () {
       final t = RiderInputTracker();
       t.accept(block(seq: 1, deviceTimeMs: 100, event: release));
-      // seq 2 (the press) lost; the longPress at seq 3 shows the button down.
-      final actions = t.accept(
-          block(seq: 3, deviceTimeMs: 900, event: longPress, down: true));
+      // seq 2 (the press) lost.
+      expect(
+          t.accept(
+              block(seq: 3, deviceTimeMs: 900, event: longPress, down: true)),
+          [RiderInputAction.startListening]);
       expect(t.lostBlocks, 1);
-      expect(actions, contains(RiderInputAction.repeatLast));
+      expect(t.accept(block(seq: 4, deviceTimeMs: 2000, event: release)),
+          [RiderInputAction.stopAndSend]);
     });
 
     test(
@@ -113,23 +132,22 @@ void main() {
         () {
       final t = RiderInputTracker();
       t.accept(block(seq: 1, deviceTimeMs: 100, event: press, down: true));
-      // The release (seq 2) is lost; the next press shows... button up on a
-      // block that carries a release flag state: use a second release.
       final actions =
           t.accept(block(seq: 3, deviceTimeMs: 600, event: release));
       expect(t.lostBlocks, 1);
-      expect(actions, [RiderInputAction.stopAndSend]);
+      expect(actions, [RiderInputAction.stopAfterTap]);
       expect(t.held, isFalse);
     });
 
-    test('a long press after lost blocks ends the hold and repeats', () {
+    test('a longPress after lost blocks keeps listening', () {
       final t = RiderInputTracker();
       t.accept(block(seq: 1, deviceTimeMs: 100, event: press, down: true));
-      // Release (2) and press (3) lost; block 4 is a longPress with the button down: still held.
-      final actions = t.accept(
-          block(seq: 4, deviceTimeMs: 900, event: longPress, down: true));
+      expect(
+          t.accept(
+              block(seq: 4, deviceTimeMs: 900, event: longPress, down: true)),
+          isEmpty);
       expect(t.lostBlocks, 2);
-      expect(actions, [RiderInputAction.repeatLast]);
+      expect(t.held, isTrue);
     });
 
     test(
@@ -180,7 +198,7 @@ void main() {
       t.accept(block(seq: 1, deviceTimeMs: 1000, event: press, down: true));
       t.noteDeviceTime(60000);
       expect(t.accept(block(seq: 2, deviceTimeMs: 1500, event: release)),
-          [RiderInputAction.stopAndSend]);
+          [RiderInputAction.stopAfterTap]);
     });
 
     test('invalid payloads and unknown events are counted and dropped', () {

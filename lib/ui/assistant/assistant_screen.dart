@@ -79,6 +79,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     _ownsVoice = widget.voice == null;
     _voice = widget.voice ?? VoiceController();
     _voice.onTranscript = _onTranscript;
+    _voice.onEmptyTap = _repeatLast;
     _voice.addListener(_onVoiceChanged);
     _announcer = CriticalAnnouncer(speak: _voice.speak);
     _bus = widget.voiceBus ?? VoiceTriggerBus.instance;
@@ -95,6 +96,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
     _bus.detach(_onTrigger);
     _voice.removeListener(_onVoiceChanged);
     _voice.onTranscript = null;
+    _voice.onEmptyTap = null;
     if (_ownsVoice) {
       _voice.dispose();
     } else {
@@ -172,16 +174,14 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
       case VoiceTrigger.startListening:
         if (!_sending) _voice.startListening();
       case VoiceTrigger.stopAndSend:
-        _voice.stopListening();
-      case VoiceTrigger.repeatLast:
-        _repeatLast();
+        _voice.stopListening(onEmpty: EmptyTranscript.nothing);
+      case VoiceTrigger.stopAfterTap:
+        _voice.stopListening(onEmpty: EmptyTranscript.repeat);
     }
   }
 
-  /// Long press of the handlebar button: cancel what the press started and
-  /// read the last answer again.
+  /// A tap of the handlebar button heard nothing: read the last answer again.
   Future<void> _repeatLast() async {
-    await _voice.cancelListening();
     for (final message in _messages.reversed) {
       if (message.role == ChatRole.assistant && !message.isFailure) {
         await _voice.speak(message.text, force: true);

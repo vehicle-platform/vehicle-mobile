@@ -72,14 +72,16 @@ class RiderInputBlockData {
 
 /// What the app does for the rider's handlebar button.
 enum RiderInputAction {
-  /// Press: start listening (hold to talk).
+  /// Press: start listening (hold to talk, any hold length).
   startListening,
 
-  /// Release: stop listening and send the question.
+  /// Release after a long hold (a longPress block came during the hold):
+  /// stop listening and send the transcript; an empty one does nothing.
   stopAndSend,
 
-  /// Long press: repeat the last answer by voice.
-  repeatLast,
+  /// Release after a tap (no longPress block during the hold): stop listening
+  /// and send the transcript; an empty one repeats the last answer by voice.
+  stopAfterTap,
 }
 
 /// Turns the rider-input notification stream into [RiderInputAction]s:
@@ -108,6 +110,7 @@ class RiderInputTracker {
   int? _prevSeq;
   int? _referenceMs;
   bool _held = false;
+  bool _longSeen = false;
 
   /// True while a press was accepted and its release has not come yet.
   bool get held => _held;
@@ -127,6 +130,7 @@ class RiderInputTracker {
     _prevSeq = null;
     _referenceMs = null;
     _held = false;
+    _longSeen = false;
   }
 
   /// uint32 wrap-aware "a is later than b".
@@ -171,26 +175,30 @@ class RiderInputTracker {
     return _apply(block, edge);
   }
 
+  RiderInputAction _releaseAction() {
+    _held = false;
+    final action = _longSeen
+        ? RiderInputAction.stopAndSend
+        : RiderInputAction.stopAfterTap;
+    _longSeen = false;
+    return action;
+  }
+
   /// After a loss the button state of the block is authoritative.
   List<RiderInputAction> _resync(
       RiderInputBlockData block, RiderInputEdge edge) {
-    final actions = <RiderInputAction>[];
-    if (block.buttonDown && !_held && edge != RiderInputEdge.longPress) {
+    if (block.buttonDown && !_held) {
       // The press was lost: start only when this block is still fresh.
       if (_isStale(block.deviceTimeMs)) {
         staleEvents++;
-      } else {
-        _held = true;
-        actions.add(RiderInputAction.startListening);
+        return const [];
       }
-    } else if (!block.buttonDown && _held) {
-      _held = false;
-      actions.add(RiderInputAction.stopAndSend);
+      _held = true;
+      _longSeen = edge == RiderInputEdge.longPress;
+      return const [RiderInputAction.startListening];
     }
-    if (edge == RiderInputEdge.longPress) {
-      actions.addAll(_apply(block, edge));
-    }
-    return actions;
+    if (!block.buttonDown && _held) return [_releaseAction()];
+    return _apply(block, edge);
   }
 
   List<RiderInputAction> _apply(
@@ -203,20 +211,16 @@ class RiderInputTracker {
           return const [];
         }
         _held = true;
+        _longSeen = false;
         return const [RiderInputAction.startListening];
       case RiderInputEdge.release:
         if (!_held) return const [];
-        _held = false;
-        return const [RiderInputAction.stopAndSend];
+        return [_releaseAction()];
       case RiderInputEdge.longPress:
-        if (_isStale(block.deviceTimeMs)) {
-          staleEvents++;
-          return const [];
-        }
-        // The hold became a repeat gesture: the controller cancels the
-        // listening that the press started, the later release is ignored.
-        _held = false;
-        return const [RiderInputAction.repeatLast];
+        // Only the firmware saying the hold passed its long-press time: keep
+        // listening. It makes the release a "long hold" instead of a tap.
+        if (_held) _longSeen = true;
+        return const [];
     }
   }
 }

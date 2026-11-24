@@ -18,6 +18,7 @@ VoiceController _controller(
     recognizer: stt,
     output: tts,
     intercom: intercom ?? IntercomAudio(supported: false),
+    ensureMicrophonePermission: () async {},
     ensureBluetoothPermission: () async => log?.add('bt-permission'),
     finalWait: const Duration(milliseconds: 5),
   );
@@ -145,6 +146,30 @@ void main() {
     expect(tts.stopCalls, greaterThan(0));
     expect(c.state, VoiceState.listening);
     expect(await spoke, isFalse);
+  });
+
+  group('recogniser start timeout', () {
+    test(
+        'a hanging initialize resets to idle with the Turkish message after the permission step',
+        () async {
+      final order = <String>[];
+      final stt = FakeRecognizer()..initializeHangs = true;
+      final c = VoiceController(
+        recognizer: stt,
+        output: FakeOutput(),
+        intercom: IntercomAudio(supported: false),
+        ensureMicrophonePermission: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 60));
+          order.add('permission-done');
+        },
+        initTimeout: const Duration(milliseconds: 20),
+      );
+      await c.startListening();
+      expect(order, ['permission-done']); // the permission step is not bounded
+      expect(c.state, VoiceState.idle);
+      expect(c.error, voiceInitTimeoutMessage);
+      expect(c.isListening, isFalse);
+    });
   });
 
   group('intercom routing', () {

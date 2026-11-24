@@ -19,6 +19,8 @@ enum VoiceState {
   speaking,
 }
 
+const String voiceInitTimeoutMessage =
+    'Ses tanıma kullanılamıyor. Soruyu yazabilirsin.';
 const String voiceNoSpeechMessage = 'Seni duyamadım. Tekrar dener misin?';
 const String voiceUnavailableMessage =
     'Ses tanıma şu an kullanılamıyor. Soruyu yazabilirsin.';
@@ -31,6 +33,18 @@ const String voiceNetworkMessage =
 const String intercomConnectedLabel = 'İntercom bağlı';
 const String phoneMicLabel = 'Telefon mikrofonu';
 
+/// What an empty transcript does after the rider stopped listening.
+enum EmptyTranscript {
+  /// Show "Seni duyamadım" (mic button).
+  message,
+
+  /// Nothing (handlebar button after a long hold).
+  nothing,
+
+  /// Repeat the last answer (handlebar tap).
+  repeat,
+}
+
 /// Voice front end of Usta: microphone (speech to text), reading answers
 /// aloud and the audio route to the rider's intercom (Android). It owns no
 /// chat logic: a final transcript goes to [onTranscript], which sends it down
@@ -42,25 +56,38 @@ class VoiceController extends ChangeNotifier {
     IntercomAudio? intercom,
     VoiceSettings settings = const VoiceSettings(),
     Future<void> Function()? ensureBluetoothPermission,
+    Future<void> Function()? ensureMicrophonePermission,
     this.finalWait = const Duration(milliseconds: 1500),
+    this.initTimeout = const Duration(seconds: 10),
   })  : _recognizer = recognizer ?? PluginSpeechRecognizer(),
         _output = output ?? PluginSpeechOutput(),
         _intercom = intercom ?? IntercomAudio.instance,
         _settings = settings,
         _ensureBluetooth =
-            ensureBluetoothPermission ?? requestBluetoothConnectIfNeeded;
+            ensureBluetoothPermission ?? requestBluetoothConnectIfNeeded,
+        _ensureMicrophone =
+            ensureMicrophonePermission ?? requestMicrophoneIfNeeded;
 
   final SpeechRecognizerPort _recognizer;
   final SpeechOutputPort _output;
   final IntercomAudio _intercom;
   final VoiceSettings _settings;
   final Future<void> Function() _ensureBluetooth;
+  final Future<void> Function() _ensureMicrophone;
+
+  /// Bound on the recogniser start. It begins only after the microphone
+  /// permission request finished, so it never cuts the permission prompt.
+  final Duration initTimeout;
 
   /// How long to wait for the final transcript after the rider stopped.
   final Duration finalWait;
 
   /// Receives the final transcript (the screen sends it to `/chat`).
   void Function(String text)? onTranscript;
+
+  /// Called when a tap of the handlebar button heard nothing.
+  VoidCallback? onEmptyTap;
+  EmptyTranscript _emptyPolicy = EmptyTranscript.message;
 
   VoiceState _state = VoiceState.idle;
   String _partial = '';
@@ -157,19 +184,35 @@ class VoiceController extends ChangeNotifier {
     await stopSpeaking();
     final session = ++_session;
     _sessionDone = false;
+    _emptyPolicy = EmptyTranscript.message;
     _error = null;
     _partial = '';
     _set(VoiceState.preparing);
 
     if (!_initialized) {
-      bool ok;
       try {
-        ok = await _recognizer.initialize(
-            onStatus: _onStatus, onError: _onError);
+        await _ensureMicrophone();
+      } catch (_) {
+        // The recogniser asks again and reports a denial.
+      }
+      if (session != _session) return;
+      var ok = false;
+      var timedOut = false;
+      try {
+        ok = await _recognizer
+            .initialize(onStatus: _onStatus, onError: _onError)
+            .timeout(initTimeout, onTimeout: () {
+          timedOut = true;
+          return false;
+        });
       } catch (_) {
         ok = false; // no speech plugin on this platform or browser
       }
       if (session != _session) return;
+      if (timedOut) {
+        _fail(voiceInitTimeoutMessage);
+        return;
+      }
       if (!ok) {
         _fail(voicePermissionMessage);
         return;
@@ -226,8 +269,10 @@ class VoiceController extends ChangeNotifier {
       'error_no_match' || 'error_speech_timeout' => voiceNoSpeechMessage,
       _ => voiceUnavailableMessage,
     };
-    if (_partial.trim().isNotEmpty &&
-        (code == 'error_no_match' || code == 'error_speech_timeout')) {
+    final silent = code == 'error_no_match' || code == 'error_speech_timeout';
+    // Already released (finishing): nothing heard is an empty transcript.
+    if (silent &&
+        (_partial.trim().isNotEmpty || _state == VoiceState.finishing)) {
       unawaited(_complete(_partial));
       return;
     }
@@ -236,8 +281,10 @@ class VoiceController extends ChangeNotifier {
 
   /// Rider stops listening (second tap, button released): the transcript so
   /// far, or the final one if it arrives within [finalWait], is sent.
-  Future<void> stopListening() async {
+  Future<void> stopListening(
+      {EmptyTranscript onEmpty = EmptyTranscript.message}) async {
     if (_state != VoiceState.listening) return;
+    _emptyPolicy = onEmpty;
     final session = _session;
     _set(VoiceState.finishing);
     try {
@@ -277,8 +324,15 @@ class VoiceController extends ChangeNotifier {
     await _releaseRoute();
     _set(VoiceState.idle);
     if (transcript.isEmpty) {
-      _error = voiceNoSpeechMessage;
-      _notify();
+      switch (_emptyPolicy) {
+        case EmptyTranscript.message:
+          _error = voiceNoSpeechMessage;
+          _notify();
+        case EmptyTranscript.nothing:
+          break;
+        case EmptyTranscript.repeat:
+          onEmptyTap?.call();
+      }
       return;
     }
     onTranscript?.call(transcript);

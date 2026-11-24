@@ -9,6 +9,7 @@ import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 /// Scriptable speech recogniser: tests push results and statuses.
 class FakeRecognizer implements SpeechRecognizerPort {
   bool initializeResult = true;
+  bool initializeHangs = false;
   int initializeCalls = 0;
   int listenCalls = 0;
   int stopCalls = 0;
@@ -28,6 +29,7 @@ class FakeRecognizer implements SpeechRecognizerPort {
     initializeCalls++;
     _onStatus = onStatus;
     _onError = onError;
+    if (initializeHangs) await Completer<void>().future;
     return initializeResult;
   }
 

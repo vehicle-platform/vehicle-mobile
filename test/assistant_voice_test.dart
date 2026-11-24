@@ -70,6 +70,7 @@ Future<_Rig> _pump(
     recognizer: stt,
     output: tts,
     intercom: IntercomAudio(supported: false),
+    ensureMicrophonePermission: () async {},
     finalWait: const Duration(milliseconds: 5),
   );
   final bus = VoiceTriggerBus();
@@ -203,17 +204,17 @@ void main() {
   });
 
   testWidgets(
-      'push-to-talk triggers: press listens, release sends, long press repeats the last answer',
+      'push-to-talk: long hold sends, empty long hold does nothing, tap repeats',
       (tester) async {
     final asked = <String>[];
     final rig = await _pump(tester,
         reply: () => _answer('Cevap bir'), readAnswers: false, asked: asked);
-    // Give the screen a first answer.
     await tester.enterText(find.byType(TextField), 'ilk');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
     expect(rig.tts.spoken, isEmpty); // setting off
 
+    // Long hold with speech: send on release.
     rig.bus.emit(VoiceTrigger.startListening);
     await _settle(tester);
     expect(rig.voice.state, VoiceState.listening);
@@ -222,11 +223,57 @@ void main() {
     await _settle(tester);
     expect(asked, ['ilk', 'ikinci soru']);
 
-    rig.tts.spoken.clear();
-    rig.bus.emit(VoiceTrigger.repeatLast);
+    // Empty long hold: nothing is sent, nothing is spoken, no error.
+    rig.bus.emit(VoiceTrigger.startListening);
     await _settle(tester);
-    // Repeat is an explicit request: spoken although "read answers" is off.
+    rig.bus.emit(VoiceTrigger.stopAndSend);
+    await _settle(tester);
+    expect(asked, hasLength(2));
+    expect(rig.tts.spoken, isEmpty);
+    expect(rig.voice.error, isNull);
+    expect(rig.voice.state, VoiceState.idle);
+
+    // Tap that heard nothing: repeat the last answer although reading is off.
+    rig.bus.emit(VoiceTrigger.startListening);
+    await _settle(tester);
+    rig.bus.emit(VoiceTrigger.stopAfterTap);
+    await _settle(tester);
+    expect(asked, hasLength(2));
     expect(rig.tts.spoken, ['Cevap bir']);
+
+    // A tap that did hear something sends it and does not repeat.
+    rig.tts.spoken.clear();
+    rig.bus.emit(VoiceTrigger.startListening);
+    await _settle(tester);
+    rig.stt.partial('üçüncü');
+    rig.bus.emit(VoiceTrigger.stopAfterTap);
+    await _settle(tester);
+    expect(asked, ['ilk', 'ikinci soru', 'üçüncü']);
+    expect(rig.tts.spoken, isEmpty);
+  });
+
+  testWidgets('a tap with nothing to repeat does nothing', (tester) async {
+    final rig = await _pump(tester, reply: () => _answer('x'));
+    rig.bus.emit(VoiceTrigger.startListening);
+    await _settle(tester);
+    rig.bus.emit(VoiceTrigger.stopAfterTap);
+    await _settle(tester);
+    expect(rig.tts.spoken, isEmpty);
+    expect(rig.voice.error, isNull);
+  });
+
+  testWidgets('a press while speaking stops the speech and listens',
+      (tester) async {
+    final rig = await _pump(tester,
+        reply: () => _answer('Cevap'), instantSpeech: false);
+    await tester.enterText(find.byType(TextField), 'x');
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await _settle(tester);
+    expect(rig.voice.state, VoiceState.speaking);
+    rig.bus.emit(VoiceTrigger.startListening);
+    await _settle(tester);
+    expect(rig.tts.stopCalls, greaterThan(0));
+    expect(rig.voice.state, VoiceState.listening);
   });
 
   testWidgets(
@@ -237,6 +284,7 @@ void main() {
         recognizer: stt,
         output: FakeOutput(),
         intercom: IntercomAudio(supported: false),
+        ensureMicrophonePermission: () async {},
         finalWait: const Duration(milliseconds: 5));
     final bus = VoiceTriggerBus()..emit(VoiceTrigger.startListening);
     final store = await _store();
@@ -257,6 +305,7 @@ void main() {
         recognizer: FakeRecognizer(),
         output: FakeOutput(),
         intercom: intercom.audio,
+        ensureMicrophonePermission: () async {},
         ensureBluetoothPermission: () async {});
     await tester.pumpWidget(MaterialApp(
       theme: buildAppTheme(),
@@ -319,6 +368,7 @@ void main() {
           recognizer: stt,
           output: FakeOutput(),
           intercom: IntercomAudio(supported: false),
+          ensureMicrophonePermission: () async {},
           finalWait: const Duration(milliseconds: 5));
       await tester.pumpWidget(MaterialApp(
         theme: buildAppTheme(),

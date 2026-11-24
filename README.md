@@ -110,10 +110,15 @@ speech APIs, Chrome) and macOS.
   same seq as the previous block is dropped, lost blocks are counted
   (`(seq - prev - 1) mod 256`), `flags.buttonDown` resynchronises, and a press
   older than 2 s (against the latest `deviceTimeMs` of the other blocks) is
-  ignored. Press starts listening (hold to talk), release stops and sends, a
-  long press cancels the listening and repeats the last answer by voice. The
-  long-press time is a firmware constant, so a hold longer than it turns into
-  the repeat gesture.
+  ignored. Hold-to-talk works for any hold length: press starts listening (a
+  press while Usta speaks stops the speech first); the firmware's `longPress`
+  block during the hold is ignored (it only marks the hold as long); release
+  stops listening and sends the transcript. An empty transcript after a long
+  hold does nothing; an empty transcript after a tap (release with no
+  `longPress` before it) repeats the last answer by voice, if there is one.
+- **Speech start bound.** The microphone permission is requested first (Android),
+  then the recogniser start is bounded to 10 s; on timeout the mic goes back to
+  idle with "Ses tanıma kullanılamıyor".
 - **Critical warnings without the LLM.** `CriticalAnnouncer` speaks fixed Turkish
   templates offline, never through `/chat`: when a chat answer's tool result has
   `advise_stop: true` the app speaks "Güvenli bir yerde dur ve motoru kontrol

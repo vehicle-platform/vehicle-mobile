@@ -13,3 +13,15 @@ Future<void> requestBluetoothConnectIfNeeded() async {
     // Treated as denied.
   }
 }
+
+/// Android: asks for the microphone permission up front so the recogniser
+/// start can be time-bounded without cutting the prompt. Other platforms ask
+/// inside the speech plugin (browser prompt, macOS dialog).
+Future<void> requestMicrophoneIfNeeded() async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+  try {
+    await Permission.microphone.request();
+  } catch (_) {
+    // The recogniser reports a denial.
+  }
+}

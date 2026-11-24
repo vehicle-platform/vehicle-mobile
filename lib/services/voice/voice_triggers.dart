@@ -10,17 +10,18 @@ enum VoiceTrigger {
   /// Open Usta and start listening.
   startListening,
 
-  /// Stop listening and send the question (button released).
+  /// Button released after a long hold: send the question; empty does nothing.
   stopAndSend,
 
-  /// Repeat the last answer by voice.
-  repeatLast,
+  /// Button released after a tap: send the question; empty repeats the last
+  /// answer by voice.
+  stopAfterTap,
 }
 
 VoiceTrigger triggerOfRiderInput(RiderInputAction action) => switch (action) {
       RiderInputAction.startListening => VoiceTrigger.startListening,
       RiderInputAction.stopAndSend => VoiceTrigger.stopAndSend,
-      RiderInputAction.repeatLast => VoiceTrigger.repeatLast,
+      RiderInputAction.stopAfterTap => VoiceTrigger.stopAfterTap,
     };
 
 /// Routes [VoiceTrigger]s to the Usta screen. The shell sets [onNeedAssistant]
@@ -39,11 +40,11 @@ class VoiceTriggerBus {
   VoidCallback? onNeedAssistant;
 
   void emit(VoiceTrigger trigger) {
-    if (trigger != VoiceTrigger.stopAndSend) onNeedAssistant?.call();
+    if (trigger == VoiceTrigger.startListening) onNeedAssistant?.call();
     final handler = _handler;
     if (handler != null) {
       handler(trigger);
-    } else if (trigger != VoiceTrigger.stopAndSend) {
+    } else if (trigger == VoiceTrigger.startListening) {
       _pending
         ..clear()
         ..add(trigger);
