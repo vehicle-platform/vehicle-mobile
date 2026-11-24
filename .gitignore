@@ -53,3 +53,4 @@ app.*.map.json
 key.properties
 *.aab
 *.ipa
+android/build/
