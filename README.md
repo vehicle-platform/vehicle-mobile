@@ -22,7 +22,13 @@ fallback).
 
 Dark, high-contrast Material 3 theme; every color and text style lives in
 `lib/ui/theme/app_theme.dart`. Six destinations on the phone (`lib/ui/app_shell.dart`);
-the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-121):
+the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-121).
+The layout follows the window WIDTH, not the platform: below 600 px a bottom
+navigation bar with full-width content and 16 px gutters (also a phone browser or
+a narrow window), 600-1024 px a navigation rail, above 1024 px the rail plus a
+centred content column (720 px Assistant, 960 px lists and forms). Spacing is the
+4/8/12/16/24/32 scale (`Spacing`), width classes and the column helper live in
+`lib/ui/theme/layout.dart`:
 
 - **Live:** speed, RPM, throttle, coolant and battery with their state, and a
   status strip (BLE, ECU, CAN state, latches, mock data, IMU, GPS).
@@ -38,9 +44,9 @@ the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-12
   behaviour, D-063 still applies).
 - **Diagnostics:** link, packet loss, vehicle CAN counters and the D-058 tester
   statistics.
-- **Assistant (D-121):** text chat against `POST /chat` of the active host. The
+- **Assistant "Sürüş Asistanı" (D-121):** text chat against `POST /chat` of the active host. The
   server picks one read-only vehicle-mcp tool and phrases its result; each answer
-  shows a source badge (LLM / template) and an expandable "computed by `<tool>`"
+  shows a source badge ("Asistan" / "Veriden doğrulandı") and an expandable "computed by `<tool>`"
   card with the tool arguments and result as key/value rows. The app never
   computes or rephrases a number and adds no advice. The conversation is kept in
   memory only. Opened from a ride summary it sends that ride's `session_id`.
@@ -53,7 +59,44 @@ the computer (web, macOS) shows only Assistant, Rides, Faults and Settings (D-12
   speech. Voice is informational only and never a safety output.
 - **Rides / Faults (computer tabs):** the server's ride history and fault
   catalogue (also reachable on the phone through Record and the ride screens).
-- **Settings:** the host list (below) and the Wi-Fi-only upload switch.
+- **Notifications (D-123):** a bell with an unread badge in the app bar of the
+  Assistant, Rides, Faults and Settings screens opens the inbox (grouped by day,
+  severity accent: critical red, warning amber, info teal). A tap opens the detail
+  with a link to the ride and "Sürüş Asistanı'na sor" (opens the assistant with a
+  prefilled question and the ride's `session_id`); "Tümünü okundu say" marks all.
+- **Login (D-122):** when the active host has no token the app shows a login
+  screen (server address - prefilled with the page origin on the web -, username,
+  password); "Hesap oluştur" registers with a vehicle ID and claim code; "Gelişmiş"
+  keeps the manual device-token path. On the phone the login can be skipped
+  (BLE and recording need no server).
+- **Settings:** the account (user, vehicles, "Araç ekle", "Çıkış yap"), the host
+  list (below) and the Wi-Fi-only upload switch.
+
+## Accounts (D-122)
+
+`lib/services/auth_client.dart` talks to vehicle-server: `POST /auth/login`,
+`POST /auth/register`, `POST /auth/logout`, `GET /auth/me`, `POST /vehicles/claim`.
+The session token goes to the keystore under the host's `host.<id>.token` key; the
+username and vehicle list are in shared_preferences (`auth.<id>.account`). A 401
+from any client (`AuthEvents`) clears that host's session and returns to the login
+screen with a short message. Tokens and passwords are never logged; password
+fields are obscured with autocorrect off.
+
+## Notifications (D-123)
+
+`lib/services/notifications/`: `notifications_client.dart` (`GET /notifications?since_id=&limit=`,
+`POST /notifications/{id}/read`, `POST /notifications/read-all`), `NotificationStore`
+(last seen id per host, in prefs), `NotificationSync` (one pull, pages through the
+answer, only ids above the stored one are "fresh"), and `NotificationCenter`
+(inbox state, unread badge, 60 s foreground poll, pull on resume and pull-to-refresh).
+A 404 (older server) hides the bell. Critical fresh entries go to the
+`CriticalAnnouncer` as `HighSeverityFaultEvent` (spoken once per id when voice is on;
+D-121 item 7b). Android only: a `workmanager` periodic task (every 15 minutes)
+pulls while the app is closed and shows local notifications through
+`flutter_local_notifications` on the channel "Araç bildirimleri" (critical ones on a
+high-importance channel); Android 13+ asks for the POST_NOTIFICATIONS permission
+at the first start of the shell. Web and desktop stay in-app. Plugin licences:
+flutter_local_notifications BSD-3-Clause, workmanager MIT.
 
 ## Hosts (D-121 item 4)
 
@@ -93,7 +136,7 @@ speech APIs, Chrome) and macOS.
   restored. Speech while routed uses the framework `TextToSpeech` with
   `USAGE_VOICE_COMMUNICATION` (flutter_tts cannot set those attributes; without
   a headset flutter_tts is used). With no headset the phone microphone and
-  speaker are used. A small chip in Usta shows "İntercom bağlı" or "Telefon
+  speaker are used. A small chip in Sürüş Asistanı shows "İntercom bağlı" or "Telefon
   mikrofonu". **An HFP session pauses the intercom's group talk, like a call
   does**, for as long as the route is held. Android 12+ asks for
   BLUETOOTH_CONNECT (denied: the phone is used).
@@ -101,7 +144,7 @@ speech APIs, Chrome) and macOS.
   `android.intent.action.VOICE_COMMAND`. In Android Settings > Apps > Default
   apps > Digital assistant / voice input (or the chooser the first time the
   headset's voice-command button is pressed) select this app. Pressing the
-  button then opens Usta and starts listening; a cold start and a running app
+  button then opens Sürüş Asistanı and starts listening; a cold start and a running app
   are both handled.
 - **Handlebar push-to-talk (phone only).** The app subscribes to the
   `riderInput` characteristic when the firmware offers it (older firmware:
@@ -111,7 +154,7 @@ speech APIs, Chrome) and macOS.
   (`(seq - prev - 1) mod 256`), `flags.buttonDown` resynchronises, and a press
   older than 2 s (against the latest `deviceTimeMs` of the other blocks) is
   ignored. Hold-to-talk works for any hold length: press starts listening (a
-  press while Usta speaks stops the speech first); the firmware's `longPress`
+  press while Sürüş Asistanı speaks stops the speech first); the firmware's `longPress`
   block during the hold is ignored (it only marks the hold as long); release
   stops listening and sends the transcript. An empty transcript after a long
   hold does nothing; an empty transcript after a tap (release with no

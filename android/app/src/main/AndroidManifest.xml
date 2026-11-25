@@ -17,11 +17,15 @@
     <!-- Keeps the screen on while a ride session is recording (wakelock_plus). -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Voice (Usta): microphone for speech recognition; MODIFY_AUDIO_SETTINGS
+    <!-- Voice (Sürüş Asistanı): microphone for speech recognition; MODIFY_AUDIO_SETTINGS
          routes the audio to the rider's Bluetooth intercom (HFP/SCO).
          BLUETOOTH_CONNECT (above) is the Android 12+ runtime permission for that. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- Rider notifications (D-123): local notifications built from the pulled
+         inbox; Android 13+ asks at runtime. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Feature Declarations -->
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
