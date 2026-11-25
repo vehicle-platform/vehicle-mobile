@@ -1,0 +1,20 @@
+{
+  "quantityRideDistance": "Mesafe",
+  "quantityRideTime": "Sürüş süresi",
+  "quantityRideStopCount": "Duruş",
+  "quantityRideIdleTime": "Rölanti süresi",
+  "quantityRideWarmupTime": "Isınma süresi",
+  "quantityRideEndCoolantTemp": "Bitişte soğutma suyu",
+  "quantityRideStartCoolantTemp": "Başlangıçta soğutma suyu",
+  "quantityRideFuelConsumption": "Yakıt tüketimi",
+  "quantityRideFuelUsed": "Harcanan yakıt",
+  "quantityRideRestVoltage": "Boştaki akü",
+  "quantityRideShiftCount": "Vites değişimi",
+  "quantityRideAggressiveness": "Sürüş şiddeti",
+  "logbookCompare": "Karşılaştır",
+  "logbookCompareTitle": "Sürüşleri karşılaştır",
+  "logbookCompareHint": "Her sürüşte göstermek için en fazla iki değer daha seç.",
+  "logbookRiderQuantities": "Sürüş değerleri",
+  "logbookAllSignals": "Tüm sinyaller",
+  "logbookCompareDone": "Tamam"
+}

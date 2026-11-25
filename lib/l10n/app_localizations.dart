@@ -1178,6 +1178,114 @@ abstract class AppLocalizations {
   /// **'first'**
   String get logbookFirstMark;
 
+  /// No description provided for @quantityRideDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get quantityRideDistance;
+
+  /// No description provided for @quantityRideTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride time'**
+  String get quantityRideTime;
+
+  /// No description provided for @quantityRideStopCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops'**
+  String get quantityRideStopCount;
+
+  /// No description provided for @quantityRideIdleTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle time'**
+  String get quantityRideIdleTime;
+
+  /// No description provided for @quantityRideWarmupTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up time'**
+  String get quantityRideWarmupTime;
+
+  /// No description provided for @quantityRideEndCoolantTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'Coolant at end'**
+  String get quantityRideEndCoolantTemp;
+
+  /// No description provided for @quantityRideStartCoolantTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'Coolant at start'**
+  String get quantityRideStartCoolantTemp;
+
+  /// No description provided for @quantityRideFuelConsumption.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel consumption'**
+  String get quantityRideFuelConsumption;
+
+  /// No description provided for @quantityRideFuelUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel used'**
+  String get quantityRideFuelUsed;
+
+  /// No description provided for @quantityRideRestVoltage.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery at rest'**
+  String get quantityRideRestVoltage;
+
+  /// No description provided for @quantityRideShiftCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear shifts'**
+  String get quantityRideShiftCount;
+
+  /// No description provided for @quantityRideAggressiveness.
+  ///
+  /// In en, this message translates to:
+  /// **'Riding intensity'**
+  String get quantityRideAggressiveness;
+
+  /// No description provided for @logbookCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get logbookCompare;
+
+  /// No description provided for @logbookCompareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare rides'**
+  String get logbookCompareTitle;
+
+  /// No description provided for @logbookCompareHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up to two more quantities to show on every ride.'**
+  String get logbookCompareHint;
+
+  /// No description provided for @logbookRiderQuantities.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride quantities'**
+  String get logbookRiderQuantities;
+
+  /// No description provided for @logbookAllSignals.
+  ///
+  /// In en, this message translates to:
+  /// **'All signals'**
+  String get logbookAllSignals;
+
+  /// No description provided for @logbookCompareDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get logbookCompareDone;
+
   /// No description provided for @rideLiveOpenRecord.
   ///
   /// In en, this message translates to:

@@ -665,6 +665,61 @@ class AppLocalizationsTr extends AppLocalizations {
   String get logbookFirstMark => 'ilk';
 
   @override
+  String get quantityRideDistance => 'Mesafe';
+
+  @override
+  String get quantityRideTime => 'Sürüş süresi';
+
+  @override
+  String get quantityRideStopCount => 'Duruş';
+
+  @override
+  String get quantityRideIdleTime => 'Rölanti süresi';
+
+  @override
+  String get quantityRideWarmupTime => 'Isınma süresi';
+
+  @override
+  String get quantityRideEndCoolantTemp => 'Bitişte soğutma suyu';
+
+  @override
+  String get quantityRideStartCoolantTemp => 'Başlangıçta soğutma suyu';
+
+  @override
+  String get quantityRideFuelConsumption => 'Yakıt tüketimi';
+
+  @override
+  String get quantityRideFuelUsed => 'Harcanan yakıt';
+
+  @override
+  String get quantityRideRestVoltage => 'Boştaki akü';
+
+  @override
+  String get quantityRideShiftCount => 'Vites değişimi';
+
+  @override
+  String get quantityRideAggressiveness => 'Sürüş şiddeti';
+
+  @override
+  String get logbookCompare => 'Karşılaştır';
+
+  @override
+  String get logbookCompareTitle => 'Sürüşleri karşılaştır';
+
+  @override
+  String get logbookCompareHint =>
+      'Her sürüşte göstermek için en fazla iki değer daha seç.';
+
+  @override
+  String get logbookRiderQuantities => 'Sürüş değerleri';
+
+  @override
+  String get logbookAllSignals => 'Tüm sinyaller';
+
+  @override
+  String get logbookCompareDone => 'Tamam';
+
+  @override
   String get rideLiveOpenRecord => 'Kayıt ekranını aç';
 
   @override

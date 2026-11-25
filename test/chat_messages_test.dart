@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
+import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
@@ -57,29 +59,76 @@ void main() {
   });
 
   group('chatData', () {
-    test('turns keys into labels and units and keeps values verbatim', () {
-      final data = chatData(flattenChatValue({
+    final l = lookupAppLocalizations(const Locale('en'));
+
+    test('turns numeric keys into labels and units, drops ids and strings', () {
+      final data = chatData({
+        'session_id': 'abc',
+        'defs_version': 'v0.31.0',
         'distance_km': 12.40,
         'max_speed_kmh': 98,
         'coolant_c': 91,
         'note': 'ok',
-      }, key: 'result'));
+      }, l);
       expect([for (final d in data) (d.label, d.value, d.unit)], [
         ('Distance', '12.4', 'km'),
         ('Max speed', '98', 'km/h'),
         ('Coolant', '91', '\u00b0C'),
-        ('Note', 'ok', null),
       ]);
     });
 
-    test('skips list bookkeeping rows and caps the count', () {
-      final rows = flattenChatValue({
-        for (var i = 0; i < 20; i++) 'k$i': i,
-      }, key: 'result');
-      expect(chatData(rows, max: 5), hasLength(5));
-      expect(chatData(flattenChatValue([1], key: 'result')).map((d) => d.value),
-          ['1']);
+    test('a ride summary shows only rider quantities with human labels', () {
+      final data = chatData({
+        'session_id': '20261118-090000-8394',
+        'ride_definition': 'session',
+        'defs_version': 'v0.31.0',
+        'signals': [
+          {'name': 'speedometer_error', 'status': 'missing_inputs'},
+          {'name': 'ride_ltft_mean', 'status': 'computed', 'unit': '%', 'kind': 'scalar', 'value': 1.5},
+          {'name': 'ride_idle_time', 'status': 'computed', 'unit': 's', 'kind': 'scalar', 'value': 135.8},
+          {'name': 'ride_distance', 'status': 'computed', 'unit': 'km', 'kind': 'scalar', 'value': 20.645805},
+          {'name': 'ride_stop_count', 'status': 'computed', 'unit': 'count', 'kind': 'scalar', 'value': 2.0},
+          {'name': 'ride_time', 'status': 'computed', 'unit': 's', 'kind': 'scalar', 'value': 1215.0},
+        ],
+      }, l);
+      expect([for (final d in data) (d.label, d.value, d.unit)], [
+        ('Distance', '20.6', 'km'),
+        ('Ride time', '20 min 15 s', null),
+        ('Stops', '2', null),
+        ('Idle time', '2 min 16 s', null),
+      ]);
+      final text = data.map((d) => d.label).join(' ');
+      expect(text.toLowerCase(), isNot(contains('session')));
+      expect(text.toLowerCase(), isNot(contains('version')));
+      expect(text.toLowerCase(), isNot(contains('status')));
     });
+
+    test('signal stats use the server label and the cap', () {
+      final data = chatData({
+        'values': [
+          for (var i = 0; i < 10; i++)
+            {'name': 'coolant_temp_x$i', 'unit': 'degC', 'value': 1.0 * i, 'label': 'coolant temp $i'},
+        ],
+      }, l, max: 4);
+      expect(data, hasLength(4));
+      expect(data.first.label, 'Coolant temp 0');
+      expect(data.first.unit, '\u00b0C');
+    });
+
+    test('readable fallback when nothing is known', () {
+      expect(readableName('ride_ltft_mean'), 'Ltft mean');
+    });
+  });
+
+  test('model names show as basenames without .gguf', () {
+    expect(cleanModelName('/srv/models/qwen2.5-7b-q4.gguf'), 'qwen2.5-7b-q4');
+    expect(cleanModelName('C:\\m\\x.GGUF'), 'x');
+    expect(cleanModelName('gemini-2.0-flash'), 'gemini-2.0-flash');
+    expect(
+        const AnsweringModel(
+                providerId: 'local', label: 'Local', model: '/m/a.gguf')
+            .caption,
+        'Local \u00b7 a');
   });
 
   group('chips', () {

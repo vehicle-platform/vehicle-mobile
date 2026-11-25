@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/assistant_provider.dart';
+import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
 import 'package:vehicle_mobile/ui/settings/assistant_model_screen.dart';
@@ -16,7 +17,9 @@ String activeModelText(
   final model = (choice.model?.isNotEmpty ?? false)
       ? choice.model
       : provider?.defaultModel;
-  return model == null || model.isEmpty ? label : '$label · $model';
+  return model == null || model.isEmpty
+      ? label
+      : '$label · ${cleanModelName(model)}';
 }
 
 /// Compact chip in the assistant header naming the selected provider and
