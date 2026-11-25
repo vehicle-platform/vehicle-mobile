@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/assistant_provider_client.dart';
 import 'package:vehicle_mobile/services/auth_client.dart';
 import 'package:vehicle_mobile/services/auth_events.dart';
 import 'package:vehicle_mobile/services/auth_store.dart';
@@ -9,6 +10,7 @@ import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
 import 'package:vehicle_mobile/services/voice/voice_settings.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/settings/assistant_model_screen.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
@@ -24,12 +26,16 @@ class SettingsScreen extends StatefulWidget {
       {super.key,
       this.store = const AppSettingsStore(),
       this.onSaved,
-      this.authClient});
+      this.authClient,
+      this.assistantClient});
 
   final AppSettingsStore store;
 
   /// Account calls (logout, claim a vehicle); a default client when null.
   final AuthClient? authClient;
+
+  /// Assistant model routes (D-124); a default client when null.
+  final AssistantProviderClient? assistantClient;
 
   /// Called after hosts or the upload policy changed (the shell uses it to
   /// refresh screens that depend on them, e.g. the upload action in Record).
@@ -341,6 +347,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: _setReadAnswers,
                     ),
                   ),
+                  if (_account != null)
+                    AssistantModelSection(
+                        key: ValueKey('assistant-model-$_activeId'),
+                        store: widget.store,
+                        client: widget.assistantClient),
                 ],
               ),
             ),
