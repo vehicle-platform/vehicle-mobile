@@ -16,7 +16,7 @@ import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/services/session_recorder.dart';
 import 'package:vehicle_mobile/services/session_store.dart';
 import 'package:vehicle_mobile/services/session_upload.dart';
-import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_history_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
@@ -355,7 +355,7 @@ class _RecordScreenState extends State<RecordScreen> {
                   tone: Tone.error,
                 ),
               ),
-            const NotificationBell(),
+            const HeaderActions(),
           ],
           bottom: const TabBar(tabs: [
             Tab(text: 'Record'),

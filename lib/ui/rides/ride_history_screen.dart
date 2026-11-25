@@ -6,7 +6,7 @@ import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
-import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
@@ -23,11 +23,16 @@ class RideHistoryScreen extends StatefulWidget {
     this.settingsStore = const AppSettingsStore(),
     this.client,
     this.dateRangePicker,
+    this.onOpenRide,
   });
 
   final AppSettingsStore settingsStore;
   final RideClient? client;
   final RideDateRangePicker? dateRangePicker;
+
+  /// Wide layout (D-130 item 2): opens the ride in the detail pane instead of
+  /// pushing a route.
+  final ValueChanged<String>? onOpenRide;
 
   @override
   State<RideHistoryScreen> createState() => _RideHistoryScreenState();
@@ -151,6 +156,11 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   }
 
   void _openSummary(String sessionId) {
+    final onOpen = widget.onOpenRide;
+    if (onOpen != null) {
+      onOpen(sessionId);
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => RideSummaryScreen(
@@ -173,7 +183,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       appBar: AppBar(
         title: const Text('Ride history'),
         actions: [
-          const NotificationBell(),
+          const HeaderActions(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',

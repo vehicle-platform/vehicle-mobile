@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
 import 'package:vehicle_mobile/models/telemetry_data.dart';
-import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -20,7 +20,7 @@ class DiagnosticsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Diagnostics'),
-        actions: const [NotificationBell()],
+        actions: const [HeaderActions()],
       ),
       body: ListenableBuilder(
         listenable: store,

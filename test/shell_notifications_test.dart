@@ -156,7 +156,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
           find.descendant(
-              of: find.byType(NavigationBar), matching: find.text('Asistan')),
+              of: find.byType(NavigationBar), matching: find.text('Assistant')),
           findsOneWidget);
       expect(find.text('Sürüş Asistanı'), findsOneWidget); // app bar title
       expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'),
@@ -168,8 +168,7 @@ void main() {
       await _size(tester, 390, 2000);
       await tester.pumpWidget(_shell(_center([])));
       await tester.pumpAndSettle();
-      await tester.tap(find.descendant(
-          of: find.byType(NavigationBar), matching: find.text('Settings')));
+      await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
       expect(find.text('SÜRÜŞ ASISTANI'), findsOneWidget);
       expect(find.textContaining('Usta'), findsNothing);

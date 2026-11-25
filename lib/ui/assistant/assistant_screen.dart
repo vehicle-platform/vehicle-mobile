@@ -15,7 +15,7 @@ import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/assistant/model_chip.dart';
 import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
-import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 
@@ -151,6 +151,15 @@ class _AssistantScreenState extends State<AssistantScreen>
     super.dispose();
   }
 
+  /// Language of the UI, sent as the `/chat` locale (D-130 item 5).
+  String _localeCode = 'en';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _localeCode = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+  }
+
   Future<void> _send(String raw) async {
     final text = raw.trim();
     if (text.isEmpty || _sending) return;
@@ -257,6 +266,7 @@ class _AssistantScreenState extends State<AssistantScreen>
         apiToken: settings.apiToken!,
         message: text,
         sessionId: _sessionId,
+        locale: _localeCode,
       );
 
   ChatMessage _describe(ChatResult result, AppSettings settings) {
@@ -322,7 +332,7 @@ class _AssistantScreenState extends State<AssistantScreen>
           ],
         ),
         actions: [
-          const NotificationBell(),
+          const HeaderActions(),
           if (_messages.isNotEmpty)
             IconButton(
               tooltip: 'Clear conversation',

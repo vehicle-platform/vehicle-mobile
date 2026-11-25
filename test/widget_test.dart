@@ -5,7 +5,7 @@ import 'package:vehicle_mobile/main.dart';
 import 'support/signed_in.dart';
 
 void main() {
-  testWidgets('App shell shows the Live screen and the five destinations', (WidgetTester tester) async {
+  testWidgets('App shell shows the Live screen and the four destinations', (WidgetTester tester) async {
     // Phone width: the bottom navigation bar (width rule, below 600 px).
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -20,8 +20,12 @@ void main() {
     // Navigation bar destinations.
     final bar = find.byType(NavigationBar);
     expect(bar, findsOneWidget);
-    for (final label in ['Live', 'Signals', 'Record', 'Diagnostics', 'Settings']) {
+    for (final label in ['Ride', 'Garage', 'Logbook', 'Assistant']) {
       expect(find.descendant(of: bar, matching: find.text(label)), findsOneWidget);
+    }
+    // Ride sub-navigation.
+    for (final label in ['LIVE', 'SIGNALS', 'RECORD', 'DIAGNOSTICS']) {
+      expect(find.text(label), findsOneWidget, reason: label);
     }
 
     // The removed brand badge and telematics form are gone.
@@ -41,11 +45,11 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Signals')));
+    await tester.tap(find.text('SIGNALS'));
     await tester.pump();
     expect(find.text('NO DATA'), findsWidgets);
 
-    await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Diagnostics')));
+    await tester.tap(find.text('DIAGNOSTICS'));
     await tester.pump();
     expect(find.text('LINK'), findsOneWidget);
 
