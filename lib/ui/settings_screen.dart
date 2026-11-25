@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/auth_client.dart';
+import 'package:vehicle_mobile/services/auth_events.dart';
+import 'package:vehicle_mobile/services/auth_store.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
 import 'package:vehicle_mobile/services/voice/voice_settings.dart';
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Host list and upload policy (D-121 item 4). The list is the rider's own
@@ -16,9 +21,15 @@ import 'package:vehicle_mobile/ui/widgets/common.dart';
 /// this being filled in -- only the server features do.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen(
-      {super.key, this.store = const AppSettingsStore(), this.onSaved});
+      {super.key,
+      this.store = const AppSettingsStore(),
+      this.onSaved,
+      this.authClient});
 
   final AppSettingsStore store;
+
+  /// Account calls (logout, claim a vehicle); a default client when null.
+  final AuthClient? authClient;
 
   /// Called after hosts or the upload policy changed (the shell uses it to
   /// refresh screens that depend on them, e.g. the upload action in Record).
@@ -37,6 +48,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loading = true;
   bool _checking = false;
   bool _loadFailed = false;
+  AccountInfo? _account;
+  bool _hasSession = false;
+  String? _accountMessage;
+  late final AuthClient _auth = widget.authClient ?? AuthClient();
 
   @override
   void initState() {
@@ -50,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     AppSettings settings;
     var readAnswers = defaultReadAnswers();
     final tokens = <String, bool>{};
+    AccountInfo? account;
     try {
       hosts = await hostStore.load();
       settings = await widget.store.load(reprobe: reprobe);
@@ -57,6 +73,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         tokens[host.id] = (await hostStore.readToken(host.id)) != null;
       }
       readAnswers = await const VoiceSettings().readAnswers();
+      if (settings.hostId != null) {
+        account = await AuthStore(hostStore).readAccount(settings.hostId!);
+      }
     } catch (_) {
       // Keystore or preferences unavailable: show an empty list, never a spinner forever.
       if (!mounted) return;
@@ -74,6 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ..clear()
         ..addAll(tokens);
       _activeId = settings.hostId;
+      _account = account;
+      _hasSession = (settings.apiToken ?? '').isNotEmpty;
       _uploadOnlyOnWifi = settings.uploadOnlyOnWifi;
       _readAnswers = readAnswers;
       _loading = false;
@@ -142,6 +163,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _changed();
   }
 
+  Future<void> _logout() async {
+    final settings = await widget.store.load();
+    final id = settings.hostId;
+    if (id == null) return;
+    final token = settings.apiToken ?? '';
+    // Revoke on the server when there is an account session; the local session
+    // is dropped even when the server cannot be reached.
+    if (_account != null && token.isNotEmpty && settings.isServerConfigured) {
+      await _auth.logout(baseUrl: settings.serverBaseUrl!, token: token);
+    }
+    await AuthStore(widget.store.hosts).clearSession(id);
+    HostResolver.invalidate();
+    widget.onSaved?.call();
+    await _load();
+  }
+
+  Future<void> _claim() async {
+    final input = await showDialog<(String, String)>(
+        context: context, builder: (_) => const _ClaimDialog());
+    if (input == null) return;
+    final settings = await widget.store.load();
+    final id = settings.hostId;
+    if (id == null || !settings.isServerConfigured) return;
+    final result = await _auth.claimVehicle(
+      baseUrl: settings.serverBaseUrl!,
+      token: settings.apiToken ?? '',
+      vehicleId: input.$1,
+      claimCode: input.$2,
+    );
+    if (!mounted) return;
+    if (result.isSuccess && result.vehicles != null) {
+      final store = AuthStore(widget.store.hosts);
+      final current = _account;
+      if (current != null) {
+        await store.saveAccount(
+            id, AccountInfo(username: current.username, vehicles: result.vehicles!));
+      }
+      setState(() => _accountMessage = null);
+      await _load();
+    } else {
+      setState(() => _accountMessage =
+          authFailureTextForClaim(result));
+    }
+  }
+
   Future<void> _recheck() async {
     setState(() => _checking = true);
     await _load(reprobe: true);
@@ -164,15 +230,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final t = context.vehicle;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        actions: const [NotificationBell()],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : ContentColumn(
+              child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                   Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _accountSection(context),
+                  const SizedBox(height: Spacing.lg),
                   SectionLabel(
                     'Hosts (vehicle-server)',
                     trailing: IconButton(
@@ -255,14 +327,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: Spacing.lg),
-                  const SectionLabel('Usta'),
+                  const SectionLabel('Sürüş Asistanı'),
                   SectionCard(
                     child: SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text('Cevapları sesli oku',
                           style: theme.textTheme.titleSmall),
                       subtitle: Text(
-                        'Usta cevabın metnini sesli okur. Telefonda varsayılan açık, web ve bilgisayarda kapalı.',
+                        'Sürüş Asistanı cevabın metnini sesli okur. Telefonda varsayılan açık, web ve bilgisayarda kapalı.',
                         style: theme.textTheme.bodySmall,
                       ),
                       value: _readAnswers,
@@ -272,6 +344,148 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            ),
+    );
+  }
+
+  Widget _accountSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final account = _account;
+    final children = <Widget>[];
+    if (account != null) {
+      children.add(Text('Giriş yapan: ${account.username}',
+          style: theme.textTheme.titleSmall));
+      if (account.vehicles.isEmpty) {
+        children.add(Padding(
+          padding: const EdgeInsets.only(top: Spacing.xs),
+          child: Text('Bu hesaba bağlı araç yok.', style: theme.textTheme.bodySmall),
+        ));
+      }
+      for (final v in account.vehicles) {
+        children.add(Padding(
+          padding: const EdgeInsets.only(top: Spacing.sm),
+          child: Row(children: [
+            const Icon(Icons.two_wheeler, size: IconSizes.regular),
+            const SizedBox(width: Spacing.sm),
+            Expanded(child: Text(v.name, style: theme.textTheme.bodyMedium)),
+            Text(v.vehicleId, style: theme.textTheme.bodySmall),
+          ]),
+        ));
+      }
+    } else if (_hasSession) {
+      children.add(Text("Cihaz token'ı ile bağlı", style: theme.textTheme.titleSmall));
+    } else {
+      children.add(Text('Giriş yapılmadı', style: theme.textTheme.titleSmall));
+    }
+    if (_accountMessage != null) {
+      children.add(Padding(
+        padding: const EdgeInsets.only(top: Spacing.sm),
+        child: InfoBanner(
+            icon: Icons.info_outline, tone: Tone.error, text: _accountMessage!),
+      ));
+    }
+    children.add(const SizedBox(height: Spacing.md));
+    children.add(Wrap(
+      spacing: Spacing.sm,
+      runSpacing: Spacing.sm,
+      children: [
+        if (account != null)
+          OutlinedButton.icon(
+            key: const ValueKey('claim-vehicle'),
+            onPressed: _claim,
+            icon: const Icon(Icons.add),
+            label: const Text('Araç ekle'),
+          ),
+        if (_hasSession)
+          OutlinedButton.icon(
+            key: const ValueKey('logout'),
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            label: const Text('Çıkış yap'),
+          )
+        else
+          FilledButton(
+            key: const ValueKey('request-login'),
+            onPressed: () => AuthEvents.emit(AuthEvent.loginRequested),
+            child: const Text('Giriş yap'),
+          ),
+      ],
+    ));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionLabel('Hesap'),
+        SectionCard(
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        ),
+      ],
+    );
+  }
+}
+
+/// Text of a failed vehicle claim.
+String authFailureTextForClaim(AuthResult result) => switch (result.outcome) {
+      AuthOutcome.forbidden => 'Araç kimliği veya kod geçersiz.',
+      AuthOutcome.rateLimited => 'Çok fazla deneme. Biraz sonra tekrar dene.',
+      AuthOutcome.unreachable => 'Sunucuya ulaşılamadı.',
+      AuthOutcome.unauthorized => 'Oturum sona erdi.',
+      _ => 'Araç eklenemedi: ${result.message ?? 'bilinmeyen hata'}',
+    };
+
+class _ClaimDialog extends StatefulWidget {
+  const _ClaimDialog();
+
+  @override
+  State<_ClaimDialog> createState() => _ClaimDialogState();
+}
+
+class _ClaimDialogState extends State<_ClaimDialog> {
+  final _vehicleId = TextEditingController();
+  final _code = TextEditingController();
+
+  @override
+  void dispose() {
+    _vehicleId.dispose();
+    _code.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Araç ekle'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _vehicleId,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: const InputDecoration(labelText: 'Araç kimliği'),
+          ),
+          const SizedBox(height: Spacing.md),
+          TextField(
+            controller: _code,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: const InputDecoration(labelText: 'Talep kodu'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+        TextButton(
+          onPressed: () {
+            final id = _vehicleId.text.trim();
+            final code = _code.text.trim();
+            if (id.isEmpty || code.isEmpty) return;
+            Navigator.pop(context, (id, code));
+          },
+          child: const Text('Ekle'),
+        ),
+      ],
     );
   }
 }

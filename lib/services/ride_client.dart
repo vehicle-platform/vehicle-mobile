@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:vehicle_mobile/models/bringup_result.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
+import 'package:vehicle_mobile/services/auth_events.dart';
 import 'package:vehicle_mobile/services/http_client_factory.dart';
 import 'package:vehicle_mobile/services/http_message.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
@@ -129,6 +130,7 @@ class RideClient {
                 statusCode: 200, message: error.message);
           }
         case 401:
+          AuthEvents.reportUnauthorized();
           return RideResult(
             RideOutcome.unauthorized,
             statusCode: 401,

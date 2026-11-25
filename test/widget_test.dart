@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vehicle_mobile/main.dart';
 
+import 'support/signed_in.dart';
+
 void main() {
   testWidgets('App shell shows the Live screen and the five destinations', (WidgetTester tester) async {
-    await tester.pumpWidget(Cl250TelemetryApp());
+    // Phone width: the bottom navigation bar (width rule, below 600 px).
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(Cl250TelemetryApp(settingsStore: signedInStore()));
+    await tester.pump();
+    await tester.pump();
 
     // App bar title of the Live destination.
     expect(find.text('CL250 Telemetry'), findsOneWidget);
@@ -25,7 +33,13 @@ void main() {
   });
 
   testWidgets('Navigation switches between destinations', (WidgetTester tester) async {
-    await tester.pumpWidget(Cl250TelemetryApp());
+    // Phone width: the bottom navigation bar (width rule, below 600 px).
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(Cl250TelemetryApp(settingsStore: signedInStore()));
+    await tester.pump();
+    await tester.pump();
 
     await tester.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('Signals')));
     await tester.pump();
