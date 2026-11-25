@@ -1,0 +1,40 @@
+{
+  "@@locale": "en",
+  "appTitle": "Vehicle",
+  "assistantName": "Ride Assistant",
+  "navRide": "Ride",
+  "navGarage": "Garage",
+  "navLogbook": "Logbook",
+  "navAssistant": "Assistant",
+  "navSettings": "Settings",
+  "rideSubLive": "Live",
+  "rideSubSignals": "Signals",
+  "rideSubRecord": "Record",
+  "rideSubDiagnostics": "Diagnostics",
+  "garageInbox": "Inbox",
+  "garageFaults": "Faults",
+  "garageMarkAllRead": "Mark all as read",
+  "garageRefresh": "Refresh",
+  "garageSelectItem": "Select an item to see its details",
+  "logbookSelectRide": "Select a ride to see its details",
+  "commandBarTitle": "Command bar",
+  "commandBarHint": "Jump to a screen or ask a question",
+  "commandBarShortcut": "Ctrl+K",
+  "commandBarNoMatch": "No matching command",
+  "commandGoTo": "Go to {destination}",
+  "@commandGoTo": {
+    "placeholders": {"destination": {"type": "String"}}
+  },
+  "commandAsk": "Ask {assistant}: {query}",
+  "@commandAsk": {
+    "placeholders": {"assistant": {"type": "String"}, "query": {"type": "String"}}
+  },
+  "commandOpenPanel": "Open the assistant panel",
+  "commandClosePanel": "Close the assistant panel",
+  "panelToggleOpen": "Show assistant panel",
+  "panelToggleClose": "Hide assistant panel",
+  "settingsLanguage": "Language",
+  "settingsLanguageHint": "Also the language of the assistant's answers.",
+  "languageEnglish": "English",
+  "languageTurkish": "Türkçe"
+}

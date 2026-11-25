@@ -23,11 +23,22 @@
   "commandBarNoMatch": "Eşleşen komut yok",
   "commandGoTo": "{destination} ekranına git",
   "@commandGoTo": {
-    "placeholders": {"destination": {"type": "String"}}
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      }
+    }
   },
   "commandAsk": "{assistant}'na sor: {query}",
   "@commandAsk": {
-    "placeholders": {"assistant": {"type": "String"}, "query": {"type": "String"}}
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      },
+      "query": {
+        "type": "String"
+      }
+    }
   },
   "commandOpenPanel": "Asistan panelini aç",
   "commandClosePanel": "Asistan panelini kapat",

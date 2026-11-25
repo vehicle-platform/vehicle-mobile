@@ -54,13 +54,13 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       foregroundColor: t.textPrimary,
     ),
     cardTheme: CardThemeData(
-      color: t.surface,
+      color: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Radii.card),
-        side: BorderSide(color: t.outline),
+        side: BorderSide(color: t.hairline),
       ),
     ),
     dividerTheme: DividerThemeData(color: t.outline, thickness: 1, space: 1),

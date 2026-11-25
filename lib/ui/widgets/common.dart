@@ -61,7 +61,8 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// Surface card with the standard padding.
+/// A flat section (D-130 item 1): content between hairline rules, no fill and
+/// no rounded card. [borderColor] switches the rule to a state colour.
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
@@ -81,9 +82,10 @@ class SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
-        border: Border.all(color: borderColor ?? t.outline, width: borderColor == null ? 1 : 2),
+        border: Border(
+          top: BorderSide(color: borderColor ?? t.hairline),
+          bottom: BorderSide(color: borderColor ?? t.hairline),
+        ),
       ),
       // Transparent Material so ink effects of list tiles / switches inside
       // the card paint above the card background.
@@ -115,12 +117,11 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = toneColor(context, tone);
     return Container(
-      constraints: const BoxConstraints(minHeight: 36),
+      constraints: const BoxConstraints(minHeight: 32),
       padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.xs),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(Radii.chip),
-        border: Border.all(color: color.withValues(alpha: 0.7)),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -156,9 +157,14 @@ class InfoBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: context.vehicle.surface,
         borderRadius: BorderRadius.circular(Radii.chip),
-        border: Border.all(color: color, width: 1.5),
+        border: Border(
+          left: BorderSide(color: color, width: 4),
+          top: BorderSide(color: context.vehicle.hairline),
+          right: BorderSide(color: context.vehicle.hairline),
+          bottom: BorderSide(color: context.vehicle.hairline),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,9 +201,8 @@ class StateChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: Spacing.xs),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(Radii.chip),
-        border: Border.all(color: color.withValues(alpha: 0.7)),
+        border: Border.all(color: color),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -293,7 +298,7 @@ class SignalTile extends StatelessWidget {
               children: [
                 Text(view.valueText, style: style),
                 const SizedBox(width: Spacing.sm),
-                Text(view.unitText, style: theme.textTheme.titleMedium!.copyWith(color: t.accent)),
+                Text(view.unitText, style: numberFace(18, FontWeight.w500, color: t.textSecondary)),
               ],
             ),
           ),
@@ -303,7 +308,7 @@ class SignalTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(Radii.chip),
               child: LinearProgressIndicator(
                 value: fraction ?? 0,
-                minHeight: 8,
+                minHeight: 4,
                 backgroundColor: t.surfaceRaised,
                 color: t.accent,
               ),

@@ -23,11 +23,22 @@
   "commandBarNoMatch": "No matching command",
   "commandGoTo": "Go to {destination}",
   "@commandGoTo": {
-    "placeholders": {"destination": {"type": "String"}}
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      }
+    }
   },
   "commandAsk": "Ask {assistant}: {query}",
   "@commandAsk": {
-    "placeholders": {"assistant": {"type": "String"}, "query": {"type": "String"}}
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      },
+      "query": {
+        "type": "String"
+      }
+    }
   },
   "commandOpenPanel": "Open the assistant panel",
   "commandClosePanel": "Close the assistant panel",
