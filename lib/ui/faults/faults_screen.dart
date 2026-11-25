@@ -4,7 +4,9 @@ import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Fault catalogue of the vehicle from the active host (`GET /faults`). Texts
@@ -78,6 +80,7 @@ class _FaultsScreenState extends State<FaultsScreen> {
       appBar: AppBar(
         title: const Text('Faults'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -85,7 +88,7 @@ class _FaultsScreenState extends State<FaultsScreen> {
           ),
         ],
       ),
-      body: _body(),
+      body: ContentColumn(child: _body()),
     );
   }
 

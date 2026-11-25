@@ -97,7 +97,7 @@ void main() {
     expect(find.text(assistantExampleQuestions.first),
         findsOneWidget); // user bubble
     expect(find.text('Son sürüşün 12.4 km idi.'), findsOneWidget);
-    expect(find.text('Usta'), findsWidgets);
+    expect(find.text('Asistan'), findsWidgets);
     expect(find.text('LLM'), findsNothing);
     expect(find.textContaining('get_ride_summary', findRichText: true),
         findsOneWidget);

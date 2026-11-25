@@ -22,7 +22,7 @@ void main() {
 
     final bar = find.byType(NavigationBar);
     expect(bar, findsOneWidget);
-    for (final label in ['Usta', 'Rides', 'Faults', 'Settings']) {
+    for (final label in ['Asistan', 'Rides', 'Faults', 'Settings']) {
       expect(
           find.descendant(of: bar, matching: find.text(label)), findsOneWidget,
           reason: label);
@@ -32,7 +32,7 @@ void main() {
           reason: label);
     }
     // Opens on the assistant.
-    expect(find.text('Merhaba, ben Usta. Ne öğrenmek istersin?'), findsOneWidget);
+    expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'), findsOneWidget);
   });
 
   testWidgets('a wide computer window uses a navigation rail', (tester) async {

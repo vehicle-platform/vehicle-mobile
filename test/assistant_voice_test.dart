@@ -355,7 +355,7 @@ void main() {
       expect(got, isEmpty);
     });
 
-    testWidgets('the shell opens Usta and the screen starts listening',
+    testWidgets('the shell opens the assistant and the screen starts listening',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
       tester.view.physicalSize = const Size(1200, 800);
@@ -379,11 +379,11 @@ void main() {
           of: find.byType(NavigationRail), matching: find.text('Settings')));
       await tester.pumpAndSettle();
       expect(
-          find.text('Merhaba, ben Usta. Ne öğrenmek istersin?'), findsNothing);
+          find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'), findsNothing);
 
       await intercom.nativeVoiceCommand();
       await _settle(tester);
-      expect(find.text('Merhaba, ben Usta. Ne öğrenmek istersin?'),
+      expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'),
           findsOneWidget);
       expect(voice.state, VoiceState.listening);
       expect(stt.listenCalls, 1);

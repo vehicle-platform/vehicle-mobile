@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'package:vehicle_mobile/models/chat_message.dart';
+import 'package:vehicle_mobile/services/auth_events.dart';
 import 'package:vehicle_mobile/services/http_client_factory.dart';
 import 'package:vehicle_mobile/services/http_message.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
@@ -111,6 +112,7 @@ class ChatClient {
                 statusCode: 200, message: error.message);
           }
         case 401:
+          AuthEvents.reportUnauthorized();
           return ChatResult(ChatOutcome.unauthorized,
               statusCode: 401, message: extractHttpMessage(response));
         case 422:

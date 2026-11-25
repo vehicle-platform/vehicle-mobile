@@ -6,7 +6,9 @@ import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
@@ -171,6 +173,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       appBar: AppBar(
         title: const Text('Ride history'),
         actions: [
+          const NotificationBell(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -178,7 +181,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           ),
         ],
       ),
-      body: _body(),
+      body: ContentColumn(child: _body()),
     );
   }
 
@@ -224,24 +227,20 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(Spacing.xl),
-                children: [
-                  const SizedBox(height: 80),
-                  const Icon(Icons.route_outlined, size: 40),
-                  const SizedBox(height: Spacing.md),
-                  const Center(child: Text('No rides in this range.')),
-                  if (table.skipped > 0) ...[
-                    const SizedBox(height: Spacing.sm),
-                    Center(
-                      child: Text(
-                        '${table.skipped} session${table.skipped == 1 ? '' : 's'} without a stored summary skipped.',
-                        textAlign: TextAlign.center,
-                      ),
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: constraints.maxHeight,
+                    child: EmptyState(
+                      icon: Icons.route_outlined,
+                      message: 'No rides in this range.',
+                      hint: table.skipped > 0
+                          ? '${table.skipped} session${table.skipped == 1 ? '' : 's'} without a stored summary skipped.'
+                          : null,
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
