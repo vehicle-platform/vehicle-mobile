@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
+import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/readout.dart';
 
@@ -186,7 +187,7 @@ class DataCard extends StatelessWidget {
     );
     final args = flattenChatValue(tool.arguments, labels: labels);
     final resultRows = flattenChatValue(result, key: 'result', labels: labels);
-    final data = chatData(resultRows);
+    final data = chatData(result, l);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: Spacing.md),

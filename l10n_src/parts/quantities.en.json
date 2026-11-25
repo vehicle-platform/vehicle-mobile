@@ -1,0 +1,20 @@
+{
+  "quantityRideDistance": "Distance",
+  "quantityRideTime": "Ride time",
+  "quantityRideStopCount": "Stops",
+  "quantityRideIdleTime": "Idle time",
+  "quantityRideWarmupTime": "Warm-up time",
+  "quantityRideEndCoolantTemp": "Coolant at end",
+  "quantityRideStartCoolantTemp": "Coolant at start",
+  "quantityRideFuelConsumption": "Fuel consumption",
+  "quantityRideFuelUsed": "Fuel used",
+  "quantityRideRestVoltage": "Battery at rest",
+  "quantityRideShiftCount": "Gear shifts",
+  "quantityRideAggressiveness": "Riding intensity",
+  "logbookCompare": "Compare",
+  "logbookCompareTitle": "Compare rides",
+  "logbookCompareHint": "Pick up to two more quantities to show on every ride.",
+  "logbookRiderQuantities": "Ride quantities",
+  "logbookAllSignals": "All signals",
+  "logbookCompareDone": "Done"
+}

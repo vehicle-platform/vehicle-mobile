@@ -667,6 +667,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logbookFirstMark => 'first';
 
   @override
+  String get quantityRideDistance => 'Distance';
+
+  @override
+  String get quantityRideTime => 'Ride time';
+
+  @override
+  String get quantityRideStopCount => 'Stops';
+
+  @override
+  String get quantityRideIdleTime => 'Idle time';
+
+  @override
+  String get quantityRideWarmupTime => 'Warm-up time';
+
+  @override
+  String get quantityRideEndCoolantTemp => 'Coolant at end';
+
+  @override
+  String get quantityRideStartCoolantTemp => 'Coolant at start';
+
+  @override
+  String get quantityRideFuelConsumption => 'Fuel consumption';
+
+  @override
+  String get quantityRideFuelUsed => 'Fuel used';
+
+  @override
+  String get quantityRideRestVoltage => 'Battery at rest';
+
+  @override
+  String get quantityRideShiftCount => 'Gear shifts';
+
+  @override
+  String get quantityRideAggressiveness => 'Riding intensity';
+
+  @override
+  String get logbookCompare => 'Compare';
+
+  @override
+  String get logbookCompareTitle => 'Compare rides';
+
+  @override
+  String get logbookCompareHint =>
+      'Pick up to two more quantities to show on every ride.';
+
+  @override
+  String get logbookRiderQuantities => 'Ride quantities';
+
+  @override
+  String get logbookAllSignals => 'All signals';
+
+  @override
+  String get logbookCompareDone => 'Done';
+
+  @override
   String get rideLiveOpenRecord => 'Open the Record screen';
 
   @override

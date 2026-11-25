@@ -370,6 +370,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final wide = Breakpoints.isWide(width);
     final railLayout = Breakpoints.usesRail(width);
 
+    // List + detail panes need the main area's width before it is laid out:
+    // the window minus the rail (80 + 1 px divider) and the side panel.
+    final railWidth = railLayout ? 81.0 : 0.0;
+    final panelShown = wide && _tab != ShellTab.assistant && _panelOpen;
+    _twoPane =
+        wide && MasterDetail.fits(width - railWidth - (panelShown ? 400 : 0));
     final others = [
       for (final tab in _tabs)
         if (tab != ShellTab.assistant) tab
@@ -392,7 +398,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       const panelWidth = 400.0;
       final mainWidth =
           assistantFull ? 0.0 : (showPanel ? avail - panelWidth : avail);
-      _twoPane = wide && MasterDetail.fits(mainWidth);
       final assistantWidth =
           assistantFull ? avail : (showPanel ? panelWidth : 0.0);
       return Stack(

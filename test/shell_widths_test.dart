@@ -83,6 +83,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('1280 px: Logbook shows list and an empty detail pane',
+      (tester) async {
+    await _pump(tester, 1280);
+    await tester.tap(find.descendant(
+        of: find.byType(NavigationRail), matching: find.text('Logbook')));
+    await tester.pumpAndSettle();
+    expect(find.text('Select a ride to see its details'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('900 px: single panes without the detail placeholder',
+      (tester) async {
+    await _pump(tester, 700);
+    await tester.tap(find.descendant(
+        of: find.byType(NavigationRail), matching: find.text('Logbook')));
+    await tester.pumpAndSettle();
+    expect(find.text('Select a ride to see its details'), findsNothing);
+  });
+
   testWidgets('Turkish locale names the assistant Sürüş Asistanı',
       (tester) async {
     await _pump(tester, 390, locale: const Locale('tr'));

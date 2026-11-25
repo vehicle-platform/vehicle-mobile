@@ -13,6 +13,7 @@ import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
+import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 
@@ -102,12 +103,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
   List<String> _validSelection(RidesTable table) {
     final names = table.columns.map((column) => column.name).toSet();
-    final kept =
-        _selected.where(names.contains).take(2).toList(growable: false);
-    if (kept.isNotEmpty) return kept;
-    return table.columns
+    return _selected
+        .where((name) => names.contains(name) && !logbookBaseColumns.contains(name))
         .take(2)
-        .map((column) => column.name)
         .toList(growable: false);
   }
 
@@ -147,10 +145,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   void _toggleColumn(String name) {
     setState(() {
       if (_selected.contains(name)) {
-        if (_selected.length > 1) {
-          _selected =
-              _selected.where((value) => value != name).toList(growable: false);
-        }
+        _selected =
+            _selected.where((value) => value != name).toList(growable: false);
       } else if (_selected.length < 2) {
         _selected = [..._selected, name];
       }
@@ -235,7 +231,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
         children: [
           RideCleartextWarning(
               settings: settings, padding: RideCleartextWarning.screenPadding),
-          _rangeBar(),
+          _rangeBar(table),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
@@ -266,8 +262,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
         if (_loading) const LinearProgressIndicator(minHeight: 2),
         RideCleartextWarning(
             settings: settings, padding: RideCleartextWarning.screenPadding),
-        _rangeBar(),
-        _columnChooser(table),
+        _rangeBar(table),
         Expanded(
           child: RefreshIndicator(
             onRefresh: _refresh,
@@ -292,7 +287,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     );
   }
 
-  Widget _rangeBar() {
+  Widget _rangeBar(RidesTable table) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0),
       child: Column(
@@ -323,6 +318,13 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                   icon: const Icon(Icons.close, size: 18),
                   label: Text(context.l10n.logbookClear),
                 ),
+              TextButton.icon(
+                onPressed: () => _openCompare(table),
+                icon: const Icon(Icons.compare_arrows, size: 18),
+                label: Text(_selected.isEmpty
+                    ? context.l10n.logbookCompare
+                    : '${context.l10n.logbookCompare} (${_selected.length})'),
+              ),
             ],
           ),
         ],
@@ -330,30 +332,91 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     );
   }
 
-  Widget _columnChooser(RidesTable table) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, 0, Spacing.lg, Spacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionLabel(context.l10n.logbookColumns,
-              trailing: Text(context.l10n.logbookUpToTwo)),
-          Wrap(
-            spacing: Spacing.sm,
-            runSpacing: Spacing.xs,
-            children: [
-              for (final column in table.columns)
-                FilterChip(
-                  label: Text(column.name),
-                  selected: _selected.contains(column.name),
-                  onSelected:
-                      !_selected.contains(column.name) && _selected.length >= 2
+  /// The compare picker (D-130 follow-up): up to two extra quantities per
+  /// ride. Rider quantities first; engineering signals under "All signals".
+  Future<void> _openCompare(RidesTable table) {
+    final l = context.l10n;
+    final names = table.columns.map((c) => c.name).toList(growable: false);
+    final rider = [
+      for (final n in riderQuantityOrder)
+        if (names.contains(n) && !logbookBaseColumns.contains(n)) n,
+    ];
+    final engineering = [
+      for (final n in names)
+        if (!rider.contains(n) && !logbookBaseColumns.contains(n)) n,
+    ];
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          Widget chips(List<String> list) => Wrap(
+                spacing: Spacing.sm,
+                runSpacing: Spacing.xs,
+                children: [
+                  for (final name in list)
+                    FilterChip(
+                      label: Text(quantityText(l, name)),
+                      selected: _selected.contains(name),
+                      onSelected: !_selected.contains(name) &&
+                              _selected.length >= 2
                           ? null
-                          : (_) => _toggleColumn(column.name),
+                          : (_) {
+                              _toggleColumn(name);
+                              setSheetState(() {});
+                            },
+                    ),
+                ],
+              );
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.8),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.lg, 0, Spacing.lg, Spacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l.logbookCompareTitle,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: Spacing.xs),
+                    Text(l.logbookCompareHint,
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: Spacing.lg),
+                    if (rider.isNotEmpty) ...[
+                      SectionLabel(l.logbookRiderQuantities),
+                      chips(rider),
+                    ],
+                    if (engineering.isNotEmpty)
+                      Theme(
+                        data: Theme.of(context)
+                            .copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          title: Text(l.logbookAllSignals,
+                              style: Theme.of(context).textTheme.titleSmall),
+                          childrenPadding:
+                              const EdgeInsets.only(bottom: Spacing.md),
+                          expandedAlignment: Alignment.centerLeft,
+                          children: [chips(engineering)],
+                        ),
+                      ),
+                    const SizedBox(height: Spacing.sm),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: Text(l.logbookCompareDone),
+                      ),
+                    ),
+                  ],
                 ),
-            ],
-          ),
-        ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -382,10 +445,14 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   }
 
   Widget _rideRow(RidesTable table, RideRow row) {
-    final theme = Theme.of(context);
     final t = context.vehicle;
+    final shown = [
+      for (final name in logbookBaseColumns)
+        if (table.columns.any((c) => c.name == name)) name,
+      ..._selected,
+    ];
     final readouts = [
-      for (final name in _selected) _valueReadout(table, row, name),
+      for (final name in shown) _valueReadout(table, row, name),
     ].whereType<Widget>().toList(growable: false);
     return DecoratedBox(
       decoration:
@@ -404,8 +471,6 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                     : formatUtc(row.createdUtc!),
                 style: numberFace(20, FontWeight.w600, color: t.textPrimary),
               ),
-              const SizedBox(height: Spacing.xs),
-              Text(row.sessionId, style: theme.textTheme.bodySmall),
               if (readouts.isNotEmpty) ...[
                 const SizedBox(height: Spacing.md),
                 Wrap(
@@ -433,9 +498,11 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Readout(
-          label: column.name,
-          value: formatRideValue(value, range.min, range.max),
-          unit: column.unit,
+          label: quantityText(context.l10n, column.name),
+          value: column.unit == 's' || column.unit == 'count'
+              ? formatQuantity(value, column.unit)
+              : formatRideValue(value, range.min, range.max),
+          unit: quantityUnit(column.unit),
           size: ReadoutSize.small,
         ),
         if (flag != null)

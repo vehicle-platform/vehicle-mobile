@@ -52,7 +52,7 @@ class AnsweringModel {
 
   /// `label · model`, or just the label when the provider has no model name.
   String get caption {
-    final name = model;
+    final name = model == null ? null : cleanModelName(model!);
     return name == null || name.isEmpty ? label : '$label · $name';
   }
 
@@ -265,61 +265,15 @@ class ChatFlattenLabels {
   static String _more(int n) => '+$n more';
 }
 
-/// One labelled value of a data card: the label and unit come from the key of
-/// the tool result (`distance_km` -> "Distance", "km"); the value is shown
-/// exactly as the server sent it (invariant 7: never rounded or converted).
-class ChatDatum {
-  const ChatDatum({required this.label, required this.value, this.unit});
-
-  final String label;
-  final String value;
-  final String? unit;
-}
-
-const Map<String, String> _unitSuffixes = {
-  'kmh': 'km/h',
-  'kph': 'km/h',
-  'km': 'km',
-  'rpm': 'rpm',
-  'pct': '%',
-  'percent': '%',
-  'kpa': 'kPa',
-  'min': 'min',
-  'ms': 'ms',
-  'c': '\u00b0C',
-  'v': 'V',
-  'a': 'A',
-  's': 's',
-  'm': 'm',
-  'g': 'g',
-};
-
-/// Turns the flattened [rows] of a tool result into data-card values: the
-/// leading `result.` is dropped, a trailing `_unit` suffix becomes the unit,
-/// list bookkeeping rows (`path`, `path[...]`) are skipped.
-List<ChatDatum> chatData(List<ChatRow> rows, {int max = 8}) {
-  final data = <ChatDatum>[];
-  for (final row in rows) {
-    if (data.length >= max) break;
-    if (row.key.contains('[...]') || row.key == '...') continue;
-    var key = row.key.startsWith('result.') ? row.key.substring(7) : row.key;
-    if (key == 'result' || key.isEmpty) continue;
-    String? unit;
-    final segments = key.split('.');
-    final last = segments.last;
-    final cut = last.lastIndexOf('_');
-    if (cut > 0) {
-      final suffix = last.substring(cut + 1).toLowerCase();
-      final mapped = _unitSuffixes[suffix];
-      if (mapped != null) {
-        unit = mapped;
-        segments[segments.length - 1] = last.substring(0, cut);
-      }
-    }
-    key = segments.join(' ').replaceAll('_', ' ').replaceAll('[', ' ').replaceAll(']', '').trim();
-    if (key.isEmpty) continue;
-    final label = key[0].toUpperCase() + key.substring(1);
-    data.add(ChatDatum(label: label, value: row.value, unit: unit));
+/// A model name for display: a path or a `.gguf` file name shows as its
+/// basename without the extension (`/models/qwen2.5-7b-q4.gguf` ->
+/// `qwen2.5-7b-q4`); other names stay as they are.
+String cleanModelName(String model) {
+  var name = model.trim();
+  final slash = name.lastIndexOf(RegExp(r'[/\\]'));
+  if (slash >= 0) name = name.substring(slash + 1);
+  if (name.toLowerCase().endsWith('.gguf')) {
+    name = name.substring(0, name.length - 5);
   }
-  return data;
+  return name.isEmpty ? model.trim() : name;
 }
