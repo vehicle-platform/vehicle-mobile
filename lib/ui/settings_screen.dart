@@ -145,16 +145,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete host?'),
-        content: Text(
-            'Removes "${host.name}" and its device token from this device.'),
+        title: Text(ctx.l10n.settingsDeleteHostTitle),
+        content: Text(ctx.l10n.settingsDeleteHostBody(host.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(ctx.l10n.settingsCancel)),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete')),
+              child: Text(ctx.l10n.settingsDelete)),
         ],
       ),
     );
@@ -206,13 +205,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final current = _account;
       if (current != null) {
         await store.saveAccount(
-            id, AccountInfo(username: current.username, vehicles: result.vehicles!));
+            id,
+            AccountInfo(
+                username: current.username, vehicles: result.vehicles!));
       }
       setState(() => _accountMessage = null);
       await _load();
     } else {
-      setState(() => _accountMessage =
-          authFailureTextForClaim(result));
+      setState(() =>
+          _accountMessage = authFailureTextForClaim(context.l10n, result));
     }
   }
 
@@ -262,145 +263,141 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final t = context.vehicle;
+    final l = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l.navSettings),
         actions: const [NotificationBell()],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ContentColumn(
               child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                  Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _accountSection(context),
-                  const SizedBox(height: Spacing.lg),
-                  SectionLabel(
-                    'Hosts (vehicle-server)',
-                    trailing: IconButton(
-                      tooltip: 'Add host',
-                      icon: const Icon(Icons.add),
-                      onPressed: () => _addOrEdit(),
-                    ),
-                  ),
-                  if (_loadFailed)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: Spacing.md),
-                      child: InfoBanner(
-                        icon: Icons.error_outline,
-                        tone: Tone.error,
-                        text: 'Could not read the saved hosts.',
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _accountSection(context),
+                    const SizedBox(height: Spacing.lg),
+                    _hostsSection(context),
+                    const SizedBox(height: Spacing.lg),
+                    _languageSection(context),
+                    const SizedBox(height: Spacing.lg),
+                    SectionLabel(l.settingsUpload),
+                    SectionCard(
+                      child: _SwitchRow(
+                        title: l.settingsWifiOnly,
+                        subtitle: l.settingsWifiOnlyHint,
+                        value: _uploadOnlyOnWifi,
+                        onChanged: _setWifiOnly,
                       ),
                     ),
-                  if (_hosts.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: Spacing.md),
-                      child: Text(
-                        'No host configured yet: recording and sharing sessions work fully without '
-                        'one. Add a host to enable upload, rides, faults and the assistant.',
-                        style: theme.textTheme.bodySmall!
-                            .copyWith(color: t.textSecondary),
-                      ),
-                    )
-                  else ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: Spacing.sm),
-                      child: Text(
-                        'The first host that answers is used, so put the local one first. '
-                        'Drag to reorder.',
-                        style: theme.textTheme.bodySmall!
-                            .copyWith(color: t.textSecondary),
+                    const SizedBox(height: Spacing.lg),
+                    SectionLabel(l.assistantName),
+                    SectionCard(
+                      child: _SwitchRow(
+                        title: l.settingsReadAnswers,
+                        subtitle: l.settingsReadAnswersHint(l.assistantName),
+                        value: _readAnswers,
+                        onChanged: _setReadAnswers,
                       ),
                     ),
-                    ReorderableListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      buildDefaultDragHandles: false,
-                      onReorderItem: _reorder,
-                      children: [
-                        for (var i = 0; i < _hosts.length; i++)
-                          _HostTile(
-                            key: ValueKey(_hosts[i].id),
-                            index: i,
-                            host: _hosts[i],
-                            active: _hosts[i].id == _activeId,
-                            hasToken: _hasToken[_hosts[i].id] ?? false,
-                            onEdit: () => _addOrEdit(_hosts[i]),
-                            onDelete: () => _delete(_hosts[i]),
-                          ),
-                      ],
-                    ),
-                    if (_hosts.length > 1)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: _checking ? null : _recheck,
-                          icon: const Icon(Icons.refresh),
-                          label: Text(
-                              _checking ? 'Checking...' : 'Check hosts again'),
-                        ),
-                      ),
+                    if (_account != null)
+                      AssistantModelSection(
+                          key: ValueKey('assistant-model-$_activeId'),
+                          store: widget.store,
+                          client: widget.assistantClient),
                   ],
-                  const SizedBox(height: Spacing.lg),
-                  _languageSection(context),
-                  const SizedBox(height: Spacing.lg),
-                  const SectionLabel('Upload'),
-                  SectionCard(
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text('Upload only on Wi-Fi',
-                          style: theme.textTheme.titleSmall),
-                      subtitle: Text(
-                        'Session archives can be several MB; avoid mobile data by default.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      value: _uploadOnlyOnWifi,
-                      onChanged: _setWifiOnly,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.lg),
-                  const SectionLabel('Sürüş Asistanı'),
-                  SectionCard(
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text('Cevapları sesli oku',
-                          style: theme.textTheme.titleSmall),
-                      subtitle: Text(
-                        'Sürüş Asistanı cevabın metnini sesli okur. Telefonda varsayılan açık, web ve bilgisayarda kapalı.',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      value: _readAnswers,
-                      onChanged: _setReadAnswers,
-                    ),
-                  ),
-                  if (_account != null)
-                    AssistantModelSection(
-                        key: ValueKey('assistant-model-$_activeId'),
-                        store: widget.store,
-                        client: widget.assistantClient),
-                ],
+                ),
               ),
             ),
+    );
+  }
+
+  Widget _hostsSection(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final t = context.vehicle;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionLabel(
+          l.settingsHosts,
+          trailing: IconButton(
+            tooltip: l.settingsAddHost,
+            icon: const Icon(Icons.add),
+            onPressed: () => _addOrEdit(),
+          ),
+        ),
+        if (_loadFailed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Spacing.md),
+            child: InfoBanner(
+              icon: Icons.error_outline,
+              tone: Tone.error,
+              text: l.settingsHostsLoadFailed,
             ),
+          ),
+        if (_hosts.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Spacing.md),
+            child: Text(l.settingsNoHosts,
+                style: theme.textTheme.bodySmall!
+                    .copyWith(color: t.textSecondary)),
+          )
+        else ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: Spacing.sm),
+            child: Text(l.settingsHostsHint,
+                style: theme.textTheme.bodySmall!
+                    .copyWith(color: t.textSecondary)),
+          ),
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            onReorderItem: _reorder,
+            children: [
+              for (var i = 0; i < _hosts.length; i++)
+                _HostTile(
+                  key: ValueKey(_hosts[i].id),
+                  index: i,
+                  host: _hosts[i],
+                  active: _hosts[i].id == _activeId,
+                  hasToken: _hasToken[_hosts[i].id] ?? false,
+                  onEdit: () => _addOrEdit(_hosts[i]),
+                  onDelete: () => _delete(_hosts[i]),
+                ),
+            ],
+          ),
+          if (_hosts.length > 1)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _checking ? null : _recheck,
+                icon: const Icon(Icons.refresh),
+                label:
+                    Text(_checking ? l.settingsChecking : l.settingsCheckHosts),
+              ),
+            ),
+        ],
+      ],
     );
   }
 
   Widget _accountSection(BuildContext context) {
     final theme = Theme.of(context);
+    final l = context.l10n;
     final account = _account;
     final children = <Widget>[];
     if (account != null) {
-      children.add(Text('Giriş yapan: ${account.username}',
+      children.add(Text(l.settingsSignedInAs(account.username),
           style: theme.textTheme.titleSmall));
       if (account.vehicles.isEmpty) {
         children.add(Padding(
           padding: const EdgeInsets.only(top: Spacing.xs),
-          child: Text('Bu hesaba bağlı araç yok.', style: theme.textTheme.bodySmall),
+          child: Text(l.settingsNoVehicles, style: theme.textTheme.bodySmall),
         ));
       }
       for (final v in account.vehicles) {
@@ -415,9 +412,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ));
       }
     } else if (_hasSession) {
-      children.add(Text("Cihaz token'ı ile bağlı", style: theme.textTheme.titleSmall));
+      children.add(Text(l.settingsDeviceTokenConnected,
+          style: theme.textTheme.titleSmall));
     } else {
-      children.add(Text('Giriş yapılmadı', style: theme.textTheme.titleSmall));
+      children
+          .add(Text(l.settingsNotSignedIn, style: theme.textTheme.titleSmall));
     }
     if (_accountMessage != null) {
       children.add(Padding(
@@ -436,27 +435,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             key: const ValueKey('claim-vehicle'),
             onPressed: _claim,
             icon: const Icon(Icons.add),
-            label: const Text('Araç ekle'),
+            label: Text(l.settingsAddVehicle),
           ),
         if (_hasSession)
           OutlinedButton.icon(
             key: const ValueKey('logout'),
             onPressed: _logout,
             icon: const Icon(Icons.logout),
-            label: const Text('Çıkış yap'),
+            label: Text(l.settingsSignOut),
           )
         else
           FilledButton(
             key: const ValueKey('request-login'),
             onPressed: () => AuthEvents.emit(AuthEvent.loginRequested),
-            child: const Text('Giriş yap'),
+            child: Text(l.settingsSignIn),
           ),
       ],
     ));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Hesap'),
+        SectionLabel(l.settingsAccount),
         SectionCard(
           child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, children: children),
@@ -467,12 +466,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 /// Text of a failed vehicle claim.
-String authFailureTextForClaim(AuthResult result) => switch (result.outcome) {
-      AuthOutcome.forbidden => 'Araç kimliği veya kod geçersiz.',
-      AuthOutcome.rateLimited => 'Çok fazla deneme. Biraz sonra tekrar dene.',
-      AuthOutcome.unreachable => 'Sunucuya ulaşılamadı.',
-      AuthOutcome.unauthorized => 'Oturum sona erdi.',
-      _ => 'Araç eklenemedi: ${result.message ?? 'bilinmeyen hata'}',
+String authFailureTextForClaim(AppLocalizations l, AuthResult result) =>
+    switch (result.outcome) {
+      AuthOutcome.forbidden => l.settingsClaimInvalid,
+      AuthOutcome.rateLimited => l.settingsRateLimited,
+      AuthOutcome.unreachable => l.settingsUnreachable,
+      AuthOutcome.unauthorized => l.settingsSessionEnded,
+      _ => l.settingsClaimFailed(result.message ?? l.settingsUnknownError),
     };
 
 class _ClaimDialog extends StatefulWidget {
@@ -495,8 +495,9 @@ class _ClaimDialogState extends State<_ClaimDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AlertDialog(
-      title: const Text('Araç ekle'),
+      title: Text(l.settingsAddVehicle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -504,20 +505,21 @@ class _ClaimDialogState extends State<_ClaimDialog> {
             controller: _vehicleId,
             autocorrect: false,
             enableSuggestions: false,
-            decoration: const InputDecoration(labelText: 'Araç kimliği'),
+            decoration: InputDecoration(labelText: l.settingsVehicleId),
           ),
           const SizedBox(height: Spacing.md),
           TextField(
             controller: _code,
             autocorrect: false,
             enableSuggestions: false,
-            decoration: const InputDecoration(labelText: 'Talep kodu'),
+            decoration: InputDecoration(labelText: l.settingsClaimCode),
           ),
         ],
       ),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+            onPressed: () => Navigator.pop(context),
+            child: Text(l.settingsCancel)),
         TextButton(
           onPressed: () {
             final id = _vehicleId.text.trim();
@@ -525,7 +527,7 @@ class _ClaimDialogState extends State<_ClaimDialog> {
             if (id.isEmpty || code.isEmpty) return;
             Navigator.pop(context, (id, code));
           },
-          child: const Text('Ekle'),
+          child: Text(l.settingsAdd),
         ),
       ],
     );
@@ -553,11 +555,14 @@ class _HostTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        padding: const EdgeInsets.fromLTRB(
-            Spacing.lg, Spacing.sm, Spacing.sm, Spacing.sm),
+    final l = context.l10n;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.vehicle.hairline)),
+      ),
+      child: Padding(
+        padding:
+            const EdgeInsets.fromLTRB(0, Spacing.sm, Spacing.sm, Spacing.sm),
         child: Row(
           children: [
             Expanded(
@@ -570,35 +575,33 @@ class _HostTile extends StatelessWidget {
                     children: [
                       Text(host.name, style: theme.textTheme.titleSmall),
                       if (active)
-                        const StatusPill(
+                        StatusPill(
                             icon: Icons.check_circle,
-                            label: 'active',
+                            label: l.settingsHostActive,
                             tone: Tone.ok),
                     ],
                   ),
                   Text(host.baseUrl, style: theme.textTheme.bodySmall),
-                  Text(hasToken ? 'token set' : 'no token',
+                  Text(hasToken ? l.settingsTokenSet : l.settingsNoToken,
                       style: theme.textTheme.bodySmall),
                   if (isCleartextRemoteUrl(host.baseUrl))
-                    const Padding(
-                      padding: EdgeInsets.only(top: Spacing.xs),
+                    Padding(
+                      padding: const EdgeInsets.only(top: Spacing.xs),
                       child: InfoBanner(
                         icon: Icons.warning_amber_rounded,
                         tone: Tone.warn,
-                        text:
-                            'http:// sends the token and ride data unencrypted. Use it only on a '
-                            'trusted local network.',
+                        text: l.settingsCleartextShort,
                       ),
                     ),
                 ],
               ),
             ),
             IconButton(
-                tooltip: 'Edit host',
+                tooltip: l.settingsEditHost,
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: onEdit),
             IconButton(
-                tooltip: 'Delete host',
+                tooltip: l.settingsDeleteHost,
                 icon: const Icon(Icons.delete_outline),
                 onPressed: onDelete),
             ReorderableDragStartListener(
@@ -649,12 +652,13 @@ class _HostEditDialogState extends State<HostEditDialog> {
   }
 
   void _submit() {
+    final l = context.l10n;
     final name = _name.text.trim();
     final url = _url.text.trim();
-    final nameError = name.isEmpty ? 'Enter a name' : null;
+    final nameError = name.isEmpty ? l.settingsEnterName : null;
     final refusal = tokenSendRefusal(url);
     final urlError = url.isEmpty
-        ? 'Enter the server URL'
+        ? l.settingsEnterUrl
         : (refusal == null ? null : _capitalize(refusal));
     if (nameError != null || urlError != null) {
       setState(() {
@@ -672,8 +676,10 @@ class _HostEditDialogState extends State<HostEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return AlertDialog(
-      title: Text(widget.existing == null ? 'Add host' : 'Edit host'),
+      title: Text(
+          widget.existing == null ? l.settingsAddHost : l.settingsEditHost),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -681,8 +687,8 @@ class _HostEditDialogState extends State<HostEditDialog> {
             TextField(
               controller: _name,
               decoration: InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Bike (local Raspi)',
+                  labelText: l.settingsHostName,
+                  hintText: l.settingsHostNameHint,
                   errorText: _nameError),
             ),
             const SizedBox(height: Spacing.md),
@@ -690,7 +696,7 @@ class _HostEditDialogState extends State<HostEditDialog> {
               controller: _url,
               keyboardType: TextInputType.url,
               decoration: InputDecoration(
-                labelText: 'Server base URL',
+                labelText: l.settingsHostUrl,
                 hintText: 'https://vehicle-server.example.com',
                 errorText: _urlError,
               ),
@@ -700,17 +706,15 @@ class _HostEditDialogState extends State<HostEditDialog> {
             TextField(
               controller: _token,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Device token'),
+              decoration: InputDecoration(labelText: l.settingsHostToken),
             ),
             if (isCleartextRemoteUrl(_url.text))
-              const Padding(
-                padding: EdgeInsets.only(top: Spacing.md),
+              Padding(
+                padding: const EdgeInsets.only(top: Spacing.md),
                 child: InfoBanner(
                   icon: Icons.warning_amber_rounded,
                   tone: Tone.warn,
-                  text:
-                      'Warning: http:// sends the token and ride data unencrypted. Use it only '
-                      'on a trusted local network; use https:// for any server reachable from outside.',
+                  text: l.settingsCleartextLong,
                 ),
               ),
           ],
@@ -719,9 +723,36 @@ class _HostEditDialogState extends State<HostEditDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
-        TextButton(onPressed: _submit, child: const Text('Save')),
+            child: Text(l.settingsCancel)),
+        TextButton(onPressed: _submit, child: Text(l.settingsSave)),
       ],
+    );
+  }
+}
+
+/// A flat switch row: title, hint below, switch on the right (48 dp target).
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title, style: theme.textTheme.titleSmall),
+      subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
+      value: value,
+      onChanged: onChanged,
     );
   }
 }

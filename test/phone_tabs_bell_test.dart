@@ -27,8 +27,8 @@ Map<String, Object?> _note(int id, {bool read = false}) => {
       'vehicle_id': 'veh-1',
       'kind': 'ride_summary',
       'severity': 'info',
-      'title': 'Başlık $id',
-      'body': 'Gövde $id',
+      'title': 'Title $id',
+      'body': 'Body $id',
       'session_id': null,
       'fault_id': null,
       'created_utc': DateTime.now().toUtc().toIso8601String(),
@@ -117,7 +117,7 @@ void main() {
         await tester.tap(find.byIcon(Icons.notifications_outlined));
         await tester.pumpAndSettle();
         expect(find.byType(NotificationsScreen), findsOneWidget);
-        expect(find.text('Başlık 2'), findsOneWidget);
+        expect(find.text('Title 2'), findsOneWidget);
       });
 
       testWidgets('is hidden when the server has no /notifications',

@@ -56,11 +56,62 @@ void main() {
     });
   });
 
-  group('ChatBubble', () {
-    testWidgets('shows the answer, an LLM badge and a collapsed tool card',
+  group('chatData', () {
+    test('turns keys into labels and units and keeps values verbatim', () {
+      final data = chatData(flattenChatValue({
+        'distance_km': 12.40,
+        'max_speed_kmh': 98,
+        'coolant_c': 91,
+        'note': 'ok',
+      }, key: 'result'));
+      expect([for (final d in data) (d.label, d.value, d.unit)], [
+        ('Distance', '12.4', 'km'),
+        ('Max speed', '98', 'km/h'),
+        ('Coolant', '91', '\u00b0C'),
+        ('Note', 'ok', null),
+      ]);
+    });
+
+    test('skips list bookkeeping rows and caps the count', () {
+      final rows = flattenChatValue({
+        for (var i = 0; i < 20; i++) 'k$i': i,
+      }, key: 'result');
+      expect(chatData(rows, max: 5), hasLength(5));
+      expect(chatData(flattenChatValue([1], key: 'result')).map((d) => d.value),
+          ['1']);
+    });
+  });
+
+  group('chips', () {
+    test('absent chips mean none; non-strings are ignored; capped', () {
+      expect(ChatAnswer.fromJson({'answer': 'a', 'source': 'llm'}).chips,
+          isEmpty);
+      expect(
+          ChatAnswer.fromJson({
+            'answer': 'a',
+            'source': 'llm',
+            'chips': ['One', 3, null, '  ', ' Two ']
+          }).chips,
+          ['One', 'Two']);
+      expect(
+          ChatAnswer.fromJson({
+            'answer': 'a',
+            'source': 'llm',
+            'chips': [for (var i = 0; i < 10; i++) 'c$i']
+          }).chips,
+          hasLength(chatMaxChips));
+      expect(
+          ChatAnswer.fromJson({'answer': 'a', 'source': 'llm', 'chips': 'x'})
+              .chips,
+          isEmpty);
+    });
+  });
+
+  group('TranscriptEntry', () {
+    testWidgets('answer: plain text, data card values with units, collapsed tool rows',
         (tester) async {
       final message = ChatMessage.fromAnswer(const ChatAnswer(
-        answer: 'Son sürüşün 12.4 km idi.',
+        answer: 'Your last ride was 12.4 km.',
         source: ChatSource.llm,
         tool: ChatToolCall(
             name: 'get_ride_summary', arguments: {'session_id': 'abc'}),
@@ -70,44 +121,61 @@ void main() {
         },
         elapsedMs: 700,
       ));
-      await tester.pumpWidget(_host(ChatBubble(message: message)));
+      await tester.pumpWidget(_host(TranscriptEntry(message: message)));
 
-      expect(find.text('Son sürüşün 12.4 km idi.'), findsOneWidget);
-      expect(find.text('Asistan'), findsWidgets);
-    expect(find.text('LLM'), findsNothing);
+      expect(find.text('Your last ride was 12.4 km.'), findsOneWidget);
+      expect(find.text('ASSISTANT'), findsOneWidget);
       expect(find.textContaining('computed by', findRichText: true),
           findsOneWidget);
       expect(find.textContaining('get_ride_summary', findRichText: true),
           findsOneWidget);
-      // Collapsed: no rows yet.
-      expect(find.text('12.4'), findsNothing);
+      // The data card shows labelled values with units right away.
+      expect(find.text('DISTANCE'), findsOneWidget);
+      expect(find.text('12.4'), findsOneWidget);
+      expect(find.text('km'), findsOneWidget);
+      expect(find.text('98'), findsOneWidget);
+      // Raw rows only when expanded.
+      expect(find.text('result.distance_km'), findsNothing);
 
       await tester.tap(find.byType(ExpansionTile));
       await tester.pumpAndSettle();
       expect(find.text('session_id'), findsOneWidget);
       expect(find.text('abc'), findsOneWidget);
       expect(find.text('result.distance_km'), findsOneWidget);
-      expect(find.text('12.4'), findsOneWidget);
       expect(find.text('result.extremes.max_speed'), findsOneWidget);
-      expect(find.text('98'), findsOneWidget);
     });
 
-    testWidgets(
-        'a template answer shows the template badge and no tool card without a tool',
+    testWidgets('a template answer has no tool card without a tool',
         (tester) async {
-      await tester.pumpWidget(_host(ChatBubble(
+      await tester.pumpWidget(_host(TranscriptEntry(
         message: ChatMessage.fromAnswer(const ChatAnswer(
-            answer: 'Kayıtlı arıza yok.', source: ChatSource.template)),
+            answer: 'No recorded faults.', source: ChatSource.template)),
       )));
-      expect(find.text('Veriden doğrulandı'), findsOneWidget);
+      expect(find.text('VERIFIED FROM DATA'), findsOneWidget);
+      expect(find.text('Template answer (no model)'), findsOneWidget);
       expect(find.byType(ExpansionTile), findsNothing);
     });
 
-    testWidgets('a user message has no badge', (tester) async {
-      await tester.pumpWidget(
-          _host(const ChatBubble(message: ChatMessage.user('merhaba'))));
-      expect(find.text('merhaba'), findsOneWidget);
+    testWidgets('a question is a plain timestamped line without any badge',
+        (tester) async {
+      await tester.pumpWidget(_host(TranscriptEntry(
+          message: ChatMessage.user('hello', at: DateTime(2026, 11, 25, 9, 5)))));
+      expect(find.text('hello'), findsOneWidget);
+      expect(find.text('09:05'), findsOneWidget);
       expect(find.byType(SourceBadge), findsNothing);
+      expect(find.byType(CircleAvatar), findsNothing);
+    });
+
+    testWidgets('follow-up chips tap through; none renders nothing',
+        (tester) async {
+      final tapped = <String>[];
+      await tester.pumpWidget(_host(
+          FollowUpChips(chips: const ['Coolant', 'Battery'], onTap: tapped.add)));
+      await tester.tap(find.widgetWithText(ActionChip, 'Battery'));
+      expect(tapped, ['Battery']);
+      await tester.pumpWidget(
+          _host(FollowUpChips(chips: const [], onTap: tapped.add)));
+      expect(find.byType(ActionChip), findsNothing);
     });
   });
 }

@@ -110,7 +110,7 @@ void main() {
     }
   });
 
-  testWidgets('wrong password shows the generic Turkish message',
+  testWidgets('wrong password shows the generic English message',
       (tester) async {
     await tester.pumpWidget(_app(
         empty,
@@ -120,7 +120,7 @@ void main() {
     await _fillLogin(tester);
     await tester.tap(find.byKey(const ValueKey('submit')));
     await tester.pumpAndSettle();
-    expect(find.text('Kullanıcı adı veya parola hatalı.'), findsOneWidget);
+    expect(find.text('Wrong username or password.'), findsOneWidget);
     expect(find.text('APP-CONTENT'), findsNothing);
   });
 
@@ -133,7 +133,7 @@ void main() {
     await _fillLogin(tester);
     await tester.tap(find.byKey(const ValueKey('submit')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('42 sn'), findsOneWidget);
+    expect(find.textContaining('42 s'), findsOneWidget);
   });
 
   testWidgets(
@@ -156,12 +156,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('submit')));
     await tester.pumpAndSettle();
     expect(seen.url.path, '/auth/register');
-    expect(find.text('Bu kullanıcı adı alınmış.'), findsOneWidget);
+    expect(find.text('That username is taken.'), findsOneWidget);
 
     status = 403;
     await tester.tap(find.byKey(const ValueKey('submit')));
     await tester.pumpAndSettle();
-    expect(find.text('Araç kimliği veya kod geçersiz.'), findsOneWidget);
+    expect(find.text('The vehicle ID or code is not valid.'), findsOneWidget);
   });
 
   testWidgets('a 401 anywhere clears the host session and returns to login',
@@ -175,7 +175,7 @@ void main() {
     AuthEvents.reportUnauthorized();
     await tester.pumpAndSettle();
     expect(find.text('APP-CONTENT'), findsNothing);
-    expect(find.textContaining('Oturum sona erdi'), findsOneWidget);
+    expect(find.textContaining('Session ended'), findsOneWidget);
     expect(secrets.values[HostStore.tokenKey('h1')], isNull);
   });
 
@@ -209,7 +209,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('submit')));
     await tester.pumpAndSettle();
     expect(called, isFalse);
-    expect(find.textContaining('Güvenli olmayan adres'), findsOneWidget);
+    expect(find.textContaining('Insecure address'), findsOneWidget);
   });
 
   testWidgets('on the phone the login can be skipped and the app stays mounted',

@@ -5,7 +5,8 @@ import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 /// One entry of the command bar.
 class ShellCommand {
-  const ShellCommand({required this.label, required this.icon, required this.run});
+  const ShellCommand(
+      {required this.label, required this.icon, required this.run});
 
   final String label;
   final IconData icon;
@@ -58,7 +59,8 @@ class _CommandBarState extends State<_CommandBar> {
     return Align(
       alignment: Alignment.topCenter,
       child: Padding(
-        padding: const EdgeInsets.only(top: 96, left: Spacing.lg, right: Spacing.lg),
+        padding:
+            const EdgeInsets.only(top: 96, left: Spacing.lg, right: Spacing.lg),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
           child: Material(

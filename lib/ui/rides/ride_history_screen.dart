@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
@@ -10,6 +11,7 @@ import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
@@ -173,20 +175,21 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   }
 
   String _rangeLabel() {
-    if (_from == null || _to == null) return 'All rides';
-    return '${formatQueryDate(_from!)} – ${formatQueryDate(_to!)} (UTC days)';
+    final l = context.l10n;
+    if (_from == null || _to == null) return l.logbookAllRides;
+    return l.logbookRangeUtc(formatQueryDate(_from!), formatQueryDate(_to!));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ride history'),
+        title: Text(context.l10n.navLogbook),
         actions: [
           const HeaderActions(),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: context.l10n.logbookRefresh,
             onPressed: _loading ? null : _refresh,
           ),
         ],
@@ -198,13 +201,12 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   Widget _body() {
     final settings = _settings;
     if (settings == null || (_loading && _table == null && _error == null)) {
-      return const RideLoading('Loading rides...');
+      return RideLoading(context.l10n.logbookLoadingRides);
     }
     if (!settings.isServerConfigured) {
-      return const RideMessage(
+      return RideMessage(
         icon: Icons.settings_ethernet,
-        message:
-            'No vehicle-server configured. Set the server URL and API token in Settings.',
+        message: context.l10n.logbookNoServer,
       );
     }
     if (_error != null) {
@@ -217,7 +219,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
               icon: Icons.cloud_off,
               tone: Tone.error,
               message: _error!,
-              actionLabel: 'Retry',
+              actionLabel: context.l10n.logbookRetry,
               onAction: _refresh,
             ),
           ),
@@ -226,7 +228,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     }
     final table = _table;
     if (table == null) {
-      return const RideLoading('Loading rides...');
+      return RideLoading(context.l10n.logbookLoadingRides);
     }
     if (table.rows.isEmpty) {
       return Column(
@@ -244,9 +246,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                     height: constraints.maxHeight,
                     child: EmptyState(
                       icon: Icons.route_outlined,
-                      message: 'No rides in this range.',
+                      message: context.l10n.logbookNoRidesInRange,
                       hint: table.skipped > 0
-                          ? '${table.skipped} session${table.skipped == 1 ? '' : 's'} without a stored summary skipped.'
+                          ? context.l10n.logbookSkippedHint(table.skipped)
                           : null,
                     ),
                   ),
@@ -271,11 +273,16 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             onRefresh: _refresh,
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                  Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
+              padding: const EdgeInsets.only(bottom: Spacing.xl),
               itemCount: rows.length + 1,
               itemBuilder: (context, index) {
-                if (index == 0) return _countLine(table);
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.lg, Spacing.sm, Spacing.lg, Spacing.sm),
+                    child: _countLine(table),
+                  );
+                }
                 return _rideRow(table, rows[index - 1]);
               },
             ),
@@ -306,13 +313,15 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
               TextButton.icon(
                 onPressed: _pickRange,
                 icon: const Icon(Icons.edit_calendar_outlined, size: 18),
-                label: Text(_from == null ? 'Date range' : 'Change range'),
+                label: Text(_from == null
+                    ? context.l10n.logbookDateRange
+                    : context.l10n.logbookChangeRange),
               ),
               if (_from != null)
                 TextButton.icon(
                   onPressed: _clearRange,
                   icon: const Icon(Icons.close, size: 18),
-                  label: const Text('Clear'),
+                  label: Text(context.l10n.logbookClear),
                 ),
             ],
           ),
@@ -327,7 +336,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionLabel('Columns', trailing: Text('up to two')),
+          SectionLabel(context.l10n.logbookColumns,
+              trailing: Text(context.l10n.logbookUpToTwo)),
           Wrap(
             spacing: Spacing.sm,
             runSpacing: Spacing.xs,
@@ -356,15 +366,15 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
         children: [
           Expanded(
             child: Text(
-              '${table.rows.length} ride${table.rows.length == 1 ? '' : 's'}',
+              context.l10n.logbookRideCount(table.rows.length),
               style: theme.textTheme.titleSmall,
             ),
           ),
           if (table.skipped > 0)
             Text(
-              '${table.skipped} skipped',
+              context.l10n.logbookSkippedCount(table.skipped),
               style: theme.textTheme.bodySmall!
-                  .copyWith(color: context.vehicle.warning),
+                  .copyWith(color: context.vehicle.advisory),
             ),
         ],
       ),
@@ -373,69 +383,70 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
   Widget _rideRow(RidesTable table, RideRow row) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.md),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(Radii.card),
-          onTap: () => _openSummary(row.sessionId),
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  row.createdUtc == null
-                      ? 'unknown time'
-                      : formatUtc(row.createdUtc!),
-                  style: theme.textTheme.titleSmall,
+    final t = context.vehicle;
+    final readouts = [
+      for (final name in _selected) _valueReadout(table, row, name),
+    ].whereType<Widget>().toList(growable: false);
+    return DecoratedBox(
+      decoration:
+          BoxDecoration(border: Border(top: BorderSide(color: t.hairline))),
+      child: InkWell(
+        onTap: () => _openSummary(row.sessionId),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: Spacing.lg, vertical: Spacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                row.createdUtc == null
+                    ? context.l10n.logbookUnknownTime
+                    : formatUtc(row.createdUtc!),
+                style: numberFace(20, FontWeight.w600, color: t.textPrimary),
+              ),
+              const SizedBox(height: Spacing.xs),
+              Text(row.sessionId, style: theme.textTheme.bodySmall),
+              if (readouts.isNotEmpty) ...[
+                const SizedBox(height: Spacing.md),
+                Wrap(
+                  spacing: Spacing.xl,
+                  runSpacing: Spacing.md,
+                  children: readouts,
                 ),
-                const SizedBox(height: Spacing.xs),
-                Text(row.sessionId, style: theme.textTheme.bodySmall),
-                for (final name in _selected) _valueLine(table, row, name),
               ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _valueLine(RidesTable table, RideRow row, String name) {
+  Widget? _valueReadout(RidesTable table, RideRow row, String name) {
     final index = table.columns.indexWhere((column) => column.name == name);
-    if (index < 0) return const SizedBox.shrink();
+    if (index < 0) return null;
     final column = table.columns[index];
     final value = row.values[name];
     final flag = row.flags[name];
     final range = _observedRange(table, name);
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: Spacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: Spacing.md,
-            runSpacing: Spacing.xs,
-            children: [
-              Text(column.name, style: theme.textTheme.bodyMedium),
-              Text(
-                '${formatRideValue(value, range.min, range.max)} ${column.unit}',
-                style: theme.textTheme.titleSmall,
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Readout(
+          label: column.name,
+          value: formatRideValue(value, range.min, range.max),
+          unit: column.unit,
+          size: ReadoutSize.small,
+        ),
+        if (flag != null)
+          Text(
+            flag,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall!
+                .copyWith(color: context.vehicle.advisory),
           ),
-          if (flag != null)
-            Text(
-              flag,
-              style: theme.textTheme.bodySmall!
-                  .copyWith(color: context.vehicle.warning),
-            ),
-        ],
-      ),
+      ],
     );
   }
 

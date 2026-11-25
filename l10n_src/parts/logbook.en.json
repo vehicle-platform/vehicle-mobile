@@ -1,0 +1,224 @@
+{
+  "logbookRideHistoryTitle": "Ride history",
+  "logbookRideSummaryTitle": "Ride summary",
+  "logbookBringupTitle": "Bring-up check",
+  "logbookRefresh": "Refresh",
+  "logbookRetry": "Retry",
+  "logbookOpenSettings": "Open Settings",
+  "logbookAskAssistant": "Ask the assistant",
+  "logbookLoadingRides": "Loading rides...",
+  "logbookLoadingSummary": "Loading ride summary...",
+  "logbookLoadingBringup": "Loading bring-up check...",
+  "logbookNoServer": "No vehicle-server configured. Set the server URL and API token in Settings.",
+  "logbookCleartextWarning": "Warning: http:// sends the API token and ride data unencrypted. Use it only on a trusted local network; use https:// for any server reachable from outside.",
+  "logbookAllRides": "All rides",
+  "logbookRangeUtc": "{from} – {to} (UTC days)",
+  "@logbookRangeUtc": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoRidesInRange": "No rides in this range.",
+  "logbookSkippedHint": "{count, plural, =1{1 session without a stored summary skipped.} other{{count} sessions without a stored summary skipped.}}",
+  "@logbookSkippedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookDateRange": "Date range",
+  "logbookChangeRange": "Change range",
+  "logbookClear": "Clear",
+  "logbookColumns": "Columns",
+  "logbookUpToTwo": "up to two",
+  "logbookRideCount": "{count, plural, =1{1 ride} other{{count} rides}}",
+  "@logbookRideCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookSkippedCount": "{count} skipped",
+  "@logbookSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookUnknownTime": "unknown time",
+  "logbookSignals": "Signals",
+  "logbookPerGear": "Per-gear signals",
+  "logbookBinned": "Binned signals",
+  "logbookCoverage": "Coverage",
+  "logbookHealthWindows": "Health windows",
+  "logbookNoSummary": "No stored ride summary for this session.",
+  "logbookDefsMismatch": "Decoded with other defs bin edges: {names}.",
+  "@logbookDefsMismatch": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRideDefinition": "ride {value}",
+  "@logbookRideDefinition": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookDefsVersion": "defs {value}",
+  "@logbookDefsVersion": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoSignals": "No stored signals in this ride summary.",
+  "logbookGear": "Gear {n}",
+  "@logbookGear": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookNoGears": "No stored gears.",
+  "logbookAxisUnsupported": "{n}-axis summaries are not shown on the phone yet.",
+  "@logbookAxisUnsupported": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookTotalOutside": "total {total} · outside {outside}",
+  "@logbookTotalOutside": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "outside": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNotAvailable": "Not available ({n})",
+  "@logbookNotAvailable": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookPendingInputs": "pending: {list}",
+  "@logbookPendingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookMissingInputs": "missing: {list}",
+  "@logbookMissingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookColumnsAxis": "columns: {input} [{unit}]",
+  "@logbookColumnsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRowsAxis": "rows: {input} [{unit}]",
+  "@logbookRowsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookSession": "Session",
+  "logbookBringupUnsupported": "this server has no bring-up check (needs vehicle-server with the bring-up route, server#50)",
+  "logbookBringupUnauthorized": "Unauthorized: check the API token in Settings.",
+  "logbookBringupNotFound": "the server does not have this session (upload it first)",
+  "logbookBringupInvalid": "invalid request",
+  "logbookBringupUnavailable": "server unavailable",
+  "logbookBringupFailed": "request failed",
+  "logbookSettingsReadFailed": "Could not read the server settings.",
+  "logbookNoBringupAnswer": "The server returned no bring-up answer.",
+  "logbookNoChecks": "The server returned no checks for this gate.",
+  "logbookChecks": "Checks",
+  "logbookManualPending": "{count, plural, =1{1 manual check pending: {list}} other{{count} manual checks pending: {list}}}",
+  "@logbookManualPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookWarningsList": "{count, plural, =1{1 warning: {list}} other{{count} warnings: {list}}}",
+  "@logbookWarningsList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookBringupLegend": "manual = you judge it at the bike; unknown = the session has no data for it.",
+  "logbookMeasured": "Measured",
+  "logbookExpected": "Expected",
+  "logbookSource": "Source",
+  "logbookNote": "Note",
+  "logbookWindowsLoading": "Loading window instances...",
+  "logbookWindowsMissingReport": "No window instances in this report (older server, or run `vehicle-server derive <id>` on the server).",
+  "logbookWindowsUnavailable": "Unavailable.",
+  "logbookWindowsNone": "No window instances stored.",
+  "logbookWindowsCounts": "{instances} instances, {qualifying} qualifying",
+  "@logbookWindowsCounts": {
+    "placeholders": {
+      "instances": {
+        "type": "int"
+      },
+      "qualifying": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookColStart": "Start",
+  "logbookColEnd": "End",
+  "logbookColDuration": "Duration",
+  "logbookColCloseReason": "Close reason",
+  "logbookColQualifies": "Qualifies",
+  "logbookColFirst": "First",
+  "logbookYes": "yes",
+  "logbookNo": "no",
+  "logbookFirstMark": "first"
+}

@@ -40,12 +40,12 @@ void main() {
     await c.toggleMic();
     expect(c.state, VoiceState.listening);
     expect(stt.initializeCalls, 1);
-    stt.partial('son sürü');
-    expect(c.partial, 'son sürü');
-    stt.finalResult('son sürüşüm nasıldı');
+    stt.partial('my last ri');
+    expect(c.partial, 'my last ri');
+    stt.finalResult('how was my last ride');
     await Future<void>.delayed(Duration.zero);
     expect(c.state, VoiceState.idle);
-    expect(sent, ['son sürüşüm nasıldı']);
+    expect(sent, ['how was my last ride']);
     expect(c.partial, isEmpty);
   });
 
@@ -54,11 +54,11 @@ void main() {
     final sent = <String>[];
     final c = _controller(stt, FakeOutput(), transcripts: sent);
     await c.toggleMic();
-    stt.partial('kayıtlı arızalar');
+    stt.partial('recorded faults');
     await c.toggleMic();
     expect(stt.stopCalls, 1);
     expect(c.state, VoiceState.idle);
-    expect(sent, ['kayıtlı arızalar']);
+    expect(sent, ['recorded faults']);
   });
 
   test('status done without a result ends the session with the partial text',
@@ -82,17 +82,17 @@ void main() {
     await c.startListening();
     stt.error('error_speech_timeout');
     expect(c.state, VoiceState.idle);
-    expect(c.error, voiceNoSpeechMessage);
+    expect(c.error, VoiceError.noSpeech);
     expect(sent, isEmpty);
   });
 
-  test('unavailable recognition or a denied permission gives a Turkish message',
+  test('unavailable recognition or a denied permission gives an error code',
       () async {
     final stt = FakeRecognizer()..initializeResult = false;
     final c = _controller(stt, FakeOutput());
     await c.startListening();
     expect(c.state, VoiceState.idle);
-    expect(c.error, voicePermissionMessage);
+    expect(c.error, VoiceError.permission);
     c.clearError();
     expect(c.error, isNull);
 
@@ -100,10 +100,10 @@ void main() {
     final c2 = _controller(stt2, FakeOutput());
     await c2.startListening();
     stt2.error('error_language_unavailable');
-    expect(c2.error, voiceLanguageMessage);
+    expect(c2.error, VoiceError.language);
     await c2.startListening();
     stt2.error('error_network');
-    expect(c2.error, voiceNetworkMessage);
+    expect(c2.error, VoiceError.network);
   });
 
   test('speak reads the text when the setting is on and skips it when off',
@@ -150,7 +150,7 @@ void main() {
 
   group('recogniser start timeout', () {
     test(
-        'a hanging initialize resets to idle with the Turkish message after the permission step',
+        'a hanging initialize resets to idle with the init-timeout error after the permission step',
         () async {
       final order = <String>[];
       final stt = FakeRecognizer()..initializeHangs = true;
@@ -167,7 +167,7 @@ void main() {
       await c.startListening();
       expect(order, ['permission-done']); // the permission step is not bounded
       expect(c.state, VoiceState.idle);
-      expect(c.error, voiceInitTimeoutMessage);
+      expect(c.error, VoiceError.initTimeout);
       expect(c.isListening, isFalse);
     });
   });
@@ -181,7 +181,7 @@ void main() {
       final c =
           _controller(stt, FakeOutput(), intercom: intercom.audio, log: log);
       await c.refreshIntercom();
-      expect(c.routeLabel, intercomConnectedLabel);
+      expect(c.route, VoiceRoute.intercom);
       await c.startListening();
       expect(log, contains('bt-permission'));
       expect(intercom.calls, containsAllInOrder(['status', 'acquire']));
@@ -206,7 +206,7 @@ void main() {
       final tts = FakeOutput()..instant = true;
       final c = _controller(FakeRecognizer(), tts, intercom: intercom.audio);
       await c.refreshIntercom();
-      expect(c.routeLabel, phoneMicLabel);
+      expect(c.route, VoiceRoute.phone);
       await c.speak('Cevap');
       expect(tts.viaIntercom, [false]);
       expect(intercom.calls, isNot(contains('release')));
@@ -214,7 +214,7 @@ void main() {
 
     test('no routing label off Android', () async {
       final c = _controller(FakeRecognizer(), FakeOutput());
-      expect(c.routeLabel, isNull);
+      expect(c.route, isNull);
     });
   });
 }

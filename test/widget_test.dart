@@ -14,8 +14,8 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    // App bar title of the Live destination.
-    expect(find.text('CL250 Telemetry'), findsOneWidget);
+    // The Ride sub-navigation names the screen; the Live app bar has no title.
+    expect(find.text('CL250 Telemetry'), findsNothing);
 
     // Navigation bar destinations.
     final bar = find.byType(NavigationBar);

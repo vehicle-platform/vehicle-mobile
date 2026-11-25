@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/health_windows.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
@@ -22,22 +23,19 @@ class HealthWindowsSection extends StatelessWidget {
   final bool loading;
   final RideSummary summary;
 
-  static const String missingReportMessage =
-      'No window instances in this report (older server, or run `vehicle-server derive <id>` on the server).';
-
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const SectionCard(
+      return SectionCard(
         child: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: Spacing.md),
-            Text('Loading window instances...'),
+            const SizedBox(width: Spacing.md),
+            Text(context.l10n.logbookWindowsLoading),
           ],
         ),
       );
@@ -48,8 +46,8 @@ class HealthWindowsSection extends StatelessWidget {
       final reason = parsed.reason;
       return SectionCard(
         child: Text(reason == 'not in report'
-            ? missingReportMessage
-            : reason ?? 'Unavailable.'),
+            ? context.l10n.logbookWindowsMissingReport
+            : reason ?? context.l10n.logbookWindowsUnavailable),
       );
     }
     return _block(context, parsed.block!);
@@ -68,13 +66,13 @@ class HealthWindowsSection extends StatelessWidget {
           ),
           for (var index = 0; index < block.windows.length; index++) ...[
             if (index > 0)
-              Divider(height: Spacing.xl, color: context.vehicle.outline),
+              Divider(height: Spacing.xl, color: context.vehicle.hairline),
             _window(context, theme, block.windows[index]),
           ],
           if (block.windows.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: Spacing.md),
-              child: Text('No window instances stored.',
+              child: Text(context.l10n.logbookWindowsNone,
                   style: theme.textTheme.bodySmall),
             ),
         ],
@@ -100,7 +98,8 @@ class HealthWindowsSection extends StatelessWidget {
             children: [
               Text(window.key, style: theme.textTheme.titleSmall),
               Text(
-                '${window.instances.length} instances, ${window.qualifyingCount} qualifying',
+                context.l10n.logbookWindowsCounts(
+                    window.instances.length, window.qualifyingCount),
                 style: theme.textTheme.bodySmall,
               ),
             ],
@@ -115,9 +114,9 @@ class HealthWindowsSection extends StatelessWidget {
                 painter: WindowTimelinePainter(
                   instances: window.instances,
                   trackColor: context.vehicle.surfaceRaised,
-                  outlineColor: context.vehicle.outline,
+                  outlineColor: context.vehicle.hairline,
                   qualifyingColor: context.vehicle.accent,
-                  markerColor: context.vehicle.stale,
+                  markerColor: context.vehicle.advisory,
                 ),
               ),
             ),
@@ -136,7 +135,8 @@ class HealthWindowsSection extends StatelessWidget {
           ],
           if (signals.isNotEmpty) ...[
             const SizedBox(height: Spacing.sm),
-            Text('Signals', style: theme.textTheme.labelMedium),
+            Text(context.l10n.logbookSignals,
+                style: theme.textTheme.labelMedium),
             for (final signal in signals) _signalRow(theme, signal),
           ],
         ],
@@ -157,13 +157,13 @@ class HealthWindowsSection extends StatelessWidget {
         children: [
           TableRow(
             children: [
-              for (final header in const [
-                'Start',
-                'End',
-                'Duration',
-                'Close reason',
-                'Qualifies',
-                'First'
+              for (final header in [
+                context.l10n.logbookColStart,
+                context.l10n.logbookColEnd,
+                context.l10n.logbookColDuration,
+                context.l10n.logbookColCloseReason,
+                context.l10n.logbookColQualifies,
+                context.l10n.logbookColFirst,
               ])
                 Padding(
                   padding: const EdgeInsets.only(
@@ -175,15 +175,20 @@ class HealthWindowsSection extends StatelessWidget {
           for (final instance in window.instances)
             TableRow(
               decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: context.vehicle.outline)),
+                border:
+                    Border(top: BorderSide(color: context.vehicle.hairline)),
               ),
               children: [
                 cell(formatDurationS(instance.startMs / 1000)),
                 cell(formatDurationS(instance.endMs / 1000)),
                 cell(formatDurationS(instance.durationMs / 1000)),
                 cell(instance.closeReason),
-                cell(instance.qualifies ? 'yes' : 'no'),
-                cell(instance.firstQualifying ? 'first' : ''),
+                cell(instance.qualifies
+                    ? context.l10n.logbookYes
+                    : context.l10n.logbookNo),
+                cell(instance.firstQualifying
+                    ? context.l10n.logbookFirstMark
+                    : ''),
               ],
             ),
         ],
@@ -278,8 +283,8 @@ class WindowTimelinePainter extends CustomPainter {
     for (final segment in segments) {
       final left = segment.left;
       final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, size.height / 2 - 5,
-            math.max(segment.right - left, 1.0), 10),
+        Rect.fromLTWH(
+            left, size.height / 2 - 5, math.max(segment.right - left, 1.0), 10),
         const Radius.circular(2),
       );
       if (segment.qualifies) {

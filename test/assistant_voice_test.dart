@@ -93,7 +93,7 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
-final _micTooltip = find.byTooltip('Sesle sor');
+final _micTooltip = find.byTooltip('Ask by voice');
 
 void main() {
   testWidgets(
@@ -101,26 +101,26 @@ void main() {
       (tester) async {
     final asked = <String>[];
     final rig = await _pump(tester,
-        reply: () => _answer('Son sürüşün 12.4 km idi.'), asked: asked);
+        reply: () => _answer('Your last ride was 12.4 km.'), asked: asked);
     expect(_micTooltip, findsOneWidget);
 
     await tester.tap(_micTooltip);
     await _settle(tester);
     expect(rig.voice.state, VoiceState.listening);
     expect(find.byKey(const ValueKey('mic-ring')), findsOneWidget);
-    expect(find.byTooltip('Dinlemeyi bitir'), findsOneWidget);
+    expect(find.byTooltip('Stop listening'), findsOneWidget);
 
-    rig.stt.partial('son sürüşüm');
+    rig.stt.partial('my last ride');
     await tester.pump();
-    expect(find.widgetWithText(TextField, 'son sürüşüm'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'my last ride'), findsOneWidget);
 
-    rig.stt.finalResult('son sürüşüm nasıldı');
+    rig.stt.finalResult('how was my last ride');
     await _settle(tester);
-    expect(asked, ['son sürüşüm nasıldı']);
-    expect(find.text('Son sürüşün 12.4 km idi.'), findsOneWidget);
+    expect(asked, ['how was my last ride']);
+    expect(find.text('Your last ride was 12.4 km.'), findsOneWidget);
     expect(find.byKey(const ValueKey('mic-ring')), findsNothing);
     // Only the answer text is spoken, never the tool card.
-    expect(rig.tts.spoken, ['Son sürüşün 12.4 km idi.']);
+    expect(rig.tts.spoken, ['Your last ride was 12.4 km.']);
   });
 
   testWidgets('answers are not read when the setting is off', (tester) async {
@@ -138,23 +138,23 @@ void main() {
       (tester) async {
     final rig = await _pump(tester,
         reply: () =>
-            _answer('Arıza kaydı bulundu.', result: {'advise_stop': true}));
-    await tester.enterText(find.byType(TextField), 'arıza var mı');
+            _answer('A fault was recorded.', result: {'advise_stop': true}));
+    await tester.enterText(find.byType(TextField), 'any faults');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
     expect(rig.tts.spoken,
-        ['Arıza kaydı bulundu.', CriticalAnnouncer.adviseStopSentence]);
+        ['A fault was recorded.', CriticalAnnouncer.adviseStopSentence]);
   });
 
   testWidgets('without advise_stop nothing is added to the answer',
       (tester) async {
     final plain = await _pump(tester,
         reply: () =>
-            _answer('Her şey yolunda.', result: {'advise_stop': false}));
+            _answer('Everything is fine.', result: {'advise_stop': false}));
     await tester.enterText(find.byType(TextField), 'durum');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
-    expect(plain.tts.spoken, ['Her şey yolunda.']);
+    expect(plain.tts.spoken, ['Everything is fine.']);
   });
 
   testWidgets('sending a new question stops the answer that is being spoken',
@@ -185,22 +185,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
     expect(rig.voice.state, VoiceState.speaking);
-    await tester.tap(find.byTooltip('Okumayı durdur ve konuş'));
+    await tester.tap(find.byTooltip('Stop reading and speak'));
     await _settle(tester);
     expect(rig.tts.stopCalls, greaterThan(0));
     expect(rig.voice.state, VoiceState.listening);
   });
 
-  testWidgets('a failed recognition shows a friendly Turkish message',
+  testWidgets('a failed recognition shows a friendly message',
       (tester) async {
     final rig = await _pump(tester, reply: () => _answer('x'));
     rig.stt.initializeResult = false;
     await tester.tap(_micTooltip);
     await _settle(tester);
-    expect(find.text(voicePermissionMessage), findsOneWidget);
-    await tester.tap(find.byTooltip('Kapat'));
+    expect(find.textContaining('Microphone permission was not granted'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
     await tester.pump();
-    expect(find.text(voicePermissionMessage), findsNothing);
+    expect(find.textContaining('Microphone permission was not granted'), findsNothing);
   });
 
   testWidgets(
@@ -209,7 +209,7 @@ void main() {
     final asked = <String>[];
     final rig = await _pump(tester,
         reply: () => _answer('Cevap bir'), readAnswers: false, asked: asked);
-    await tester.enterText(find.byType(TextField), 'ilk');
+    await tester.enterText(find.byType(TextField), 'first');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
     expect(rig.tts.spoken, isEmpty); // setting off
@@ -218,10 +218,10 @@ void main() {
     rig.bus.emit(VoiceTrigger.startListening);
     await _settle(tester);
     expect(rig.voice.state, VoiceState.listening);
-    rig.stt.partial('ikinci soru');
+    rig.stt.partial('second question');
     rig.bus.emit(VoiceTrigger.stopAndSend);
     await _settle(tester);
-    expect(asked, ['ilk', 'ikinci soru']);
+    expect(asked, ['first', 'second question']);
 
     // Empty long hold: nothing is sent, nothing is spoken, no error.
     rig.bus.emit(VoiceTrigger.startListening);
@@ -245,10 +245,10 @@ void main() {
     rig.tts.spoken.clear();
     rig.bus.emit(VoiceTrigger.startListening);
     await _settle(tester);
-    rig.stt.partial('üçüncü');
+    rig.stt.partial('third');
     rig.bus.emit(VoiceTrigger.stopAfterTap);
     await _settle(tester);
-    expect(asked, ['ilk', 'ikinci soru', 'üçüncü']);
+    expect(asked, ['first', 'second question', 'third']);
     expect(rig.tts.spoken, isEmpty);
   });
 
@@ -313,11 +313,11 @@ void main() {
           settingsStore: store, voice: voice, voiceBus: VoiceTriggerBus()),
     ));
     await _settle(tester);
-    expect(find.text(intercomConnectedLabel), findsOneWidget);
+    expect(find.text('Intercom connected'), findsOneWidget);
     intercom.headset = false;
     await voice.refreshIntercom();
     await tester.pump();
-    expect(find.text(phoneMicLabel), findsOneWidget);
+    expect(find.text('Phone microphone'), findsOneWidget);
   });
 
   group('VOICE_COMMAND entry', () {
@@ -379,11 +379,11 @@ void main() {
           of: find.byType(NavigationRail), matching: find.text('Settings')));
       await tester.pumpAndSettle();
       expect(
-          find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'), findsNothing);
+          find.text('Hello, I am the Ride Assistant. What would you like to know?'), findsNothing);
 
       await intercom.nativeVoiceCommand();
       await _settle(tester);
-      expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'),
+      expect(find.text('Hello, I am the Ride Assistant. What would you like to know?'),
           findsOneWidget);
       expect(voice.state, VoiceState.listening);
       expect(stt.listenCalls, 1);

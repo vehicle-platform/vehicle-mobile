@@ -1,0 +1,37 @@
+{
+  "garageNotificationsTitle": "Notifications",
+  "garageNotificationTitle": "Notification",
+  "garageBellTooltip": "Notifications",
+  "garageBellTooltipUnread": "Notifications ({count} unread)",
+  "@garageBellTooltipUnread": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "garageSeverityCritical": "Critical",
+  "garageSeverityWarning": "Warning",
+  "garageSeverityInfo": "Info",
+  "garageDayToday": "Today",
+  "garageDayYesterday": "Yesterday",
+  "garageDayNoDate": "No date",
+  "garageEmptyTitle": "No notifications yet",
+  "garageEmptyHint": "Ride summaries and alerts appear here.",
+  "garageUnread": "Unread",
+  "garageOpenRide": "Open ride",
+  "garageAskAssistant": "Ask {assistant}",
+  "@garageAskAssistant": {
+    "placeholders": {"assistant": {"type": "String"}}
+  },
+  "garageAskQuestion": "What can you tell me about the notification \"{title}\"?",
+  "@garageAskQuestion": {
+    "placeholders": {"title": {"type": "String"}}
+  },
+  "garageFaultsTitle": "Faults",
+  "garageFaultsLoading": "Loading faults...",
+  "garageFaultsNoServer": "No vehicle-server configured. Add a host with its device token in Settings.",
+  "garageFaultsRetry": "Retry",
+  "garageFaultsEmpty": "The host lists no faults.",
+  "garageAnnounceAdviseStop": "Stop in a safe place and have the engine checked.",
+  "garageAnnounceFault": "High-priority warning: {title}. Stop in a safe place and have the engine checked.",
+  "@garageAnnounceFault": {
+    "placeholders": {"title": {"type": "String"}}
+  }
+}

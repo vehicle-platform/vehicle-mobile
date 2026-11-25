@@ -12,11 +12,11 @@ abstract class LocalNotifier {
   Future<void> show(AppNotification notification);
 }
 
-/// Channel ids/names of the Android notifications (Turkish, user-visible).
+/// Channel ids/names of the Android notifications (English; the system shows them in the notification settings).
 const String notificationChannelId = 'vehicle_notifications';
-const String notificationChannelName = 'Araç bildirimleri';
+const String notificationChannelName = 'Vehicle notifications';
 const String criticalChannelId = 'vehicle_notifications_critical';
-const String criticalChannelName = 'Kritik araç bildirimleri';
+const String criticalChannelName = 'Critical vehicle notifications';
 
 class NoopLocalNotifier implements LocalNotifier {
   const NoopLocalNotifier();

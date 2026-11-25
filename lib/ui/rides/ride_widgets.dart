@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -8,10 +9,12 @@ import 'package:vehicle_mobile/ui/widgets/common.dart';
 /// The same cleartext warning the Settings screen shows, for the read-only
 /// ride screens that send the same bearer token.
 class RideCleartextWarning extends StatelessWidget {
-  const RideCleartextWarning({super.key, required this.settings, this.padding = EdgeInsets.zero});
+  const RideCleartextWarning(
+      {super.key, required this.settings, this.padding = EdgeInsets.zero});
 
   /// Padding of the shown banner; a hidden warning takes no space.
-  static const EdgeInsets screenPadding = EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0);
+  static const EdgeInsets screenPadding =
+      EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0);
 
   final AppSettings settings;
   final EdgeInsets padding;
@@ -19,13 +22,13 @@ class RideCleartextWarning extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!settings.sendsTokenInCleartext) return const SizedBox.shrink();
-    return Padding(padding: padding, child: const InfoBanner(
-      icon: Icons.warning_amber_rounded,
-      tone: Tone.warn,
-      text:
-          'Warning: http:// sends the API token and ride data unencrypted. Use it only '
-          'on a trusted local network; use https:// for any server reachable from outside.',
-    ));
+    return Padding(
+        padding: padding,
+        child: InfoBanner(
+          icon: Icons.warning_amber_rounded,
+          tone: Tone.warn,
+          text: context.l10n.logbookCleartextWarning,
+        ));
   }
 }
 
@@ -41,9 +44,12 @@ class RideLoading extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(),
+          const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(height: Spacing.md),
-          Text(label),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
@@ -75,7 +81,7 @@ class RideMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: toneColor(context, tone)),
+            Icon(icon, size: 32, color: toneColor(context, tone)),
             const SizedBox(height: Spacing.md),
             Text(message, textAlign: TextAlign.center),
             if (actionLabel != null && onAction != null) ...[

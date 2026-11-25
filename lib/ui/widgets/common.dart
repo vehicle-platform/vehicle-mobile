@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -20,13 +21,15 @@ Color stateColor(BuildContext context, SignalState state) {
 /// Short upper-case label of a signal state. State is always conveyed by
 /// text and icon as well as colour. A negative response shows its NRC
 /// (`NRC 0x31`) when [nrc] is known.
-String stateLabel(SignalState state, {int? nrc}) => switch (state) {
-      SignalState.live => 'LIVE',
-      SignalState.stale => 'STALE',
-      SignalState.noData => 'NO DATA',
-      SignalState.notPolled => 'NOT POLLED',
-      SignalState.skipped => 'SKIPPED',
-      SignalState.negativeResponse => nrc == null ? 'NRC' : 'NRC ${nrcHex(nrc)}',
+String stateLabel(AppLocalizations l, SignalState state, {int? nrc}) =>
+    switch (state) {
+      SignalState.live => l.settingsSignalLive,
+      SignalState.stale => l.settingsSignalStale,
+      SignalState.noData => l.settingsSignalNoData,
+      SignalState.notPolled => l.settingsSignalNotPolled,
+      SignalState.skipped => l.settingsSignalSkipped,
+      SignalState.negativeResponse =>
+        nrc == null ? 'NRC' : 'NRC ${nrcHex(nrc)}',
     };
 
 IconData stateIcon(SignalState state) => switch (state) {
@@ -52,7 +55,8 @@ class SectionLabel extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(text.toUpperCase(), style: Theme.of(context).textTheme.labelSmall),
+            child: Text(upperFor(context, text),
+                style: Theme.of(context).textTheme.labelSmall),
           ),
           if (trailing != null) trailing!,
         ],
@@ -107,7 +111,11 @@ Color toneColor(BuildContext context, Tone tone) {
 
 /// Compact status chip: icon + text, tinted by [tone].
 class StatusPill extends StatelessWidget {
-  const StatusPill({super.key, required this.icon, required this.label, this.tone = Tone.neutral});
+  const StatusPill(
+      {super.key,
+      required this.icon,
+      required this.label,
+      this.tone = Tone.neutral});
 
   final IconData icon;
   final String label;
@@ -118,7 +126,8 @@ class StatusPill extends StatelessWidget {
     final color = toneColor(context, tone);
     return Container(
       constraints: const BoxConstraints(minHeight: 32),
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md, vertical: Spacing.xs),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md, vertical: Spacing.xs),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(Radii.chip),
         border: Border.all(color: color),
@@ -131,7 +140,10 @@ class StatusPill extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium!.copyWith(color: context.vehicle.textPrimary),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium!
+                  .copyWith(color: context.vehicle.textPrimary),
             ),
           ),
         ],
@@ -142,7 +154,12 @@ class StatusPill extends StatelessWidget {
 
 /// Full-width message box (warnings, errors, notes).
 class InfoBanner extends StatelessWidget {
-  const InfoBanner({super.key, required this.icon, required this.text, this.tone = Tone.warn, this.title});
+  const InfoBanner(
+      {super.key,
+      required this.icon,
+      required this.text,
+      this.tone = Tone.warn,
+      this.title});
 
   final IconData icon;
   final String text;
@@ -158,7 +175,6 @@ class InfoBanner extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.md),
       decoration: BoxDecoration(
         color: context.vehicle.surface,
-        borderRadius: BorderRadius.circular(Radii.chip),
         border: Border(
           left: BorderSide(color: color, width: 4),
           top: BorderSide(color: context.vehicle.hairline),
@@ -175,7 +191,10 @@ class InfoBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (title != null) Text(title!, style: theme.textTheme.titleSmall!.copyWith(color: color)),
+                if (title != null)
+                  Text(title!,
+                      style:
+                          theme.textTheme.titleSmall!.copyWith(color: color)),
                 Text(text, style: theme.textTheme.bodyMedium),
               ],
             ),
@@ -199,7 +218,8 @@ class StateChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = stateColor(context, state);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: Spacing.xs),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm, vertical: Spacing.xs),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(Radii.chip),
         border: Border.all(color: color),
@@ -207,11 +227,15 @@ class StateChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(stateIcon(state), size: state == SignalState.live ? 10 : 14, color: color),
+          Icon(stateIcon(state),
+              size: state == SignalState.live ? 10 : 14, color: color),
           const SizedBox(width: Spacing.xs + 2),
           Text(
-            stateLabel(state, nrc: nrc),
-            style: Theme.of(context).textTheme.labelSmall!.copyWith(color: color, letterSpacing: 0.6),
+            stateLabel(context.l10n, state, nrc: nrc),
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall!
+                .copyWith(color: color, letterSpacing: 0.6),
           ),
         ],
       ),
@@ -221,7 +245,8 @@ class StateChip extends StatelessWidget {
 
 /// Label on the left, value on the right; wraps instead of overflowing.
 class KeyValueRow extends StatelessWidget {
-  const KeyValueRow({super.key, required this.label, required this.value, this.valueColor});
+  const KeyValueRow(
+      {super.key, required this.label, required this.value, this.valueColor});
 
   final String label;
   final String value;
@@ -239,7 +264,9 @@ class KeyValueRow extends StatelessWidget {
           children: [
             Expanded(
               flex: 5,
-              child: Text(label, style: theme.textTheme.bodyMedium!.copyWith(color: context.vehicle.textSecondary)),
+              child: Text(label,
+                  style: theme.textTheme.bodyMedium!
+                      .copyWith(color: context.vehicle.textSecondary)),
             ),
             const SizedBox(width: Spacing.md),
             Expanded(
@@ -252,73 +279,6 @@ class KeyValueRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// A big-numeral tile for one catalog signal (label, value, unit, state).
-class SignalTile extends StatelessWidget {
-  const SignalTile({super.key, required this.view, this.valueStyle, this.showBar = false});
-
-  final SignalView view;
-
-  /// Defaults to `textTheme.displaySmall`.
-  final TextStyle? valueStyle;
-
-  /// Show a catalog-range bar under the value (live only).
-  final bool showBar;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final t = context.vehicle;
-    final live = view.isLive;
-    final color = live ? t.textPrimary : stateColor(context, view.state);
-    final style = (valueStyle ?? theme.textTheme.displaySmall!).copyWith(color: color);
-    final fraction = view.fraction;
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(view.label.toUpperCase(), style: theme.textTheme.labelSmall)),
-              if (!live) Icon(stateIcon(view.state), size: 16, color: stateColor(context, view.state)),
-            ],
-          ),
-          const SizedBox(height: Spacing.sm),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(view.valueText, style: style),
-                const SizedBox(width: Spacing.sm),
-                Text(view.unitText, style: numberFace(18, FontWeight.w500, color: t.textSecondary)),
-              ],
-            ),
-          ),
-          if (showBar) ...[
-            const SizedBox(height: Spacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.chip),
-              child: LinearProgressIndicator(
-                value: fraction ?? 0,
-                minHeight: 4,
-                backgroundColor: t.surfaceRaised,
-                color: t.accent,
-              ),
-            ),
-          ],
-          if (!live) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(stateLabel(view.state), style: theme.textTheme.labelSmall!.copyWith(color: color)),
-          ],
-        ],
       ),
     );
   }

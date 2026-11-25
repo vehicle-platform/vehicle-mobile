@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/assistant_provider.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
@@ -8,10 +9,10 @@ import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 
-/// Summary line of the current choice, e.g. "Yerel model (varsayılan)".
-String assistantChoiceSummary(
-    AssistantChoice choice, List<AssistantProvider> providers) {
-  if (choice.isLocal) return 'Yerel model (varsayılan)';
+/// Summary line of the current choice, e.g. "Local model (default)".
+String assistantChoiceSummary(AppLocalizations l, AssistantChoice choice,
+    List<AssistantProvider> providers) {
+  if (choice.isLocal) return l.settingsModelLocal;
   final label = providers
       .where((p) => p.id == choice.provider)
       .map((p) => p.label)
@@ -21,24 +22,22 @@ String assistantChoiceSummary(
   return model == null || model.isEmpty ? name : '$name · $model';
 }
 
-/// Turkish text of a failed provider call.
-String providerFailureText(ProviderResult<Object?> r) => switch (r.outcome) {
-      ProviderOutcome.consentRequired =>
-        'Bulut sağlayıcı için onay gerekli. Onayı verip tekrar dene.',
-      ProviderOutcome.cloudDisabled =>
-        'Bu sunucuda bulut sağlayıcılar kapalı. Yerel model kullanılabilir.',
-      ProviderOutcome.providerError =>
-        'Sağlayıcı hata verdi. Anahtarı ve bağlantıyı kontrol et.',
-      ProviderOutcome.invalid => 'Sunucu girişi kabul etmedi'
-          '${r.message == null ? '.' : ': ${r.message}'}',
-      ProviderOutcome.unauthorized => 'Oturum sona erdi.',
-      ProviderOutcome.unreachable => 'Sunucuya ulaşılamadı.',
-      ProviderOutcome.notSupported =>
-        'Bu sunucu sürümü model seçimini desteklemiyor.',
-      _ => 'İşlem başarısız: ${r.message ?? 'bilinmeyen hata'}',
+/// Localized text of a failed provider call.
+String providerFailureText(AppLocalizations l, ProviderResult<Object?> r) =>
+    switch (r.outcome) {
+      ProviderOutcome.consentRequired => l.settingsModelConsentRequired,
+      ProviderOutcome.cloudDisabled => l.settingsModelCloudDisabled,
+      ProviderOutcome.providerError => l.settingsModelProviderError,
+      ProviderOutcome.invalid => r.message == null
+          ? l.settingsModelInvalid
+          : l.settingsModelInvalidDetail(r.message!),
+      ProviderOutcome.unauthorized => l.settingsSessionEnded,
+      ProviderOutcome.unreachable => l.settingsUnreachable,
+      ProviderOutcome.notSupported => l.settingsModelNotSupported,
+      _ => l.settingsModelFailed(r.message ?? l.settingsUnknownError),
     };
 
-/// Settings row "Asistan modeli": shows the current choice and opens
+/// Settings row "Assistant model": shows the current choice and opens
 /// [AssistantModelScreen]. Renders nothing when the server answers 404 (an
 /// older server without these routes); other failures show a retry row.
 class AssistantModelSection extends StatefulWidget {
@@ -56,7 +55,8 @@ class _AssistantModelSectionState extends State<AssistantModelSection> {
       widget.client ?? AssistantProviderClient();
   bool _loading = true;
   bool _hidden = false;
-  String? _summary;
+  AssistantChoice? _choice;
+  List<AssistantProvider> _providers = const [];
 
   @override
   void initState() {
@@ -84,16 +84,17 @@ class _AssistantModelSectionState extends State<AssistantModelSection> {
       setState(() => _hidden = true);
       return;
     }
-    String? summary;
+    List<AssistantProvider> providers = const [];
     if (choice.isSuccess) {
-      final providers =
-          await _client.providers(baseUrl: target.$1, token: target.$2);
-      summary =
-          assistantChoiceSummary(choice.value!, providers.value ?? const []);
+      providers =
+          (await _client.providers(baseUrl: target.$1, token: target.$2))
+                  .value ??
+              const [];
     }
     if (!mounted) return;
     setState(() {
-      _summary = summary;
+      _choice = choice.isSuccess ? choice.value : null;
+      _providers = providers;
       _loading = false;
     });
   }
@@ -111,11 +112,15 @@ class _AssistantModelSectionState extends State<AssistantModelSection> {
   Widget build(BuildContext context) {
     if (_hidden) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final l = context.l10n;
+    final choice = _choice;
+    final summary =
+        choice == null ? null : assistantChoiceSummary(l, choice, _providers);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: Spacing.lg),
-        const SectionLabel('Asistan modeli'),
+        SectionLabel(l.settingsModelTitle),
         SectionCard(
           padding: EdgeInsets.zero,
           child: ListTile(
@@ -123,13 +128,13 @@ class _AssistantModelSectionState extends State<AssistantModelSection> {
             leading: const Icon(Icons.tune),
             title: Text(
                 _loading
-                    ? 'Yükleniyor...'
-                    : (_summary ?? 'Okunamadı, tekrar denemek için dokun'),
+                    ? l.settingsModelLoading
+                    : (summary ?? l.settingsModelUnreadable),
                 style: theme.textTheme.titleSmall),
-            subtitle: Text('Sürüş Asistanı\'nın cevabı hangi modelle yazdığı',
+            subtitle: Text(l.settingsModelSubtitle(l.assistantName),
                 style: theme.textTheme.bodySmall),
             trailing: const Icon(Icons.chevron_right),
-            onTap: _loading ? null : (_summary == null ? _load : _open),
+            onTap: _loading ? null : (summary == null ? _load : _open),
           ),
         ),
       ],
@@ -204,8 +209,8 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
     if (!providers.isSuccess || !current.isSuccess) {
       setState(() {
         _loading = false;
-        _loadError =
-            providerFailureText(providers.isSuccess ? current : providers);
+        _loadError = providerFailureText(
+            context.l10n, providers.isSuccess ? current : providers);
       });
       return;
     }
@@ -312,7 +317,9 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
       setState(() {
         _saving = false;
         _applySaved(result.value!);
-        _message = deleteKey ? 'Anahtar silindi.' : 'Kaydedildi.';
+        _message = deleteKey
+            ? context.l10n.settingsModelKeyDeleted
+            : context.l10n.settingsModelSaved;
         _messageTone = Tone.ok;
         _testResult = null;
       });
@@ -322,7 +329,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
     setState(() {
       _saving = false;
       _insecure = result.outcome == ProviderOutcome.insecureTransport;
-      _message = _insecure ? null : providerFailureText(result);
+      _message = _insecure ? null : providerFailureText(context.l10n, result);
       _messageTone = Tone.error;
     });
   }
@@ -331,16 +338,15 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Anahtar silinsin mi?'),
-        content: const Text(
-            'Kayıtlı anahtar sunucudan silinir. Asistan bu sağlayıcıyla çalışmaz.'),
+        title: Text(ctx.l10n.settingsModelDeleteKeyTitle),
+        content: Text(ctx.l10n.settingsModelDeleteKeyBody),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Vazgeç')),
+              child: Text(ctx.l10n.settingsDismiss)),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sil')),
+              child: Text(ctx.l10n.settingsDelete)),
         ],
       ),
     );
@@ -361,7 +367,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
       if (result.isSuccess) {
         _testResult = result.value;
       } else {
-        _message = providerFailureText(result);
+        _message = providerFailureText(context.l10n, result);
         _messageTone = Tone.error;
       }
     });
@@ -370,7 +376,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Asistan modeli')),
+      appBar: AppBar(title: Text(context.l10n.settingsModelTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ContentColumn(
@@ -388,7 +394,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                           const SizedBox(height: Spacing.md),
                           OutlinedButton(
                               onPressed: _load,
-                              child: const Text('Tekrar dene')),
+                              child: Text(context.l10n.settingsRetry)),
                         ],
                       )
                     : _form(context),
@@ -400,6 +406,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
   Widget _form(BuildContext context) {
     final theme = Theme.of(context);
     final t = context.vehicle;
+    final l = context.l10n;
     final p = _provider;
     final saved = _saved;
     final showSavedKey = p != null &&
@@ -411,16 +418,15 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Sürüş Asistanı varsayılan olarak sunucudaki yerel modeli kullanır. '
-          'İstersen kendi API anahtarınla başka bir sağlayıcı seçebilirsin.',
+          l.settingsModelIntro(l.assistantName),
           style: theme.textTheme.bodySmall!.copyWith(color: t.textSecondary),
         ),
         const SizedBox(height: Spacing.md),
-        const SectionLabel('Sağlayıcı'),
+        SectionLabel(l.settingsModelProvider),
         for (final provider in _providers) _providerTile(context, provider),
         if (p != null && p.needsKey) ...[
           const SizedBox(height: Spacing.lg),
-          const SectionLabel('Bağlantı'),
+          SectionLabel(l.settingsModelConnection),
           SectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -431,8 +437,8 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                     controller: _url,
                     keyboardType: TextInputType.url,
                     autocorrect: false,
-                    decoration: const InputDecoration(
-                        labelText: 'Adres (base URL)',
+                    decoration: InputDecoration(
+                        labelText: l.settingsModelBaseUrl,
                         hintText: 'https://api.example.com/v1'),
                     onChanged: (_) => setState(() {}),
                   ),
@@ -441,9 +447,8 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                 if (!showSavedKey) ...[
                   Text(
                     p.isCustom
-                        ? 'Enter the endpoint address and your API key, then tap Save.'
-                        : 'Paste your ${p.label} API key below, then tap Save. '
-                            'The key is sent once and is never shown again.',
+                        ? l.settingsModelKeyHelpCustom
+                        : l.settingsModelKeyHelp(p.label),
                     key: const ValueKey('key-help'),
                     style: theme.textTheme.bodySmall!
                         .copyWith(color: t.textSecondary),
@@ -453,14 +458,14 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                 if (showSavedKey) ...[
                   Row(children: [
                     Expanded(
-                      child: Text('Kayıtlı anahtar ••••${saved.keyHint ?? ''}',
+                      child: Text(l.settingsModelSavedKey(saved.keyHint ?? ''),
                           key: const ValueKey('key-hint'),
                           style: theme.textTheme.bodyMedium),
                     ),
                     TextButton(
                       key: const ValueKey('delete-key'),
                       onPressed: _saving ? null : _confirmDeleteKey,
-                      child: const Text('Anahtarı sil'),
+                      child: Text(l.settingsModelDeleteKey),
                     ),
                   ]),
                   const SizedBox(height: Spacing.sm),
@@ -473,20 +478,19 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                   enableSuggestions: false,
                   decoration: InputDecoration(
                       labelText: showSavedKey
-                          ? 'Yeni anahtar (isteğe bağlı)'
-                          : 'API anahtarı'),
+                          ? l.settingsModelNewKey
+                          : l.settingsModelApiKey),
                 ),
                 const SizedBox(height: Spacing.md),
-                _modelField(),
+                _modelField(l),
                 if (p.cloud) ...[
                   const SizedBox(height: Spacing.sm),
                   SwitchListTile(
                     key: const ValueKey('allow-position'),
                     contentPadding: EdgeInsets.zero,
-                    title: Text('Konum verisi de gönderilsin',
+                    title: Text(l.settingsModelSendPosition,
                         style: theme.textTheme.titleSmall),
-                    subtitle: Text(
-                        'Kapalıyken konum bilgisi sağlayıcıya gitmez.',
+                    subtitle: Text(l.settingsModelSendPositionHint,
                         style: theme.textTheme.bodySmall),
                     value: _allowPosition,
                     onChanged: (v) => setState(() => _allowPosition = v),
@@ -498,14 +502,12 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
         ],
         if (_insecure) ...[
           const SizedBox(height: Spacing.md),
-          const InfoBanner(
-            key: ValueKey('insecure-banner'),
+          InfoBanner(
+            key: const ValueKey('insecure-banner'),
             icon: Icons.lock_outline,
             tone: Tone.warn,
-            title: 'Güvenli bağlantı gerekli',
-            text: 'Anahtar yalnızca güvenli bağlantıyla (HTTPS) ya da Pi '
-                'üzerinde komutla girilebilir:\n'
-                'vehicle-server user set-llm <kullanıcı> --provider <id>',
+            title: l.settingsModelInsecureTitle,
+            text: l.settingsModelInsecureText,
           ),
         ],
         if (_message != null) ...[
@@ -521,14 +523,15 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
         FilledButton(
           key: const ValueKey('save-provider'),
           onPressed: _canSave ? _save : null,
-          child: Text(_saving ? 'Kaydediliyor...' : 'Kaydet'),
+          child: Text(_saving ? l.settingsSaving : l.settingsSave),
         ),
         if (p != null && !p.isLocal && _isSavedProvider) ...[
           const SizedBox(height: Spacing.sm),
           OutlinedButton(
             key: const ValueKey('test-provider'),
             onPressed: _testing ? null : _test,
-            child: Text(_testing ? 'Deneniyor...' : 'Bağlantıyı test et'),
+            child:
+                Text(_testing ? l.settingsModelTesting : l.settingsModelTest),
           ),
         ],
         if (_testResult != null) ...[
@@ -540,15 +543,15 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                 : Icons.error_outline,
             tone: _testResult!.ok ? Tone.ok : Tone.error,
             text: _testResult!.ok
-                ? 'Bağlantı çalışıyor (${_testResult!.latencyMs} ms).'
-                : 'Bağlantı kurulamadı: ${_testResult!.detail}',
+                ? l.settingsModelTestOk(_testResult!.latencyMs)
+                : l.settingsModelTestFailed(_testResult!.detail),
           ),
         ],
       ],
     );
   }
 
-  Widget _modelField() {
+  Widget _modelField(AppLocalizations l) {
     if (_models.isNotEmpty) {
       final ids = _models.map((m) => m.id).toList();
       final current = _model.text.trim();
@@ -562,7 +565,7 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
         key: ValueKey('model-dropdown-$_selected-${ids.length}'),
         initialValue: value,
         isExpanded: true,
-        decoration: const InputDecoration(labelText: 'Model'),
+        decoration: InputDecoration(labelText: l.settingsModelLabel),
         items: [
           for (final m in _models)
             DropdownMenuItem(value: m.id, child: Text(m.label)),
@@ -576,10 +579,10 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
       autocorrect: false,
       enableSuggestions: false,
       decoration: InputDecoration(
-        labelText: 'Model',
+        labelText: l.settingsModelLabel,
         helperText: _saved?.hasKey == true && _isSavedProvider
-            ? 'Liste alınamadı, model adını elle yaz.'
-            : 'Anahtarı kaydedince model listesi gelir; şimdilik adı elle yazabilirsin.',
+            ? l.settingsModelListFailed
+            : l.settingsModelListLater,
       ),
     );
   }
@@ -587,13 +590,19 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
   Widget _providerTile(BuildContext context, AssistantProvider p) {
     final theme = Theme.of(context);
     final t = context.vehicle;
+    final l = context.l10n;
     final selected = p.id == _selected;
     final enabled = p.available;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        borderColor: selected ? t.accent : null,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+              color: selected ? t.accent : Colors.transparent, width: 3),
+          bottom: BorderSide(color: t.hairline),
+        ),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
         child: ListTile(
           key: ValueKey('provider-${p.id}'),
           enabled: enabled,
@@ -604,15 +613,16 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
           subtitle: Text(
             enabled
                 ? p.dataNote
-                : (p.unavailableReason ?? 'Bu sağlayıcı şu an kullanılamıyor.'),
+                : (p.unavailableReason ?? l.settingsModelUnavailable),
             key: ValueKey('provider-note-${p.id}'),
             style: enabled
                 ? theme.textTheme.bodySmall
                 : theme.textTheme.bodySmall!.copyWith(color: t.stale),
           ),
           trailing: p.cloud
-              ? const Tooltip(
-                  message: 'Bulut sağlayıcı', child: Icon(Icons.cloud_outlined))
+              ? Tooltip(
+                  message: l.settingsModelCloud,
+                  child: const Icon(Icons.cloud_outlined))
               : null,
           onTap: enabled ? () => _select(p) : null,
         ),
@@ -639,6 +649,7 @@ class _ConsentSheetState extends State<_ConsentSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = context.l10n;
     final label = widget.provider.label;
     return SafeArea(
       child: SingleChildScrollView(
@@ -648,12 +659,11 @@ class _ConsentSheetState extends State<_ConsentSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$label ile devam edilsin mi?',
+            Text(l.settingsModelConsentTitle(label),
                 style: theme.textTheme.titleMedium),
             const SizedBox(height: Spacing.md),
             Text(
-              'Sorun ve sunucunun hesapladığı sürüş verileri $label sağlayıcısına gönderilir. '
-              'Maliyet kendi $label hesabından faturalanır.',
+              l.settingsModelConsentText(label),
               key: const ValueKey('consent-text'),
               style: theme.textTheme.bodyMedium,
             ),
@@ -665,7 +675,7 @@ class _ConsentSheetState extends State<_ConsentSheet> {
             SwitchListTile(
               key: const ValueKey('consent-position'),
               contentPadding: EdgeInsets.zero,
-              title: Text('Konum verisi de gönderilsin',
+              title: Text(l.settingsModelSendPosition,
                   style: theme.textTheme.titleSmall),
               value: _position,
               onChanged: (v) => setState(() => _position = v),
@@ -674,12 +684,12 @@ class _ConsentSheetState extends State<_ConsentSheet> {
             FilledButton(
               key: const ValueKey('consent-accept'),
               onPressed: () => Navigator.pop(context, _position),
-              child: const Text('Kabul ediyorum'),
+              child: Text(l.settingsModelAccept),
             ),
             TextButton(
               key: const ValueKey('consent-cancel'),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Vazgeç'),
+              child: Text(l.settingsDismiss),
             ),
           ],
         ),

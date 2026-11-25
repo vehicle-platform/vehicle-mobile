@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
@@ -10,6 +11,7 @@ import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 
 /// Live dashboard: hero speed, RPM and throttle, secondary tiles, and a
 /// compact status strip showing which links and sources are healthy.
@@ -73,13 +75,15 @@ class _LiveScreenState extends State<LiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The Ride sub-navigation already names this screen: no title here.
       appBar: AppBar(
-        title: const Text('CL250 Telemetry'),
+        toolbarHeight: 48,
         actions: [
           IconButton(
-            tooltip: 'Open the Record screen',
+            tooltip: context.l10n.rideLiveOpenRecord,
             onPressed: widget.onOpenRecord,
-            icon: Icon(Icons.fiber_manual_record, color: context.vehicle.record),
+            icon:
+                Icon(Icons.fiber_manual_record, color: context.vehicle.record),
           ),
           const HeaderActions(),
         ],
@@ -93,7 +97,8 @@ class _LiveScreenState extends State<LiveScreen> {
             final main = _mainColumn(context, snapshot);
             final side = _sideColumn(context, snapshot);
             return SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
+              padding: const EdgeInsets.fromLTRB(
+                  Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
               child: wide
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +108,11 @@ class _LiveScreenState extends State<LiveScreen> {
                         Expanded(flex: 2, child: side),
                       ],
                     )
-                  : Column(children: [main, const SizedBox(height: Spacing.lg), side]),
+                  : Column(children: [
+                      main,
+                      const SizedBox(height: Spacing.lg),
+                      side
+                    ]),
             );
           });
         },
@@ -115,19 +124,19 @@ class _LiveScreenState extends State<LiveScreen> {
 
   Widget _mainColumn(BuildContext context, SignalSnapshot snapshot) {
     final store = widget.store;
+    final l = context.l10n;
     final speed = snapshot.byName(VehicleSignalNames.vehicleSpeed);
     final rpm = snapshot.byName(VehicleSignalNames.engineSpeed);
     final throttle = snapshot.byName(VehicleSignalNames.throttlePos);
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (store.data.syntheticData == true) ...[
-          const InfoBanner(
+          InfoBanner(
             icon: Icons.science_outlined,
             tone: Tone.error,
-            title: 'SYNTHETIC DATA',
-            text: 'The node is generating mock values. Nothing shown here comes from the bike.',
+            title: l.rideSynthTitle,
+            text: l.rideSynthText,
           ),
           const SizedBox(height: Spacing.md),
         ],
@@ -137,17 +146,19 @@ class _LiveScreenState extends State<LiveScreen> {
           onPressed: _connectOrDisconnect,
         ),
         const SizedBox(height: Spacing.md),
-        if (speed != null) _HeroTile(view: speed),
-        const SizedBox(height: Spacing.md),
+        if (speed != null) _SignalReadout(view: speed, size: ReadoutSize.hero),
+        const SizedBox(height: Spacing.lg),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (rpm != null)
-              Expanded(child: SignalTile(view: rpm, valueStyle: theme.textTheme.displayMedium)),
+              Expanded(
+                  child: _SignalReadout(view: rpm, size: ReadoutSize.large)),
             const SizedBox(width: Spacing.md),
             if (throttle != null)
               Expanded(
-                child: SignalTile(view: throttle, valueStyle: theme.textTheme.displayMedium, showBar: true),
+                child: _SignalReadout(
+                    view: throttle, size: ReadoutSize.large, showBar: true),
               ),
           ],
         ),
@@ -166,74 +177,82 @@ class _LiveScreenState extends State<LiveScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (coolant != null) Expanded(child: SignalTile(view: coolant)),
+            if (coolant != null) Expanded(child: _SignalReadout(view: coolant)),
             const SizedBox(width: Spacing.md),
-            if (battery != null) Expanded(child: SignalTile(view: battery)),
+            if (battery != null) Expanded(child: _SignalReadout(view: battery)),
           ],
         ),
         const SizedBox(height: Spacing.lg),
-        const SectionLabel('Status'),
+        SectionLabel(context.l10n.rideStatusLabel),
         _StatusStrip(store: widget.store),
         const SizedBox(height: Spacing.lg),
         FilledButton.icon(
           style: FilledButton.styleFrom(
             backgroundColor: context.vehicle.record,
-            foregroundColor: context.vehicle.textPrimary,
+            foregroundColor: context.vehicle.onAccent,
             minimumSize: const Size.fromHeight(56),
           ),
           onPressed: widget.onOpenRecord,
           icon: const Icon(Icons.fiber_manual_record),
-          label: const Text('RECORD A SESSION'),
+          label: Text(context.l10n.rideRecordCta),
         ),
       ],
     );
   }
 }
 
-/// Speed in huge numerals; the card border follows the signal state.
-class _HeroTile extends StatelessWidget {
-  const _HeroTile({required this.view});
+/// One live signal as an instrument readout: label, tabular value and unit.
+/// The value takes the state colour only when it is not live; a state chip
+/// and (optionally) a range bar sit under it.
+class _SignalReadout extends StatelessWidget {
+  const _SignalReadout(
+      {required this.view,
+      this.size = ReadoutSize.medium,
+      this.showBar = false});
 
   final SignalView view;
+  final ReadoutSize size;
+  final bool showBar;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final t = context.vehicle;
     final live = view.isLive;
-    final color = live ? t.textPrimary : stateColor(context, view.state);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.xl),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(Radii.hero),
-        border: Border.all(color: live ? t.accent : t.outline, width: 2),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(view.label.toUpperCase(), style: theme.textTheme.labelSmall)),
-              StateChip(view.state, nrc: view.nrc),
-            ],
-          ),
-          const SizedBox(height: Spacing.md),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(view.valueText, style: theme.textTheme.displayLarge!.copyWith(color: color)),
-          ),
-          Text(
-            view.unitText.toUpperCase(),
-            style: theme.textTheme.titleMedium!.copyWith(color: t.accent, letterSpacing: 2),
+    final fraction = view.fraction;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Readout(
+          label: view.label,
+          value: view.valueText,
+          unit: view.unitText,
+          size: size,
+          color: live ? null : stateColor(context, view.state),
+        ),
+        if (showBar) ...[
+          const SizedBox(height: Spacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Radii.chip),
+            child: LinearProgressIndicator(
+              value: fraction ?? 0,
+              minHeight: 4,
+              backgroundColor: t.surfaceRaised,
+              color: t.accent,
+            ),
           ),
         ],
-      ),
+        if (!live) ...[
+          const SizedBox(height: Spacing.sm),
+          StateChip(view.state, nrc: view.nrc),
+        ],
+      ],
     );
   }
 }
 
 class _ConnectionCard extends StatelessWidget {
-  const _ConnectionCard({required this.store, required this.connecting, required this.onPressed});
+  const _ConnectionCard(
+      {required this.store, required this.connecting, required this.onPressed});
 
   final TelemetryStore store;
   final bool connecting;
@@ -243,19 +262,22 @@ class _ConnectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = context.vehicle;
+    final l = context.l10n;
     final connected = store.connected;
     final since = store.sinceLastPacket;
     final String title;
     final String subtitle;
     if (connected) {
-      title = store.deviceName ?? 'Connected';
-      subtitle = since == null ? 'Waiting for the first packet' : 'Last packet ${formatAge(since.inMilliseconds)} ago';
+      title = store.deviceName ?? l.rideConnected;
+      subtitle = since == null
+          ? l.rideWaitingFirstPacket
+          : l.rideLastPacketAgoSub(formatAge(since.inMilliseconds));
     } else if (connecting) {
-      title = 'Scanning...';
-      subtitle = 'Looking for the bike';
+      title = l.rideScanningTitle;
+      subtitle = l.rideLookingForBike;
     } else {
-      title = 'Not connected';
-      subtitle = 'Tap Connect to scan for the bike';
+      title = l.rideNotConnected;
+      subtitle = l.rideTapConnect;
     }
     return SectionCard(
       padding: const EdgeInsets.all(Spacing.md),
@@ -268,7 +290,9 @@ class _ConnectionCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                connected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+                connected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth_disabled,
                 color: connected ? t.live : t.noData,
                 size: 28,
               ),
@@ -278,7 +302,10 @@ class _ConnectionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                    Text(title,
+                        style: theme.textTheme.titleMedium!
+                            .copyWith(color: connected ? t.live : null),
+                        overflow: TextOverflow.ellipsis),
                     Text(subtitle, style: theme.textTheme.bodySmall),
                   ],
                 ),
@@ -289,14 +316,17 @@ class _ConnectionCard extends StatelessWidget {
               ? OutlinedButton.icon(
                   onPressed: onPressed,
                   icon: const Icon(Icons.link_off),
-                  label: const Text('Disconnect'),
+                  label: Text(l.rideDisconnect),
                 )
               : FilledButton.icon(
                   onPressed: connecting ? null : onPressed,
                   icon: connecting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.bluetooth_searching),
-                  label: Text(connecting ? 'Scanning' : 'Connect'),
+                  label: Text(connecting ? l.rideScanning : l.rideConnect),
                 ),
         ],
       ),
@@ -311,29 +341,42 @@ class _StatusStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final data = store.data;
     final live = store.connected && store.hasPacket;
     final pills = <Widget>[];
 
     pills.add(StatusPill(
-      icon: store.connected ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-      label: store.connected ? 'BLE ${store.deviceName ?? 'connected'}' : 'BLE disconnected',
+      icon: store.connected
+          ? Icons.bluetooth_connected
+          : Icons.bluetooth_disabled,
+      label: store.connected
+          ? (store.deviceName == null
+              ? l.rideBleConnected
+              : l.rideBleDevice(store.deviceName!))
+          : l.rideBleDisconnected,
       tone: store.connected ? Tone.ok : Tone.neutral,
     ));
 
     pills.add(live
         ? StatusPill(
             icon: data.ecuPresent ? Icons.memory : Icons.error_outline,
-            label: data.ecuPresent ? 'ECU present' : 'ECU not found',
+            label: data.ecuPresent ? l.rideEcuPresent : l.rideEcuNotFound,
             tone: data.ecuPresent ? Tone.ok : Tone.error,
           )
-        : const StatusPill(icon: Icons.memory, label: 'ECU --'));
+        : StatusPill(icon: Icons.memory, label: l.rideEcuUnknown));
 
-    final can = live ? canStateStatus(data.canBusState) : const StatusText('CAN --', Tone.neutral);
-    pills.add(StatusPill(icon: Icons.settings_ethernet, label: can.text, tone: can.tone));
+    final can = live
+        ? canStateStatus(data.canBusState, l)
+        : StatusText(l.rideCanUnknown, Tone.neutral);
+    pills.add(StatusPill(
+        icon: Icons.settings_ethernet, label: can.text, tone: can.tone));
 
     if (live && data.pollerEnabled == false) {
-      pills.add(const StatusPill(icon: Icons.pause_circle_outline, label: 'Poller off', tone: Tone.warn));
+      pills.add(StatusPill(
+          icon: Icons.pause_circle_outline,
+          label: l.ridePollerOff,
+          tone: Tone.warn));
     }
 
     // Latch flags: shown as alarms when set, one calm pill when both clear.
@@ -341,27 +384,36 @@ class _StatusStrip extends StatelessWidget {
       final foreign = data.latchedForeignTester;
       final busOff = data.latchedBusOff;
       if (foreign == true) {
-        pills.add(const StatusPill(icon: Icons.lock, label: 'Foreign tester latched', tone: Tone.error));
+        pills.add(StatusPill(
+            icon: Icons.lock, label: l.rideForeignLatched, tone: Tone.error));
       }
       if (busOff == true) {
-        pills.add(const StatusPill(icon: Icons.lock, label: 'Bus-off latched', tone: Tone.error));
+        pills.add(StatusPill(
+            icon: Icons.lock, label: l.rideBusOffLatched, tone: Tone.error));
       }
       if (foreign == false && busOff == false) {
-        pills.add(const StatusPill(icon: Icons.lock_open, label: 'Latches clear', tone: Tone.ok));
+        pills.add(StatusPill(
+            icon: Icons.lock_open, label: l.rideLatchesClear, tone: Tone.ok));
       }
       if (data.syntheticData == true) {
-        pills.add(const StatusPill(icon: Icons.science_outlined, label: 'Synthetic data', tone: Tone.error));
+        pills.add(StatusPill(
+            icon: Icons.science_outlined,
+            label: l.rideSyntheticData,
+            tone: Tone.error));
       }
     }
 
     pills.add(StatusPill(
       icon: Icons.vibration,
-      label: live ? (data.imuActive ? 'IMU active' : 'IMU inactive') : 'IMU --',
+      label: live
+          ? (data.imuActive ? l.rideImuActive : l.rideImuInactive)
+          : l.rideImuUnknown,
       tone: live ? (data.imuActive ? Tone.ok : Tone.warn) : Tone.neutral,
     ));
 
-    final gps = gpsStatus(store.gpsLink, store.lastGpsBlock);
-    pills.add(StatusPill(icon: Icons.satellite_alt, label: gps.text, tone: gps.tone));
+    final gps = gpsStatus(store.gpsLink, store.lastGpsBlock, l);
+    pills.add(
+        StatusPill(icon: Icons.satellite_alt, label: gps.text, tone: gps.tone));
 
     return Wrap(spacing: Spacing.sm, runSpacing: Spacing.sm, children: pills);
   }

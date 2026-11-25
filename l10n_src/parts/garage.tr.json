@@ -1,0 +1,37 @@
+{
+  "garageNotificationsTitle": "Bildirimler",
+  "garageNotificationTitle": "Bildirim",
+  "garageBellTooltip": "Bildirimler",
+  "garageBellTooltipUnread": "Bildirimler ({count} okunmamış)",
+  "@garageBellTooltipUnread": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "garageSeverityCritical": "Kritik",
+  "garageSeverityWarning": "Uyarı",
+  "garageSeverityInfo": "Bilgi",
+  "garageDayToday": "Bugün",
+  "garageDayYesterday": "Dün",
+  "garageDayNoDate": "Tarih yok",
+  "garageEmptyTitle": "Henüz bildirim yok",
+  "garageEmptyHint": "Sürüş özetleri ve uyarılar burada görünür.",
+  "garageUnread": "Okunmadı",
+  "garageOpenRide": "Sürüşü aç",
+  "garageAskAssistant": "{assistant}'na sor",
+  "@garageAskAssistant": {
+    "placeholders": {"assistant": {"type": "String"}}
+  },
+  "garageAskQuestion": "\"{title}\" bildirimi hakkında ne söyleyebilirsin?",
+  "@garageAskQuestion": {
+    "placeholders": {"title": {"type": "String"}}
+  },
+  "garageFaultsTitle": "Arızalar",
+  "garageFaultsLoading": "Arızalar yükleniyor...",
+  "garageFaultsNoServer": "vehicle-server ayarlanmamış. Ayarlar'dan cihaz anahtarıyla bir sunucu ekle.",
+  "garageFaultsRetry": "Tekrar dene",
+  "garageFaultsEmpty": "Sunucu hiç arıza listelemiyor.",
+  "garageAnnounceAdviseStop": "Güvenli bir yerde dur ve motoru kontrol ettir.",
+  "garageAnnounceFault": "Yüksek öncelikli uyarı: {title}. Güvenli bir yerde dur ve motoru kontrol ettir.",
+  "@garageAnnounceFault": {
+    "placeholders": {"title": {"type": "String"}}
+  }
+}

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -302,6 +304,10 @@ Future<void> _drain(WidgetTester tester) async {
   }
 }
 
+/// A [Readout] with this value and unit (the value and unit are separate texts).
+Finder _readout(String value, String unit) => find.byWidgetPredicate(
+    (w) => w is Readout && w.value == value && w.unit == unit);
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -389,9 +395,9 @@ void main() {
     expect(find.text('20260116-090000-bbbb'), findsOneWidget);
     expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
     expect(find.text('defs 1.2.3'), findsOneWidget);
-    expect(find.text('12.35 km'), findsOneWidget);
-    expect(find.text('900.0 s'), findsOneWidget);
-    expect(find.text('– degC'), findsOneWidget);
+    expect(_readout('12.35', 'km'), findsOneWidget);
+    expect(_readout('900.0', 's'), findsOneWidget);
+    expect(_readout('–', 'degC'), findsOneWidget);
     expect(find.text('gps_fix_type_ignored'), findsOneWidget);
 
     expect(find.text('did.COOLANT_TEMP [degC]'), findsOneWidget);
@@ -575,7 +581,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ride cl250_ride.yaml'), findsOneWidget);
-    expect(find.text(HealthWindowsSection.missingReportMessage), findsOneWidget);
+    expect(find.text(lookupAppLocalizations(const Locale('en')).logbookWindowsMissingReport), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -1,0 +1,405 @@
+{
+  "rideLiveOpenRecord": "Open the Record screen",
+  "rideSynthTitle": "SYNTHETIC DATA",
+  "rideSynthText": "The node is generating mock values. Nothing shown here comes from the bike.",
+  "rideRecordCta": "RECORD A SESSION",
+  "rideStatusLabel": "Status",
+  "rideConnected": "Connected",
+  "rideDisconnected": "Disconnected",
+  "rideNotConnected": "Not connected",
+  "rideWaitingFirstPacket": "Waiting for the first packet",
+  "rideLastPacketAgoSub": "Last packet {age} ago",
+  "@rideLastPacketAgoSub": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "rideScanningTitle": "Scanning...",
+  "rideLookingForBike": "Looking for the bike",
+  "rideTapConnect": "Tap Connect to scan for the bike",
+  "rideDisconnect": "Disconnect",
+  "rideConnect": "Connect",
+  "rideScanning": "Scanning",
+  "rideBleDevice": "BLE {device}",
+  "@rideBleDevice": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "rideBleConnected": "BLE connected",
+  "rideBleDisconnected": "BLE disconnected",
+  "rideEcuPresent": "ECU present",
+  "rideEcuNotFound": "ECU not found",
+  "rideEcuUnknown": "ECU --",
+  "rideCanUnknown": "CAN --",
+  "ridePollerOff": "Poller off",
+  "rideForeignLatched": "Foreign tester latched",
+  "rideBusOffLatched": "Bus-off latched",
+  "rideLatchesClear": "Latches clear",
+  "rideSyntheticData": "Synthetic data",
+  "rideImuActive": "IMU active",
+  "rideImuInactive": "IMU inactive",
+  "rideImuUnknown": "IMU --",
+  "rideCanNa": "CAN n/a",
+  "rideCanRunning": "CAN running",
+  "rideCanErrorWarning": "CAN error warning",
+  "rideCanBusOff": "CAN bus-off",
+  "rideCanStopped": "CAN stopped",
+  "rideCanNotInstalled": "CAN not installed",
+  "rideGpsNone": "GPS --",
+  "rideGpsNotOffered": "GPS not offered",
+  "rideGpsPairing": "GPS pairing...",
+  "rideGpsPairPhone": "GPS: pair phone with bike",
+  "rideGpsWaiting": "GPS waiting for data",
+  "rideGpsFix": "GPS {fix} · {sats} sats",
+  "@rideGpsFix": {
+    "placeholders": {
+      "fix": {
+        "type": "String"
+      },
+      "sats": {
+        "type": "int"
+      }
+    }
+  },
+  "rideSigLive": "live",
+  "rideSigPolled": "polled",
+  "rideSigCandidates": "candidates",
+  "rideFilterAll": "All",
+  "rideFilterPolled": "Polled",
+  "rideFilterCandidates": "Candidates",
+  "rideGroupLive": "{live} / {total} live",
+  "@rideGroupLive": {
+    "placeholders": {
+      "live": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ridePollEvery": "Poll every {ms} ms",
+  "@ridePollEvery": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "rideAgeDetail": "Age {age} · {detail}",
+  "@rideAgeDetail": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "rideNotPolled": "Not polled",
+  "rideReportedByNode": "Reported by the node",
+  "rideDiagLink": "Link",
+  "rideDiagBle": "BLE",
+  "rideDiagDevice": "Device",
+  "rideDiagAttMtu": "ATT MTU",
+  "rideDiagRequestedMtu": "Requested MTU",
+  "rideDiagPacketVersion": "Packet version",
+  "rideDiagLastPacket": "Last packet",
+  "rideDiagAgoSuffix": "{age} ago",
+  "@rideDiagAgoSuffix": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "rideDiagDeviceTime": "Device time",
+  "rideDiagPackets": "Packets",
+  "rideDiagReceived": "Received",
+  "rideDiagLostGaps": "Lost (sequence gaps)",
+  "rideDiagLoss": "Loss",
+  "rideDiagRejectedVersion": "Rejected (version)",
+  "rideDiagRejectedSize": "Rejected (size)",
+  "rideDiagCanBus": "Vehicle CAN bus",
+  "rideDiagBusState": "Bus state",
+  "rideDiagTxErrors": "TX errors",
+  "rideDiagRxErrors": "RX errors",
+  "rideDiagBusOffEvents": "Bus-off events",
+  "rideDiagUnansweredDids": "Unanswered DIDs",
+  "rideDiagPollerEnabled": "Poller enabled",
+  "rideDiagForeignLatched": "Foreign tester latched",
+  "rideDiagBusOffLatched": "Bus-off latched",
+  "rideDiagSynthetic": "Synthetic data",
+  "rideYes": "yes",
+  "rideNo": "no",
+  "rideDiagCanNeeds": "CAN health needs a version {version} or newer packet.",
+  "@rideDiagCanNeeds": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "rideDiagTester": "Tester (diagnostic poller)",
+  "rideDiagStepGapMax": "Step gap, max",
+  "rideDiagStepGapOver": "Step gap, over limit",
+  "rideDiagRoundTrip": "Round trip, rotating DID",
+  "rideDiagDid": "DID",
+  "rideDiagMin": "Min",
+  "rideDiagMax": "Max",
+  "rideDiagMean": "Mean",
+  "rideDiagSamples": "Samples",
+  "rideDiagNrc78": "NRC 0x78 (pending)",
+  "rideDiagTesterNeeds": "Tester stats need a version {version} packet.",
+  "@rideDiagTesterNeeds": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecTabRecord": "Record",
+  "rideRecTabSessions": "Sessions",
+  "rideRecServerRides": "Server rides",
+  "rideRecRunning": "REC {duration}",
+  "@rideRecRunning": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecKeepOn": "Keep this screen on and the app in the foreground while recording. Android may kill the BLE connection if the app is backgrounded or killed -- there is no foreground service yet.",
+  "rideRecStop": "STOP RECORDING",
+  "rideRecStart": "START RECORDING",
+  "rideRecMetadata": "Session metadata",
+  "rideRecRiderName": "Rider name",
+  "rideRecRiderWeight": "Rider weight (kg)",
+  "rideRecExtraLoad": "Extra load (kg)",
+  "rideRecAmbientTemp": "Ambient temp (°C)",
+  "rideRecWeather": "Weather",
+  "rideRecTireFront": "Tire pressure front (bar)",
+  "rideRecTireRear": "Tire pressure rear (bar)",
+  "rideRecFuel": "Fuel level (e.g. full, 1/2, reserve)",
+  "rideRecVehicleConfig": "Vehicle config (gearing/exhaust/filter)",
+  "rideRecCondition": "Condition label (healthy or fault type)",
+  "rideRecRouteType": "Route type",
+  "rideRecNote": "Note",
+  "rideWeatherDry": "dry",
+  "rideWeatherWet": "wet",
+  "rideWeatherUnknown": "unknown",
+  "rideRouteUrban": "urban",
+  "rideRouteRural": "rural",
+  "rideRouteHighway": "highway",
+  "rideRouteClosedCourse": "closed course",
+  "rideRouteStationary": "stationary",
+  "rideRecGpsNotSubscribed": "GPS: not subscribed -- pair the phone with the bike (bonded link required); it is retried on the next connection",
+  "rideRecGpsPairing": "GPS: pairing / subscribing...",
+  "rideRecGpsWaiting": "GPS: subscribed, waiting for data",
+  "rideRecGpsNotOffered": "GPS: not offered by the firmware",
+  "rideRecGpsNone": "GPS: -",
+  "rideRecGpsNotOk": " (not OK)",
+  "rideRecGpsLine": "GPS: {fix}{notOk}   Sats: {sats}   {kmh} km/h   Lost/skipped: {lost}",
+  "@rideRecGpsLine": {
+    "placeholders": {
+      "fix": {
+        "type": "String"
+      },
+      "notOk": {
+        "type": "String"
+      },
+      "sats": {
+        "type": "int"
+      },
+      "kmh": {
+        "type": "String"
+      },
+      "lost": {
+        "type": "int"
+      }
+    }
+  },
+  "rideRecSession": "Session: {id}",
+  "@rideRecSession": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecElapsed": "ELAPSED",
+  "rideRecStatPackets": "Packets",
+  "rideRecStatLost": "Lost",
+  "rideRecStatLoss": "Loss",
+  "rideRecStatDecodeErrors": "Decode errors",
+  "rideRecStatDisconnects": "Disconnects",
+  "rideRecStatImuSamples": "IMU samples",
+  "rideRecStatImuMissing": "IMU missing",
+  "rideRecStatMtu": "MTU",
+  "rideRecFirmwareOld": "Only version 2 telemetry packets received so far -- the connected device firmware may be outdated. Update it to get CAN health, ages and IMU data.",
+  "rideRecNoPacketsYet": "No packets yet",
+  "rideRecLastPacketMs": "Last packet: {ms} ms ago",
+  "@rideRecLastPacketMs": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "rideUpNotUploaded": "not uploaded",
+  "rideUpNotUploadedNoServer": "not uploaded (no server configured)",
+  "rideUpUploading": "uploading...",
+  "rideUpUploaded": "uploaded",
+  "rideUpUploadedAt": "uploaded ({time})",
+  "@rideUpUploadedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rideUpFailed": "failed: {reason}",
+  "@rideUpFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "rideUpUnknownError": "unknown error",
+  "rideUpTipNoServer": "Set a server URL in Settings to enable uploads",
+  "rideUpTipRetry": "Retry upload",
+  "rideUpTipUpload": "Upload to vehicle-server",
+  "rideRecNoSessions": "No recorded sessions yet.",
+  "rideRecUnknownTime": "unknown time",
+  "rideRecSessionLine": "duration: {duration}  packets: {packets}  loss: {loss}",
+  "@rideRecSessionLine": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "packets": {
+        "type": "String"
+      },
+      "loss": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadLine": "upload: {status}",
+  "@rideRecUploadLine": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecRideSummary": "Ride summary",
+  "rideRecBringup": "Bring-up check",
+  "rideRecShare": "Share",
+  "rideRecDelete": "Delete",
+  "rideRecCancel": "Cancel",
+  "rideRecDeleteTitle": "Delete session?",
+  "rideRecDeleteBody": "This permanently deletes \"{id}\" and its recorded files.",
+  "@rideRecDeleteBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecSaved": "Session saved: {packets} packets, {loss}% loss",
+  "@rideRecSaved": {
+    "placeholders": {
+      "packets": {
+        "type": "int"
+      },
+      "loss": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadFailedSnack": "Upload failed: {reason}",
+  "@rideRecUploadFailedSnack": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadComplete": "Upload complete.",
+  "rideVsigNoData": "Vehicle signals: no data",
+  "rideVsigLine": "Vehicle signals: {parts}{lost}",
+  "@rideVsigLine": {
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      },
+      "lost": {
+        "type": "String"
+      }
+    }
+  },
+  "rideVsigFresh": "{n} fresh",
+  "@rideVsigFresh": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigStale": "{n} stale",
+  "@rideVsigStale": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigNrc": "{n} NRC",
+  "@rideVsigNrc": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigSkipped": "{n} skipped",
+  "@rideVsigSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigNever": "{n} never",
+  "@rideVsigNever": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigUnknown": "{n} unknown",
+  "@rideVsigUnknown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigLostBlocks": "   Lost blocks: {n}",
+  "@rideVsigLostBlocks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
+}

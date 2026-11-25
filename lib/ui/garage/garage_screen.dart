@@ -80,8 +80,7 @@ class _GarageScreenState extends State<GarageScreen> {
                 ),
                 segments: [
                   ButtonSegment(
-                      value: _GarageSection.inbox,
-                      label: Text(l.garageInbox)),
+                      value: _GarageSection.inbox, label: Text(l.garageInbox)),
                   ButtonSegment(
                       value: _GarageSection.faults,
                       label: Text(l.garageFaults)),

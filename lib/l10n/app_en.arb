@@ -47,5 +47,1050 @@
   "settingsLanguage": "Language",
   "settingsLanguageHint": "Also the language of the assistant's answers.",
   "languageEnglish": "English",
-  "languageTurkish": "Türkçe"
+  "languageTurkish": "Türkçe",
+  "assistantGreeting": "Hello, I am the Ride Assistant. What would you like to know?",
+  "assistantExample1": "How was my last ride?",
+  "assistantExample2": "Summary of the last ride",
+  "assistantExample3": "Any recorded faults?",
+  "assistantHint": "Type a question",
+  "assistantHintListening": "Listening...",
+  "assistantSend": "Send",
+  "assistantClear": "Clear conversation",
+  "assistantRideChip": "Ride {id}",
+  "@assistantRideChip": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantStepReading": "Reading the data ...",
+  "assistantStepReadingRide": "Reading ride {id} ...",
+  "@assistantStepReadingRide": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantSourceLlm": "Assistant",
+  "assistantSourceTemplate": "Verified from data",
+  "assistantSourceUnsupported": "Could not answer",
+  "assistantSourceError": "Error",
+  "assistantModelTemplate": "Template answer (no model)",
+  "assistantModelNone": "Not answered (no model)",
+  "assistantModelChipLabel": "Assistant model: {text}",
+  "@assistantModelChipLabel": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantComputedBy": "computed by ",
+  "assistantArguments": "Arguments",
+  "assistantResult": "Result",
+  "assistantResultEmpty": "(empty)",
+  "assistantItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@assistantItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantMoreItems": "+{count} more",
+  "@assistantMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantTruncated": "truncated",
+  "assistantFailSettings": "Could not read the host settings.",
+  "assistantFailNoHost": "No host with a device token is configured. Add one in Settings > Hosts.",
+  "assistantFailUnauthorized": "The device token was rejected by \"{host}\". Check the token in Settings > Hosts.",
+  "@assistantFailUnauthorized": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailInvalid": "The server rejected the message: {message}",
+  "@assistantFailInvalid": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailRateLimited": "Rate limited. Try again shortly.",
+  "assistantFailRateLimitedIn": "Rate limited. Try again in {seconds} s.",
+  "@assistantFailRateLimitedIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantFailDisabled": "The assistant is disabled on \"{host}\".",
+  "@assistantFailDisabled": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnreachable": "Host unreachable: \"{host}\".",
+  "@assistantFailUnreachable": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailFailed": "Request failed: {message}",
+  "@assistantFailFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnknown": "unknown error",
+  "assistantTheHost": "the host",
+  "assistantVoiceInitTimeout": "Speech recognition is not available. You can type the question.",
+  "assistantVoiceNoSpeech": "I did not hear you. Try again?",
+  "assistantVoiceUnavailable": "Speech recognition is not available right now. You can type the question.",
+  "assistantVoicePermission": "Microphone permission was not granted or this device has no speech recognition. You can allow it in the settings or type the question.",
+  "assistantVoiceLanguage": "Speech recognition for this language is not installed on this device. You can type the question.",
+  "assistantVoiceNetwork": "Speech recognition needs an internet connection.",
+  "assistantRouteIntercom": "Intercom connected",
+  "assistantRoutePhone": "Phone microphone",
+  "assistantMicStop": "Stop listening",
+  "assistantMicSpeaking": "Stop reading and speak",
+  "assistantMicStart": "Ask by voice",
+  "assistantClose": "Close",
+  "assistantHoldToTalk": "Hold to talk",
+  "assistantReleaseToSend": "Release to send",
+  "assistantPreparing": "Preparing the microphone ...",
+  "garageNotificationsTitle": "Notifications",
+  "garageNotificationTitle": "Notification",
+  "garageBellTooltip": "Notifications",
+  "garageBellTooltipUnread": "Notifications ({count} unread)",
+  "@garageBellTooltipUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "garageSeverityCritical": "Critical",
+  "garageSeverityWarning": "Warning",
+  "garageSeverityInfo": "Info",
+  "garageDayToday": "Today",
+  "garageDayYesterday": "Yesterday",
+  "garageDayNoDate": "No date",
+  "garageEmptyTitle": "No notifications yet",
+  "garageEmptyHint": "Ride summaries and alerts appear here.",
+  "garageUnread": "Unread",
+  "garageOpenRide": "Open ride",
+  "garageAskAssistant": "Ask {assistant}",
+  "@garageAskAssistant": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "garageAskQuestion": "What can you tell me about the notification \"{title}\"?",
+  "@garageAskQuestion": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "garageFaultsTitle": "Faults",
+  "garageFaultsLoading": "Loading faults...",
+  "garageFaultsNoServer": "No vehicle-server configured. Add a host with its device token in Settings.",
+  "garageFaultsRetry": "Retry",
+  "garageFaultsEmpty": "The host lists no faults.",
+  "garageAnnounceAdviseStop": "Stop in a safe place and have the engine checked.",
+  "garageAnnounceFault": "High-priority warning: {title}. Stop in a safe place and have the engine checked.",
+  "@garageAnnounceFault": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRideHistoryTitle": "Ride history",
+  "logbookRideSummaryTitle": "Ride summary",
+  "logbookBringupTitle": "Bring-up check",
+  "logbookRefresh": "Refresh",
+  "logbookRetry": "Retry",
+  "logbookOpenSettings": "Open Settings",
+  "logbookAskAssistant": "Ask the assistant",
+  "logbookLoadingRides": "Loading rides...",
+  "logbookLoadingSummary": "Loading ride summary...",
+  "logbookLoadingBringup": "Loading bring-up check...",
+  "logbookNoServer": "No vehicle-server configured. Set the server URL and API token in Settings.",
+  "logbookCleartextWarning": "Warning: http:// sends the API token and ride data unencrypted. Use it only on a trusted local network; use https:// for any server reachable from outside.",
+  "logbookAllRides": "All rides",
+  "logbookRangeUtc": "{from} – {to} (UTC days)",
+  "@logbookRangeUtc": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoRidesInRange": "No rides in this range.",
+  "logbookSkippedHint": "{count, plural, =1{1 session without a stored summary skipped.} other{{count} sessions without a stored summary skipped.}}",
+  "@logbookSkippedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookDateRange": "Date range",
+  "logbookChangeRange": "Change range",
+  "logbookClear": "Clear",
+  "logbookColumns": "Columns",
+  "logbookUpToTwo": "up to two",
+  "logbookRideCount": "{count, plural, =1{1 ride} other{{count} rides}}",
+  "@logbookRideCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookSkippedCount": "{count} skipped",
+  "@logbookSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookUnknownTime": "unknown time",
+  "logbookSignals": "Signals",
+  "logbookPerGear": "Per-gear signals",
+  "logbookBinned": "Binned signals",
+  "logbookCoverage": "Coverage",
+  "logbookHealthWindows": "Health windows",
+  "logbookNoSummary": "No stored ride summary for this session.",
+  "logbookDefsMismatch": "Decoded with other defs bin edges: {names}.",
+  "@logbookDefsMismatch": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRideDefinition": "ride {value}",
+  "@logbookRideDefinition": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookDefsVersion": "defs {value}",
+  "@logbookDefsVersion": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoSignals": "No stored signals in this ride summary.",
+  "logbookGear": "Gear {n}",
+  "@logbookGear": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookNoGears": "No stored gears.",
+  "logbookAxisUnsupported": "{n}-axis summaries are not shown on the phone yet.",
+  "@logbookAxisUnsupported": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookTotalOutside": "total {total} · outside {outside}",
+  "@logbookTotalOutside": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "outside": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNotAvailable": "Not available ({n})",
+  "@logbookNotAvailable": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookPendingInputs": "pending: {list}",
+  "@logbookPendingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookMissingInputs": "missing: {list}",
+  "@logbookMissingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookColumnsAxis": "columns: {input} [{unit}]",
+  "@logbookColumnsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRowsAxis": "rows: {input} [{unit}]",
+  "@logbookRowsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookSession": "Session",
+  "logbookBringupUnsupported": "this server has no bring-up check (needs vehicle-server with the bring-up route, server#50)",
+  "logbookBringupUnauthorized": "Unauthorized: check the API token in Settings.",
+  "logbookBringupNotFound": "the server does not have this session (upload it first)",
+  "logbookBringupInvalid": "invalid request",
+  "logbookBringupUnavailable": "server unavailable",
+  "logbookBringupFailed": "request failed",
+  "logbookSettingsReadFailed": "Could not read the server settings.",
+  "logbookNoBringupAnswer": "The server returned no bring-up answer.",
+  "logbookNoChecks": "The server returned no checks for this gate.",
+  "logbookChecks": "Checks",
+  "logbookManualPending": "{count, plural, =1{1 manual check pending: {list}} other{{count} manual checks pending: {list}}}",
+  "@logbookManualPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookWarningsList": "{count, plural, =1{1 warning: {list}} other{{count} warnings: {list}}}",
+  "@logbookWarningsList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookBringupLegend": "manual = you judge it at the bike; unknown = the session has no data for it.",
+  "logbookMeasured": "Measured",
+  "logbookExpected": "Expected",
+  "logbookSource": "Source",
+  "logbookNote": "Note",
+  "logbookWindowsLoading": "Loading window instances...",
+  "logbookWindowsMissingReport": "No window instances in this report (older server, or run `vehicle-server derive <id>` on the server).",
+  "logbookWindowsUnavailable": "Unavailable.",
+  "logbookWindowsNone": "No window instances stored.",
+  "logbookWindowsCounts": "{instances} instances, {qualifying} qualifying",
+  "@logbookWindowsCounts": {
+    "placeholders": {
+      "instances": {
+        "type": "int"
+      },
+      "qualifying": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookColStart": "Start",
+  "logbookColEnd": "End",
+  "logbookColDuration": "Duration",
+  "logbookColCloseReason": "Close reason",
+  "logbookColQualifies": "Qualifies",
+  "logbookColFirst": "First",
+  "logbookYes": "yes",
+  "logbookNo": "no",
+  "logbookFirstMark": "first",
+  "rideLiveOpenRecord": "Open the Record screen",
+  "rideSynthTitle": "SYNTHETIC DATA",
+  "rideSynthText": "The node is generating mock values. Nothing shown here comes from the bike.",
+  "rideRecordCta": "RECORD A SESSION",
+  "rideStatusLabel": "Status",
+  "rideConnected": "Connected",
+  "rideDisconnected": "Disconnected",
+  "rideNotConnected": "Not connected",
+  "rideWaitingFirstPacket": "Waiting for the first packet",
+  "rideLastPacketAgoSub": "Last packet {age} ago",
+  "@rideLastPacketAgoSub": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "rideScanningTitle": "Scanning...",
+  "rideLookingForBike": "Looking for the bike",
+  "rideTapConnect": "Tap Connect to scan for the bike",
+  "rideDisconnect": "Disconnect",
+  "rideConnect": "Connect",
+  "rideScanning": "Scanning",
+  "rideBleDevice": "BLE {device}",
+  "@rideBleDevice": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "rideBleConnected": "BLE connected",
+  "rideBleDisconnected": "BLE disconnected",
+  "rideEcuPresent": "ECU present",
+  "rideEcuNotFound": "ECU not found",
+  "rideEcuUnknown": "ECU --",
+  "rideCanUnknown": "CAN --",
+  "ridePollerOff": "Poller off",
+  "rideForeignLatched": "Foreign tester latched",
+  "rideBusOffLatched": "Bus-off latched",
+  "rideLatchesClear": "Latches clear",
+  "rideSyntheticData": "Synthetic data",
+  "rideImuActive": "IMU active",
+  "rideImuInactive": "IMU inactive",
+  "rideImuUnknown": "IMU --",
+  "rideCanNa": "CAN n/a",
+  "rideCanRunning": "CAN running",
+  "rideCanErrorWarning": "CAN error warning",
+  "rideCanBusOff": "CAN bus-off",
+  "rideCanStopped": "CAN stopped",
+  "rideCanNotInstalled": "CAN not installed",
+  "rideGpsNone": "GPS --",
+  "rideGpsNotOffered": "GPS not offered",
+  "rideGpsPairing": "GPS pairing...",
+  "rideGpsPairPhone": "GPS: pair phone with bike",
+  "rideGpsWaiting": "GPS waiting for data",
+  "rideGpsFix": "GPS {fix} · {sats} sats",
+  "@rideGpsFix": {
+    "placeholders": {
+      "fix": {
+        "type": "String"
+      },
+      "sats": {
+        "type": "int"
+      }
+    }
+  },
+  "rideSigLive": "live",
+  "rideSigPolled": "polled",
+  "rideSigCandidates": "candidates",
+  "rideFilterAll": "All",
+  "rideFilterPolled": "Polled",
+  "rideFilterCandidates": "Candidates",
+  "rideGroupLive": "{live} / {total} live",
+  "@rideGroupLive": {
+    "placeholders": {
+      "live": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "ridePollEvery": "Poll every {ms} ms",
+  "@ridePollEvery": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "rideAgeDetail": "Age {age} · {detail}",
+  "@rideAgeDetail": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "rideNotPolled": "Not polled",
+  "rideReportedByNode": "Reported by the node",
+  "rideDiagLink": "Link",
+  "rideDiagBle": "BLE",
+  "rideDiagDevice": "Device",
+  "rideDiagAttMtu": "ATT MTU",
+  "rideDiagRequestedMtu": "Requested MTU",
+  "rideDiagPacketVersion": "Packet version",
+  "rideDiagLastPacket": "Last packet",
+  "rideDiagAgoSuffix": "{age} ago",
+  "@rideDiagAgoSuffix": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "rideDiagDeviceTime": "Device time",
+  "rideDiagPackets": "Packets",
+  "rideDiagReceived": "Received",
+  "rideDiagLostGaps": "Lost (sequence gaps)",
+  "rideDiagLoss": "Loss",
+  "rideDiagRejectedVersion": "Rejected (version)",
+  "rideDiagRejectedSize": "Rejected (size)",
+  "rideDiagCanBus": "Vehicle CAN bus",
+  "rideDiagBusState": "Bus state",
+  "rideDiagTxErrors": "TX errors",
+  "rideDiagRxErrors": "RX errors",
+  "rideDiagBusOffEvents": "Bus-off events",
+  "rideDiagUnansweredDids": "Unanswered DIDs",
+  "rideDiagPollerEnabled": "Poller enabled",
+  "rideDiagForeignLatched": "Foreign tester latched",
+  "rideDiagBusOffLatched": "Bus-off latched",
+  "rideDiagSynthetic": "Synthetic data",
+  "rideYes": "yes",
+  "rideNo": "no",
+  "rideDiagCanNeeds": "CAN health needs a version {version} or newer packet.",
+  "@rideDiagCanNeeds": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "rideDiagTester": "Tester (diagnostic poller)",
+  "rideDiagStepGapMax": "Step gap, max",
+  "rideDiagStepGapOver": "Step gap, over limit",
+  "rideDiagRoundTrip": "Round trip, rotating DID",
+  "rideDiagDid": "DID",
+  "rideDiagMin": "Min",
+  "rideDiagMax": "Max",
+  "rideDiagMean": "Mean",
+  "rideDiagSamples": "Samples",
+  "rideDiagNrc78": "NRC 0x78 (pending)",
+  "rideDiagTesterNeeds": "Tester stats need a version {version} packet.",
+  "@rideDiagTesterNeeds": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecTabRecord": "Record",
+  "rideRecTabSessions": "Sessions",
+  "rideRecServerRides": "Server rides",
+  "rideRecRunning": "REC {duration}",
+  "@rideRecRunning": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecKeepOn": "Keep this screen on and the app in the foreground while recording. Android may kill the BLE connection if the app is backgrounded or killed -- there is no foreground service yet.",
+  "rideRecStop": "STOP RECORDING",
+  "rideRecStart": "START RECORDING",
+  "rideRecMetadata": "Session metadata",
+  "rideRecRiderName": "Rider name",
+  "rideRecRiderWeight": "Rider weight (kg)",
+  "rideRecExtraLoad": "Extra load (kg)",
+  "rideRecAmbientTemp": "Ambient temp (°C)",
+  "rideRecWeather": "Weather",
+  "rideRecTireFront": "Tire pressure front (bar)",
+  "rideRecTireRear": "Tire pressure rear (bar)",
+  "rideRecFuel": "Fuel level (e.g. full, 1/2, reserve)",
+  "rideRecVehicleConfig": "Vehicle config (gearing/exhaust/filter)",
+  "rideRecCondition": "Condition label (healthy or fault type)",
+  "rideRecRouteType": "Route type",
+  "rideRecNote": "Note",
+  "rideWeatherDry": "dry",
+  "rideWeatherWet": "wet",
+  "rideWeatherUnknown": "unknown",
+  "rideRouteUrban": "urban",
+  "rideRouteRural": "rural",
+  "rideRouteHighway": "highway",
+  "rideRouteClosedCourse": "closed course",
+  "rideRouteStationary": "stationary",
+  "rideRecGpsNotSubscribed": "GPS: not subscribed -- pair the phone with the bike (bonded link required); it is retried on the next connection",
+  "rideRecGpsPairing": "GPS: pairing / subscribing...",
+  "rideRecGpsWaiting": "GPS: subscribed, waiting for data",
+  "rideRecGpsNotOffered": "GPS: not offered by the firmware",
+  "rideRecGpsNone": "GPS: -",
+  "rideRecGpsNotOk": " (not OK)",
+  "rideRecGpsLine": "GPS: {fix}{notOk}   Sats: {sats}   {kmh} km/h   Lost/skipped: {lost}",
+  "@rideRecGpsLine": {
+    "placeholders": {
+      "fix": {
+        "type": "String"
+      },
+      "notOk": {
+        "type": "String"
+      },
+      "sats": {
+        "type": "int"
+      },
+      "kmh": {
+        "type": "String"
+      },
+      "lost": {
+        "type": "int"
+      }
+    }
+  },
+  "rideRecSession": "Session: {id}",
+  "@rideRecSession": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecElapsed": "ELAPSED",
+  "rideRecStatPackets": "Packets",
+  "rideRecStatLost": "Lost",
+  "rideRecStatLoss": "Loss",
+  "rideRecStatDecodeErrors": "Decode errors",
+  "rideRecStatDisconnects": "Disconnects",
+  "rideRecStatImuSamples": "IMU samples",
+  "rideRecStatImuMissing": "IMU missing",
+  "rideRecStatMtu": "MTU",
+  "rideRecFirmwareOld": "Only version 2 telemetry packets received so far -- the connected device firmware may be outdated. Update it to get CAN health, ages and IMU data.",
+  "rideRecNoPacketsYet": "No packets yet",
+  "rideRecLastPacketMs": "Last packet: {ms} ms ago",
+  "@rideRecLastPacketMs": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "rideUpNotUploaded": "not uploaded",
+  "rideUpNotUploadedNoServer": "not uploaded (no server configured)",
+  "rideUpUploading": "uploading...",
+  "rideUpUploaded": "uploaded",
+  "rideUpUploadedAt": "uploaded ({time})",
+  "@rideUpUploadedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rideUpFailed": "failed: {reason}",
+  "@rideUpFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "rideUpUnknownError": "unknown error",
+  "rideUpTipNoServer": "Set a server URL in Settings to enable uploads",
+  "rideUpTipRetry": "Retry upload",
+  "rideUpTipUpload": "Upload to vehicle-server",
+  "rideRecNoSessions": "No recorded sessions yet.",
+  "rideRecUnknownTime": "unknown time",
+  "rideRecSessionLine": "duration: {duration}  packets: {packets}  loss: {loss}",
+  "@rideRecSessionLine": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "packets": {
+        "type": "String"
+      },
+      "loss": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadLine": "upload: {status}",
+  "@rideRecUploadLine": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecRideSummary": "Ride summary",
+  "rideRecBringup": "Bring-up check",
+  "rideRecShare": "Share",
+  "rideRecDelete": "Delete",
+  "rideRecCancel": "Cancel",
+  "rideRecDeleteTitle": "Delete session?",
+  "rideRecDeleteBody": "This permanently deletes \"{id}\" and its recorded files.",
+  "@rideRecDeleteBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecSaved": "Session saved: {packets} packets, {loss}% loss",
+  "@rideRecSaved": {
+    "placeholders": {
+      "packets": {
+        "type": "int"
+      },
+      "loss": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadFailedSnack": "Upload failed: {reason}",
+  "@rideRecUploadFailedSnack": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "rideRecUploadComplete": "Upload complete.",
+  "rideVsigNoData": "Vehicle signals: no data",
+  "rideVsigLine": "Vehicle signals: {parts}{lost}",
+  "@rideVsigLine": {
+    "placeholders": {
+      "parts": {
+        "type": "String"
+      },
+      "lost": {
+        "type": "String"
+      }
+    }
+  },
+  "rideVsigFresh": "{n} fresh",
+  "@rideVsigFresh": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigStale": "{n} stale",
+  "@rideVsigStale": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigNrc": "{n} NRC",
+  "@rideVsigNrc": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigSkipped": "{n} skipped",
+  "@rideVsigSkipped": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigNever": "{n} never",
+  "@rideVsigNever": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigUnknown": "{n} unknown",
+  "@rideVsigUnknown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "rideVsigLostBlocks": "   Lost blocks: {n}",
+  "@rideVsigLostBlocks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsCancel": "Cancel",
+  "settingsSave": "Save",
+  "settingsSaving": "Saving...",
+  "settingsDelete": "Delete",
+  "settingsAdd": "Add",
+  "settingsRetry": "Try again",
+  "settingsDismiss": "Cancel",
+  "settingsUnknownError": "unknown error",
+  "settingsSignalLive": "LIVE",
+  "settingsSignalStale": "STALE",
+  "settingsSignalNoData": "NO DATA",
+  "settingsSignalNotPolled": "NOT POLLED",
+  "settingsSignalSkipped": "SKIPPED",
+  "settingsAccount": "Account",
+  "settingsSignedInAs": "Signed in as {username}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNoVehicles": "No vehicle is linked to this account.",
+  "settingsDeviceTokenConnected": "Connected with a device token",
+  "settingsNotSignedIn": "Not signed in",
+  "settingsAddVehicle": "Add vehicle",
+  "settingsSignOut": "Sign out",
+  "settingsSignIn": "Sign in",
+  "settingsVehicleId": "Vehicle ID",
+  "settingsClaimCode": "Claim code",
+  "settingsClaimInvalid": "The vehicle ID or code is not valid.",
+  "settingsRateLimited": "Too many attempts. Try again in a moment.",
+  "settingsRateLimitedWait": "Too many attempts. Try again in {seconds} s.",
+  "@settingsRateLimitedWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsUnreachable": "Could not reach the server.",
+  "settingsSessionEnded": "Session ended.",
+  "settingsClaimFailed": "Could not add the vehicle: {detail}",
+  "@settingsClaimFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHosts": "Hosts (vehicle-server)",
+  "settingsAddHost": "Add host",
+  "settingsEditHost": "Edit host",
+  "settingsDeleteHost": "Delete host",
+  "settingsHostsLoadFailed": "Could not read the saved hosts.",
+  "settingsNoHosts": "No host configured yet: recording and sharing sessions work fully without one. Add a host to enable upload, rides, faults and the assistant.",
+  "settingsHostsHint": "The first host that answers is used, so put the local one first. Drag to reorder.",
+  "settingsCheckHosts": "Check hosts again",
+  "settingsChecking": "Checking...",
+  "settingsDeleteHostTitle": "Delete host?",
+  "settingsDeleteHostBody": "Removes \"{name}\" and its device token from this device.",
+  "@settingsDeleteHostBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostActive": "active",
+  "settingsTokenSet": "token set",
+  "settingsNoToken": "no token",
+  "settingsCleartextShort": "http:// sends the token and ride data unencrypted. Use it only on a trusted local network.",
+  "settingsCleartextLong": "Warning: http:// sends the token and ride data unencrypted. Use it only on a trusted local network; use https:// for any server reachable from outside.",
+  "settingsHostName": "Name",
+  "settingsHostNameHint": "Bike (local Raspi)",
+  "settingsHostUrl": "Server base URL",
+  "settingsHostToken": "Device token",
+  "settingsEnterName": "Enter a name",
+  "settingsEnterUrl": "Enter the server URL",
+  "settingsUpload": "Upload",
+  "settingsWifiOnly": "Upload only on Wi-Fi",
+  "settingsWifiOnlyHint": "Session archives can be several MB; avoid mobile data by default.",
+  "settingsReadAnswers": "Read answers aloud",
+  "settingsReadAnswersHint": "{assistant} reads the answer text aloud. On by default on the phone, off on web and desktop.",
+  "@settingsReadAnswersHint": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelTitle": "Assistant model",
+  "settingsModelSubtitle": "Which model {assistant} uses to write its answers",
+  "@settingsModelSubtitle": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelLoading": "Loading...",
+  "settingsModelUnreadable": "Could not read it, tap to try again",
+  "settingsModelLocal": "Local model (default)",
+  "settingsModelConsentRequired": "Cloud providers need your consent. Give it and try again.",
+  "settingsModelCloudDisabled": "Cloud providers are turned off on this server. The local model stays available.",
+  "settingsModelProviderError": "The provider returned an error. Check the key and the connection.",
+  "settingsModelInvalid": "The server did not accept the input.",
+  "settingsModelInvalidDetail": "The server did not accept the input: {detail}",
+  "@settingsModelInvalidDetail": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelNotSupported": "This server version does not support model selection.",
+  "settingsModelFailed": "The action failed: {detail}",
+  "@settingsModelFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelIntro": "{assistant} uses the local model on the server by default. You can pick another provider with your own API key.",
+  "@settingsModelIntro": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelProvider": "Provider",
+  "settingsModelConnection": "Connection",
+  "settingsModelBaseUrl": "Address (base URL)",
+  "settingsModelKeyHelpCustom": "Enter the endpoint address and your API key, then tap Save.",
+  "settingsModelKeyHelp": "Paste your {provider} API key below, then tap Save. The key is sent once and is never shown again.",
+  "@settingsModelKeyHelp": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelSavedKey": "Saved key ••••{hint}",
+  "@settingsModelSavedKey": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelDeleteKey": "Delete key",
+  "settingsModelNewKey": "New key (optional)",
+  "settingsModelApiKey": "API key",
+  "settingsModelSendPosition": "Also send position data",
+  "settingsModelSendPositionHint": "While off, no position data goes to the provider.",
+  "settingsModelInsecureTitle": "Secure connection required",
+  "settingsModelInsecureText": "The key can only be entered over a secure connection (HTTPS) or on the Pi with the command:\nvehicle-server user set-llm <user> --provider <id>",
+  "settingsModelTest": "Test the connection",
+  "settingsModelTesting": "Testing...",
+  "settingsModelTestOk": "The connection works ({ms} ms).",
+  "@settingsModelTestOk": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsModelTestFailed": "The connection failed: {detail}",
+  "@settingsModelTestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelKeyDeleted": "Key deleted.",
+  "settingsModelSaved": "Saved.",
+  "settingsModelDeleteKeyTitle": "Delete the key?",
+  "settingsModelDeleteKeyBody": "The saved key is deleted from the server. The assistant will not work with this provider.",
+  "settingsModelLabel": "Model",
+  "settingsModelListFailed": "The list could not be loaded, type the model name.",
+  "settingsModelListLater": "The model list appears after you save the key; for now you can type the name.",
+  "settingsModelUnavailable": "This provider is not available right now.",
+  "settingsModelCloud": "Cloud provider",
+  "settingsModelConsentTitle": "Continue with {provider}?",
+  "@settingsModelConsentTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelConsentText": "Your question and the ride data the server computed are sent to {provider}. The cost is billed to your own {provider} account.",
+  "@settingsModelConsentText": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelAccept": "I accept",
+  "settingsAuthBadCredentials": "Wrong username or password.",
+  "settingsAuthUsernameTaken": "That username is taken.",
+  "settingsAuthInvalid": "The details were not accepted: {detail}",
+  "@settingsAuthInvalid": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuthInvalidFallback": "invalid input",
+  "settingsAuthNotSupported": "This server does not support account sign-in. Connect with a device token under Advanced.",
+  "settingsAuthRequestFailed": "The request failed: {detail}",
+  "@settingsAuthRequestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLoginSignIn": "Sign in",
+  "settingsLoginRegister": "Create account",
+  "settingsLoginSubRegister": "Create your account with the vehicle ID and the ownership code.",
+  "settingsLoginSubSignIn": "Sign in to see your rides and notifications.",
+  "settingsLoginSavedHost": "Saved server",
+  "settingsLoginServer": "Server address",
+  "settingsLoginUsername": "Username",
+  "settingsLoginPassword": "Password",
+  "settingsLoginHaveAccount": "I already have an account",
+  "settingsLoginAdvanced": "Advanced: connect with a device token",
+  "settingsLoginConnect": "Connect",
+  "settingsLoginSkip": "Skip for now",
+  "settingsLoginEnterUrl": "Enter the server address.",
+  "settingsLoginInsecureUrl": "Insecure address: use https:// or a server on the local network.",
+  "settingsLoginNeedCredentials": "Username and password are required.",
+  "settingsLoginNeedVehicle": "Vehicle ID and claim code are required.",
+  "settingsLoginNeedToken": "Enter the device token.",
+  "settingsLoginSessionEnded": "Session ended. Please sign in again."
 }

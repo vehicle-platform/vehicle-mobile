@@ -7,7 +7,7 @@ import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
 /// handlebar push-to-talk (BLE) and the intercom's voice-command button
 /// (Android `VOICE_COMMAND` intent).
 enum VoiceTrigger {
-  /// Open Sürüş Asistanı and start listening.
+  /// Open Ride Assistant and start listening.
   startListening,
 
   /// Button released after a long hold: send the question; empty does nothing.
@@ -24,8 +24,8 @@ VoiceTrigger triggerOfRiderInput(RiderInputAction action) => switch (action) {
       RiderInputAction.stopAfterTap => VoiceTrigger.stopAfterTap,
     };
 
-/// Routes [VoiceTrigger]s to the Sürüş Asistanı screen. The shell sets [onNeedAssistant]
-/// (select the Sürüş Asistanı tab); the screen [attach]es its handler once it exists.
+/// Routes [VoiceTrigger]s to the Ride Assistant screen. The shell sets [onNeedAssistant]
+/// (select the Ride Assistant tab); the screen [attach]es its handler once it exists.
 /// A trigger that arrives before the screen is built waits and is delivered on
 /// [attach] (a cold start from the voice-command button).
 class VoiceTriggerBus {
@@ -36,7 +36,7 @@ class VoiceTriggerBus {
   void Function(VoiceTrigger trigger)? _handler;
   final List<VoiceTrigger> _pending = [];
 
-  /// Called for triggers that need the Sürüş Asistanı screen in front.
+  /// Called for triggers that need the Ride Assistant screen in front.
   VoidCallback? onNeedAssistant;
 
   void emit(VoiceTrigger trigger) {

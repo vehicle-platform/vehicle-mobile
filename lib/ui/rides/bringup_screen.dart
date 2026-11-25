@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/bringup_result.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
@@ -47,6 +48,16 @@ class _BringupScreenState extends State<BringupScreen> {
   void initState() {
     super.initState();
     _client = widget.client ?? RideClient();
+  }
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The first load reads localized fallback texts, so it starts here.
+    if (_started) return;
+    _started = true;
     _load();
   }
 
@@ -68,6 +79,8 @@ class _BringupScreenState extends State<BringupScreen> {
       if (clearResult) _result = null;
     });
 
+    final settingsFailedText = context.l10n.logbookSettingsReadFailed;
+    final errorTexts = _errorTexts(context);
     AppSettings settings;
     try {
       settings = (reloadSettings || _settings == null)
@@ -80,7 +93,7 @@ class _BringupScreenState extends State<BringupScreen> {
         _loading = false;
         _result = null;
         _settingsFailed = true;
-        _error = 'Could not read the server settings.';
+        _error = settingsFailedText;
       });
       return;
     }
@@ -108,28 +121,38 @@ class _BringupScreenState extends State<BringupScreen> {
       } else {
         _result = null;
         _outcome = result.outcome;
-        _error = _errorText(result);
+        _error = _errorText(result, errorTexts);
       }
     });
   }
 
-  String _errorText(RideResult<BringupResult> result) {
+  _ErrorTexts _errorTexts(BuildContext context) {
+    final l = context.l10n;
+    return _ErrorTexts(
+      unsupported: l.logbookBringupUnsupported,
+      unauthorized: l.logbookBringupUnauthorized,
+      notFound: l.logbookBringupNotFound,
+      invalid: l.logbookBringupInvalid,
+      unavailable: l.logbookBringupUnavailable,
+      failed: l.logbookBringupFailed,
+    );
+  }
+
+  String _errorText(RideResult<BringupResult> result, _ErrorTexts texts) {
     return switch (result.outcome) {
-      RideOutcome.unsupported =>
-        'this server has no bring-up check (needs vehicle-server with the bring-up route, server#50)',
-      RideOutcome.unauthorized =>
-        'Unauthorized: check the API token in Settings.',
+      RideOutcome.unsupported => texts.unsupported,
+      RideOutcome.unauthorized => texts.unauthorized,
       RideOutcome.notFound => [
-          'the server does not have this session (upload it first)',
+          texts.notFound,
           // ride_client falls back to the literal "not found" without a server detail.
           if (result.message != null &&
               result.message!.trim().isNotEmpty &&
               result.message!.trim().toLowerCase() != 'not found')
             result.message!.trim(),
         ].join(': '),
-      RideOutcome.invalid => result.message ?? 'invalid request',
-      RideOutcome.unavailable => result.message ?? 'server unavailable',
-      RideOutcome.failed => result.message ?? 'request failed',
+      RideOutcome.invalid => result.message ?? texts.invalid,
+      RideOutcome.unavailable => result.message ?? texts.unavailable,
+      RideOutcome.failed => result.message ?? texts.failed,
       RideOutcome.ok => '',
     };
   }
@@ -157,11 +180,11 @@ class _BringupScreenState extends State<BringupScreen> {
     final settings = _settings;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bring-up check'),
+        title: Text(context.l10n.logbookBringupTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: context.l10n.logbookRefresh,
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -176,9 +199,12 @@ class _BringupScreenState extends State<BringupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('SESSION', style: theme.textTheme.labelSmall),
+                  Text(upperFor(context, context.l10n.logbookSession),
+                      style: theme.textTheme.labelSmall),
                   const SizedBox(height: Spacing.xs),
-                  Text(widget.sessionId, style: theme.textTheme.titleSmall),
+                  Text(widget.sessionId,
+                      style: numberFace(20, FontWeight.w600,
+                          color: context.vehicle.textPrimary)),
                   const SizedBox(height: Spacing.md),
                   SegmentedButton<String>(
                     showSelectedIcon: false,
@@ -202,7 +228,7 @@ class _BringupScreenState extends State<BringupScreen> {
 
   Widget _body(AppSettings? settings) {
     if (settings == null || (_loading && _result == null)) {
-      return const RideLoading('Loading bring-up check...');
+      return RideLoading(context.l10n.logbookLoadingBringup);
     }
     if (_error != null) {
       final settingsAction = _outcome == RideOutcome.unauthorized;
@@ -220,7 +246,9 @@ class _BringupScreenState extends State<BringupScreen> {
                   ? Tone.neutral
                   : Tone.error,
               message: _error!,
-              actionLabel: settingsAction ? 'Open Settings' : 'Retry',
+              actionLabel: settingsAction
+                  ? context.l10n.logbookOpenSettings
+                  : context.l10n.logbookRetry,
               onAction: settingsAction
                   ? _openSettings
                   : () => _load(reloadSettings: _settingsFailed),
@@ -232,17 +260,16 @@ class _BringupScreenState extends State<BringupScreen> {
     if (!_isConfigured(settings)) {
       return RideMessage(
         icon: Icons.settings_ethernet,
-        message:
-            'No vehicle-server configured. Set the server URL and API token in Settings.',
-        actionLabel: 'Open Settings',
+        message: context.l10n.logbookNoServer,
+        actionLabel: context.l10n.logbookOpenSettings,
         onAction: _openSettings,
       );
     }
     if (_result == null) {
       return RideMessage(
         icon: Icons.help_outline,
-        message: 'The server returned no bring-up answer.',
-        actionLabel: 'Retry',
+        message: context.l10n.logbookNoBringupAnswer,
+        actionLabel: context.l10n.logbookRetry,
         onAction: _load,
       );
     }
@@ -261,10 +288,9 @@ class _BringupScreenState extends State<BringupScreen> {
             RideCleartextWarning(settings: settings),
           _verdict(result),
           const SizedBox(height: Spacing.lg),
-          const SectionLabel('Checks'),
+          SectionLabel(context.l10n.logbookChecks),
           if (result.checks.isEmpty)
-            const SectionCard(
-                child: Text('The server returned no checks for this gate.'))
+            SectionCard(child: Text(context.l10n.logbookNoChecks))
           else
             for (final check in result.checks) _checkCard(check),
         ],
@@ -288,21 +314,20 @@ class _BringupScreenState extends State<BringupScreen> {
           ),
           if (pending > 0) ...[
             const SizedBox(height: Spacing.sm),
-            Text('$pending manual check${pending == 1 ? '' : 's'} pending: '
-                '${result.needsYou.join(', ')}'),
+            Text(context.l10n
+                .logbookManualPending(pending, result.needsYou.join(', '))),
           ],
           if (warnings > 0) ...[
             const SizedBox(height: Spacing.xs),
             Text(
-              '$warnings warning${warnings == 1 ? '' : 's'}: '
-              '${result.warnings.join(', ')}',
-              style: TextStyle(color: context.vehicle.warning),
+              context.l10n
+                  .logbookWarningsList(warnings, result.warnings.join(', ')),
+              style: TextStyle(color: context.vehicle.advisory),
             ),
           ],
           const SizedBox(height: Spacing.sm),
           Text(
-            'manual = you judge it at the bike; '
-            'unknown = the session has no data for it.',
+            context.l10n.logbookBringupLegend,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -331,10 +356,12 @@ class _BringupScreenState extends State<BringupScreen> {
               ],
             ),
             const SizedBox(height: Spacing.md),
-            _field('Measured', formatBringupMeasured(check.measured)),
-            _field('Expected', check.expected),
-            _field('Source', check.source),
-            if (check.note.isNotEmpty) _field('Note', check.note),
+            _field(context.l10n.logbookMeasured,
+                formatBringupMeasured(check.measured)),
+            _field(context.l10n.logbookExpected, check.expected),
+            _field(context.l10n.logbookSource, check.source),
+            if (check.note.isNotEmpty)
+              _field(context.l10n.logbookNote, check.note),
           ],
         ),
       ),
@@ -348,7 +375,7 @@ class _BringupScreenState extends State<BringupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
+          Text(upperFor(context, label), style: theme.textTheme.labelSmall),
           const SizedBox(height: Spacing.xs),
           Text(value, style: theme.textTheme.bodyMedium),
         ],
@@ -410,4 +437,24 @@ String _inlineMeasured(Object? value) {
 String _scalarMeasured(Object? value) {
   if (value == null) return '—';
   return value.toString();
+}
+
+/// The localized fallback texts of a failed bring-up request, read before the
+/// request starts so no context is used across the async gap.
+class _ErrorTexts {
+  const _ErrorTexts({
+    required this.unsupported,
+    required this.unauthorized,
+    required this.notFound,
+    required this.invalid,
+    required this.unavailable,
+    required this.failed,
+  });
+
+  final String unsupported;
+  final String unauthorized;
+  final String notFound;
+  final String invalid;
+  final String unavailable;
+  final String failed;
 }

@@ -32,7 +32,7 @@ void main() {
           reason: label);
     }
     // Opens on the assistant.
-    expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'), findsOneWidget);
+    expect(find.text('Hello, I am the Ride Assistant. What would you like to know?'), findsOneWidget);
   });
 
   testWidgets('a wide computer window uses a navigation rail', (tester) async {

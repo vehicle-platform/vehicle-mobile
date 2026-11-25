@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/notifications/notification_center.dart';
 import 'package:vehicle_mobile/ui/notifications/notifications_screen.dart';
 
@@ -34,7 +35,9 @@ class NotificationBell extends StatelessWidget {
     }
     final unread = center.unreadCount;
     return IconButton(
-      tooltip: unread == 0 ? 'Bildirimler' : 'Bildirimler ($unread okunmamış)',
+      tooltip: unread == 0
+          ? context.l10n.garageBellTooltip
+          : context.l10n.garageBellTooltipUnread(unread),
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text(unread > 99 ? '99+' : '$unread'),

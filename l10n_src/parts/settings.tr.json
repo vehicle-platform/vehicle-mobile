@@ -1,0 +1,243 @@
+{
+  "settingsCancel": "İptal",
+  "settingsSave": "Kaydet",
+  "settingsSaving": "Kaydediliyor...",
+  "settingsDelete": "Sil",
+  "settingsAdd": "Ekle",
+  "settingsRetry": "Tekrar dene",
+  "settingsDismiss": "Vazgeç",
+  "settingsUnknownError": "bilinmeyen hata",
+  "settingsSignalLive": "CANLI",
+  "settingsSignalStale": "ESKİ",
+  "settingsSignalNoData": "VERİ YOK",
+  "settingsSignalNotPolled": "SORGULANMIYOR",
+  "settingsSignalSkipped": "ATLANDI",
+  "settingsAccount": "Hesap",
+  "settingsSignedInAs": "Giriş yapan: {username}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNoVehicles": "Bu hesaba bağlı araç yok.",
+  "settingsDeviceTokenConnected": "Cihaz token'ı ile bağlı",
+  "settingsNotSignedIn": "Giriş yapılmadı",
+  "settingsAddVehicle": "Araç ekle",
+  "settingsSignOut": "Çıkış yap",
+  "settingsSignIn": "Giriş yap",
+  "settingsVehicleId": "Araç kimliği",
+  "settingsClaimCode": "Talep kodu",
+  "settingsClaimInvalid": "Araç kimliği veya kod geçersiz.",
+  "settingsRateLimited": "Çok fazla deneme. Biraz sonra tekrar dene.",
+  "settingsRateLimitedWait": "Çok fazla deneme. {seconds} sn sonra tekrar dene.",
+  "@settingsRateLimitedWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsUnreachable": "Sunucuya ulaşılamadı.",
+  "settingsSessionEnded": "Oturum sona erdi.",
+  "settingsClaimFailed": "Araç eklenemedi: {detail}",
+  "@settingsClaimFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHosts": "Sunucular (vehicle-server)",
+  "settingsAddHost": "Sunucu ekle",
+  "settingsEditHost": "Sunucuyu düzenle",
+  "settingsDeleteHost": "Sunucuyu sil",
+  "settingsHostsLoadFailed": "Kayıtlı sunucular okunamadı.",
+  "settingsNoHosts": "Henüz sunucu yok: kayıt ve oturum paylaşımı sunucusuz da tam çalışır. Yükleme, sürüşler, arızalar ve asistan için bir sunucu ekle.",
+  "settingsHostsHint": "Cevap veren ilk sunucu kullanılır; yerel olanı başa koy. Sıralamak için sürükle.",
+  "settingsCheckHosts": "Sunucuları yeniden dene",
+  "settingsChecking": "Deneniyor...",
+  "settingsDeleteHostTitle": "Sunucu silinsin mi?",
+  "settingsDeleteHostBody": "\"{name}\" ve cihaz token'ı bu cihazdan silinir.",
+  "@settingsDeleteHostBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostActive": "etkin",
+  "settingsTokenSet": "token var",
+  "settingsNoToken": "token yok",
+  "settingsCleartextShort": "http:// token'ı ve sürüş verisini şifrelemeden gönderir. Yalnızca güvenilir bir yerel ağda kullan.",
+  "settingsCleartextLong": "Uyarı: http:// token'ı ve sürüş verisini şifrelemeden gönderir. Yalnızca güvenilir bir yerel ağda kullan; dışarıdan erişilen her sunucu için https:// kullan.",
+  "settingsHostName": "Ad",
+  "settingsHostNameHint": "Motor (yerel Raspi)",
+  "settingsHostUrl": "Sunucu adresi",
+  "settingsHostToken": "Cihaz token'ı",
+  "settingsEnterName": "Bir ad gir",
+  "settingsEnterUrl": "Sunucu adresini gir",
+  "settingsUpload": "Yükleme",
+  "settingsWifiOnly": "Yalnızca Wi-Fi ile yükle",
+  "settingsWifiOnlyHint": "Oturum arşivleri birkaç MB olabilir; varsayılan olarak mobil veri kullanılmaz.",
+  "settingsReadAnswers": "Cevapları sesli oku",
+  "settingsReadAnswersHint": "{assistant} cevabın metnini sesli okur. Telefonda varsayılan açık, web ve bilgisayarda kapalı.",
+  "@settingsReadAnswersHint": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelTitle": "Asistan modeli",
+  "settingsModelSubtitle": "{assistant} cevabı hangi modelle yazıyor",
+  "@settingsModelSubtitle": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelLoading": "Yükleniyor...",
+  "settingsModelUnreadable": "Okunamadı, tekrar denemek için dokun",
+  "settingsModelLocal": "Yerel model (varsayılan)",
+  "settingsModelConsentRequired": "Bulut sağlayıcı için onay gerekli. Onayı verip tekrar dene.",
+  "settingsModelCloudDisabled": "Bu sunucuda bulut sağlayıcılar kapalı. Yerel model kullanılabilir.",
+  "settingsModelProviderError": "Sağlayıcı hata verdi. Anahtarı ve bağlantıyı kontrol et.",
+  "settingsModelInvalid": "Sunucu girişi kabul etmedi.",
+  "settingsModelInvalidDetail": "Sunucu girişi kabul etmedi: {detail}",
+  "@settingsModelInvalidDetail": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelNotSupported": "Bu sunucu sürümü model seçimini desteklemiyor.",
+  "settingsModelFailed": "İşlem başarısız: {detail}",
+  "@settingsModelFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelIntro": "{assistant} varsayılan olarak sunucudaki yerel modeli kullanır. İstersen kendi API anahtarınla başka bir sağlayıcı seçebilirsin.",
+  "@settingsModelIntro": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelProvider": "Sağlayıcı",
+  "settingsModelConnection": "Bağlantı",
+  "settingsModelBaseUrl": "Adres (base URL)",
+  "settingsModelKeyHelpCustom": "Uç nokta adresini ve API anahtarını gir, sonra Kaydet'e dokun.",
+  "settingsModelKeyHelp": "{provider} API anahtarını aşağıya yapıştır, sonra Kaydet'e dokun. Anahtar bir kez gönderilir ve bir daha gösterilmez.",
+  "@settingsModelKeyHelp": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelSavedKey": "Kayıtlı anahtar ••••{hint}",
+  "@settingsModelSavedKey": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelDeleteKey": "Anahtarı sil",
+  "settingsModelNewKey": "Yeni anahtar (isteğe bağlı)",
+  "settingsModelApiKey": "API anahtarı",
+  "settingsModelSendPosition": "Konum verisi de gönderilsin",
+  "settingsModelSendPositionHint": "Kapalıyken konum bilgisi sağlayıcıya gitmez.",
+  "settingsModelInsecureTitle": "Güvenli bağlantı gerekli",
+  "settingsModelInsecureText": "Anahtar yalnızca güvenli bağlantıyla (HTTPS) ya da Pi üzerinde komutla girilebilir:\nvehicle-server user set-llm <kullanıcı> --provider <id>",
+  "settingsModelTest": "Bağlantıyı test et",
+  "settingsModelTesting": "Deneniyor...",
+  "settingsModelTestOk": "Bağlantı çalışıyor ({ms} ms).",
+  "@settingsModelTestOk": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsModelTestFailed": "Bağlantı kurulamadı: {detail}",
+  "@settingsModelTestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelKeyDeleted": "Anahtar silindi.",
+  "settingsModelSaved": "Kaydedildi.",
+  "settingsModelDeleteKeyTitle": "Anahtar silinsin mi?",
+  "settingsModelDeleteKeyBody": "Kayıtlı anahtar sunucudan silinir. Asistan bu sağlayıcıyla çalışmaz.",
+  "settingsModelLabel": "Model",
+  "settingsModelListFailed": "Liste alınamadı, model adını elle yaz.",
+  "settingsModelListLater": "Anahtarı kaydedince model listesi gelir; şimdilik adı elle yazabilirsin.",
+  "settingsModelUnavailable": "Bu sağlayıcı şu an kullanılamıyor.",
+  "settingsModelCloud": "Bulut sağlayıcı",
+  "settingsModelConsentTitle": "{provider} ile devam edilsin mi?",
+  "@settingsModelConsentTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelConsentText": "Sorun ve sunucunun hesapladığı sürüş verileri {provider} sağlayıcısına gönderilir. Maliyet kendi {provider} hesabından faturalanır.",
+  "@settingsModelConsentText": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelAccept": "Kabul ediyorum",
+  "settingsAuthBadCredentials": "Kullanıcı adı veya parola hatalı.",
+  "settingsAuthUsernameTaken": "Bu kullanıcı adı alınmış.",
+  "settingsAuthInvalid": "Bilgiler kabul edilmedi: {detail}",
+  "@settingsAuthInvalid": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuthInvalidFallback": "geçersiz giriş",
+  "settingsAuthNotSupported": "Bu sunucu hesap girişini desteklemiyor. Gelişmiş bölümünden cihaz token'ı ile bağlan.",
+  "settingsAuthRequestFailed": "İstek başarısız: {detail}",
+  "@settingsAuthRequestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLoginSignIn": "Giriş yap",
+  "settingsLoginRegister": "Hesap oluştur",
+  "settingsLoginSubRegister": "Araç kimliği ve sahiplik kodu ile hesabını oluştur.",
+  "settingsLoginSubSignIn": "Sürüşlerini ve bildirimlerini görmek için hesabınla gir.",
+  "settingsLoginSavedHost": "Kayıtlı sunucu",
+  "settingsLoginServer": "Sunucu adresi",
+  "settingsLoginUsername": "Kullanıcı adı",
+  "settingsLoginPassword": "Parola",
+  "settingsLoginHaveAccount": "Zaten hesabım var",
+  "settingsLoginAdvanced": "Gelişmiş: cihaz token'ı ile bağlan",
+  "settingsLoginConnect": "Bağlan",
+  "settingsLoginSkip": "Şimdilik atla",
+  "settingsLoginEnterUrl": "Sunucu adresini gir.",
+  "settingsLoginInsecureUrl": "Güvenli olmayan adres: https:// veya yerel ağdaki bir sunucu kullan.",
+  "settingsLoginNeedCredentials": "Kullanıcı adı ve parola gerekli.",
+  "settingsLoginNeedVehicle": "Araç kimliği ve talep kodu gerekli.",
+  "settingsLoginNeedToken": "Cihaz token'ını gir.",
+  "settingsLoginSessionEnded": "Oturum sona erdi. Lütfen yeniden giriş yap."
+}

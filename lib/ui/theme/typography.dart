@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/ui/theme/tokens.dart';
@@ -59,14 +58,13 @@ TextTheme buildTextTheme(VehicleTokens t) {
     titleLarge: textFace(22, FontWeight.w600, color: t.textPrimary),
     titleMedium: textFace(17, FontWeight.w600, color: t.textPrimary),
     titleSmall: textFace(15, FontWeight.w600, color: t.textPrimary),
-    bodyLarge:
-        textFace(16, FontWeight.w400, color: t.textPrimary, height: 1.4),
+    bodyLarge: textFace(16, FontWeight.w400, color: t.textPrimary, height: 1.4),
     bodyMedium:
         textFace(14, FontWeight.w400, color: t.textPrimary, height: 1.4),
     bodySmall:
         textFace(12.5, FontWeight.w400, color: t.textSecondary, height: 1.35),
-    labelLarge: textFace(15, FontWeight.w600,
-        color: t.textPrimary, letterSpacing: 0.2),
+    labelLarge:
+        textFace(15, FontWeight.w600, color: t.textPrimary, letterSpacing: 0.2),
     labelMedium: textFace(13, FontWeight.w500,
         color: t.textSecondary, letterSpacing: 0.3),
     // Upper-case, letter-spaced section captions.

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/ui/record_screen.dart';
+import 'package:vehicle_mobile/ui/rides/ride_history_screen.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
@@ -138,7 +139,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('Ride history'), findsOneWidget);
+    expect(find.byType(RideHistoryScreen), findsOneWidget);
     expect(
       find.text(
           'No vehicle-server configured. Set the server URL and API token in Settings.'),

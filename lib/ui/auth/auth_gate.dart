@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/auth_client.dart';
 import 'package:vehicle_mobile/services/auth_events.dart';
@@ -38,7 +39,7 @@ enum _Gate { loading, signedIn, needsLogin }
 
 class _AuthGateState extends State<AuthGate> {
   _Gate _state = _Gate.loading;
-  String? _message;
+  bool _sessionEnded = false;
   bool _skipped = false;
   int _generation = 0;
   StreamSubscription<AuthEvent>? _events;
@@ -61,12 +62,12 @@ class _AuthGateState extends State<AuthGate> {
       await _dropSession();
       if (!mounted) return;
       _skipped = false;
-      _message = 'Oturum sona erdi. Lütfen yeniden giriş yap.';
+      _sessionEnded = true;
     } else if (event == AuthEvent.loginRequested) {
       _skipped = false;
-      _message = null;
+      _sessionEnded = false;
     } else if (event == AuthEvent.signedIn) {
-      _message = null;
+      _sessionEnded = false;
       if (!widget.allowSkip) _generation++;
     }
     await _check();
@@ -103,9 +104,11 @@ class _AuthGateState extends State<AuthGate> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final showLogin = _state == _Gate.needsLogin && !_skipped;
+    final message =
+        _sessionEnded ? context.l10n.settingsLoginSessionEnded : null;
     if (showLogin && !widget.allowSkip) {
       return LoginScreen(
-          store: widget.store, client: widget.client, message: _message);
+          store: widget.store, client: widget.client, message: message);
     }
     final app = KeyedSubtree(
         key: ValueKey(_generation), child: Builder(builder: widget.builder));
@@ -118,7 +121,7 @@ class _AuthGateState extends State<AuthGate> {
           LoginScreen(
             store: widget.store,
             client: widget.client,
-            message: _message,
+            message: message,
             onSkip: () => setState(() => _skipped = true),
           ),
       ],

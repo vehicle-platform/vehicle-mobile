@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,6 +90,10 @@ Future<void> _drain(WidgetTester tester) async {
   }
 }
 
+/// A [Readout] with this value and unit (the value and unit are separate texts).
+Finder _readout(String value, String unit) => find.byWidgetPredicate(
+    (w) => w is Readout && w.value == value && w.unit == unit);
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -143,7 +150,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('HTTP 500'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
-    expect(find.text('Ride history'), findsOneWidget);
+    expect(find.text('Logbook'), findsOneWidget);
 
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
@@ -194,9 +201,9 @@ void main() {
     final newer = tester.getTopLeft(find.text('2026-01-16 09:00 UTC')).dy;
     final older = tester.getTopLeft(find.text('2026-01-15 09:00 UTC')).dy;
     expect(newer, lessThan(older));
-    expect(find.text('82.500 km/h'), findsOneWidget);
-    expect(find.text('40.000 km/h'), findsOneWidget);
-    expect(find.text('7000.0 rpm'), findsOneWidget);
+    expect(_readout('82.500', 'km/h'), findsOneWidget);
+    expect(_readout('40.000', 'km/h'), findsOneWidget);
+    expect(_readout('7000.0', 'rpm'), findsOneWidget);
   });
 
   testWidgets(
@@ -235,10 +242,10 @@ void main() {
     await tester.pump();
 
     expect(selected(), ['rpm', 'lean']);
-    expect(find.text('12.000 deg'), findsOneWidget);
-    expect(find.text('– deg'), findsOneWidget);
+    expect(_readout('12.000', 'deg'), findsOneWidget);
+    expect(_readout('–', 'deg'), findsOneWidget);
     expect(find.text('missing'), findsOneWidget);
-    expect(find.text('7000.0 rpm'), findsOneWidget);
+    expect(_readout('7000.0', 'rpm'), findsOneWidget);
   });
 
   testWidgets('lays out on a 360 px phone at 2x text scale', (tester) async {
@@ -264,7 +271,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Ride history'), findsOneWidget);
+    expect(find.text('Logbook'), findsOneWidget);
   });
 
   testWidgets('a chosen date range reaches the request and Clear removes it',
@@ -427,5 +434,66 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Turkish locale translates the screen and the rows keep readouts',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async => _ok(
+        _ridesJson(rows: [
+          _row('20260116-090000-bbbb', '2026-01-16T09:00:00Z',
+              speed: 82.5, rpm: 7000, lean: 12),
+        ]))));
+    await tester.pumpWidget(MaterialApp(
+      theme: buildAppTheme(),
+      locale: const Locale('tr'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: RideHistoryScreen(
+        settingsStore: _store('https://vehicle-server.example.com', 't'),
+        client: client,
+      ),
+    ));
+    await _drain(tester);
+
+    expect(find.text('Günlük'), findsOneWidget);
+    expect(find.text('1 sürüş'), findsOneWidget);
+    expect(find.text('Tarih aralığı'), findsOneWidget);
+    expect(find.text('Tüm sürüşler'), findsOneWidget);
+    expect(_readout('82.500', 'km/h'), findsOneWidget);
+  });
+
+  testWidgets('onOpenRide hands the session to the wide detail pane',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final client = RideClient(httpClient: MockClient((request) async => _ok(
+        _ridesJson(rows: [
+          _row('20260116-090000-bbbb', '2026-01-16T09:00:00Z',
+              speed: 82.5, rpm: 7000, lean: 12),
+        ]))));
+    final opened = <String>[];
+    await tester.pumpWidget(_host(RideHistoryScreen(
+      settingsStore: _store('https://vehicle-server.example.com', 't'),
+      client: client,
+      onOpenRide: opened.add,
+    )));
+    await _drain(tester);
+
+    await tester.tap(find.text('20260116-090000-bbbb'));
+    await tester.pump();
+    expect(opened, ['20260116-090000-bbbb']);
+    // No route was pushed.
+    expect(find.text('Ride summary'), findsNothing);
   });
 }

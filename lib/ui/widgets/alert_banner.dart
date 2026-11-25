@@ -51,7 +51,8 @@ class AlertBanner extends StatelessWidget {
           onTap: onTap,
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(minHeight: Spacing.touchTarget + 8),
+            constraints:
+                const BoxConstraints(minHeight: Spacing.touchTarget + 8),
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(color: color, width: 6),
