@@ -438,6 +438,18 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
                   ),
                   const SizedBox(height: Spacing.md),
                 ],
+                if (!showSavedKey) ...[
+                  Text(
+                    p.isCustom
+                        ? 'Enter the endpoint address and your API key, then tap Save.'
+                        : 'Paste your ${p.label} API key below, then tap Save. '
+                            'The key is sent once and is never shown again.',
+                    key: const ValueKey('key-help'),
+                    style: theme.textTheme.bodySmall!
+                        .copyWith(color: t.textSecondary),
+                  ),
+                  const SizedBox(height: Spacing.sm),
+                ],
                 if (showSavedKey) ...[
                   Row(children: [
                     Expanded(
@@ -593,7 +605,10 @@ class _AssistantModelScreenState extends State<AssistantModelScreen> {
             enabled
                 ? p.dataNote
                 : (p.unavailableReason ?? 'Bu sağlayıcı şu an kullanılamıyor.'),
-            style: theme.textTheme.bodySmall,
+            key: ValueKey('provider-note-${p.id}'),
+            style: enabled
+                ? theme.textTheme.bodySmall
+                : theme.textTheme.bodySmall!.copyWith(color: t.stale),
           ),
           trailing: p.cloud
               ? const Tooltip(

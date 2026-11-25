@@ -6,12 +6,14 @@ import 'package:flutter/services.dart' show MaxLengthEnforcement;
 
 import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/assistant_provider_client.dart';
 import 'package:vehicle_mobile/services/chat_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/voice/critical_announcer.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
+import 'package:vehicle_mobile/ui/assistant/model_chip.dart';
 import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -44,6 +46,7 @@ class AssistantScreen extends StatefulWidget {
     super.key,
     this.settingsStore = const AppSettingsStore(),
     this.client,
+    this.providerClient,
     this.sessionId,
     this.voice,
     this.voiceBus,
@@ -52,6 +55,9 @@ class AssistantScreen extends StatefulWidget {
 
   final AppSettingsStore settingsStore;
   final ChatClient? client;
+
+  /// Client of the header model chip (D-127); tests inject a fake.
+  final AssistantProviderClient? providerClient;
 
   /// Voice front end (microphone, reading answers aloud, intercom routing);
   /// tests inject one with fake STT/TTS. Created and owned here when null.
@@ -71,7 +77,8 @@ class AssistantScreen extends StatefulWidget {
   State<AssistantScreen> createState() => _AssistantScreenState();
 }
 
-class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProviderStateMixin {
+class _AssistantScreenState extends State<AssistantScreen>
+    with SingleTickerProviderStateMixin {
   late final ChatClient _client;
   final _controller = TextEditingController();
   final _scroll = ScrollController();
@@ -90,7 +97,8 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
+    _pulse = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1100));
     _client = widget.client ?? ChatClient();
     _sessionId = widget.sessionId;
     _ownsVoice = widget.voice == null;
@@ -292,12 +300,25 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        toolbarHeight: 64,
+        title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AssistantAvatar(size: 28),
-            SizedBox(width: Spacing.sm),
-            Flexible(child: Text('Sürüş Asistanı', overflow: TextOverflow.ellipsis)),
+            const AssistantAvatar(size: 28),
+            const SizedBox(width: Spacing.sm),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Sürüş Asistanı', overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  ActiveModelChip(
+                      settingsStore: widget.settingsStore,
+                      client: widget.providerClient),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -319,7 +340,8 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
               children: [
                 if (_sessionId != null)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.lg, Spacing.sm, Spacing.lg, 0),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: InputChip(
@@ -329,12 +351,16 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                       ),
                     ),
                   ),
-                Expanded(child: _messages.isEmpty ? _emptyState(context) : _messageList()),
+                Expanded(
+                    child: _messages.isEmpty
+                        ? _emptyState(context)
+                        : _messageList()),
                 if (_sending) const LinearProgressIndicator(minHeight: 2),
                 if (_voice.error != null) _voiceError(context),
                 if (_voice.routeLabel != null)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.xs, Spacing.lg, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                        Spacing.lg, Spacing.xs, Spacing.lg, 0),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: VoiceRouteChip(
@@ -347,7 +373,8 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
                   controller: _controller,
                   sending: _sending,
                   onSend: _send,
-                  hintText: _voice.isListening ? 'Dinliyorum...' : 'Bir soru yaz',
+                  hintText:
+                      _voice.isListening ? 'Dinliyorum...' : 'Bir soru yaz',
                   micButton: MicButton(
                     state: _voice.state,
                     onPressed: _sending ? null : _voice.toggleMic,
@@ -372,13 +399,15 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
           side: BorderSide(color: t.error.withValues(alpha: 0.5)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.md, Spacing.xs, Spacing.xs, Spacing.xs),
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.md, Spacing.xs, Spacing.xs, Spacing.xs),
           child: Row(
             children: [
               Icon(Icons.info_outline, size: 20, color: t.error),
               const SizedBox(width: Spacing.sm),
               Expanded(
-                child: Text(_voice.error!, style: Theme.of(context).textTheme.bodyMedium),
+                child: Text(_voice.error!,
+                    style: Theme.of(context).textTheme.bodyMedium),
               ),
               IconButton(
                 tooltip: 'Kapat',
@@ -395,7 +424,8 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
 
   Widget _messageList() => ListView.builder(
         controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, Spacing.sm),
+        padding: const EdgeInsets.fromLTRB(
+            Spacing.lg, Spacing.sm, Spacing.lg, Spacing.sm),
         itemCount: _messages.length + (_sending ? 1 : 0),
         itemBuilder: (_, i) {
           if (i == _messages.length) return PendingAnswerCard(pulse: _pulse);
@@ -425,7 +455,8 @@ class PendingAnswerCard extends StatelessWidget {
           widthFactor: factor,
           child: Container(
             height: 12,
-            decoration: BoxDecoration(color: t.surfaceRaised, borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(
+                color: t.surfaceRaised, borderRadius: BorderRadius.circular(6)),
           ),
         );
     return Padding(
@@ -482,7 +513,8 @@ class AssistantComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.vehicle;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, Spacing.md),
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.lg, Spacing.sm, Spacing.lg, Spacing.md),
       child: Material(
         color: t.surfaceRaised,
         shape: RoundedRectangleBorder(
@@ -490,7 +522,8 @@ class AssistantComposer extends StatelessWidget {
           side: BorderSide(color: t.outline),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.xs, Spacing.xs, Spacing.xs),
+          padding: const EdgeInsets.fromLTRB(
+              Spacing.lg, Spacing.xs, Spacing.xs, Spacing.xs),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
