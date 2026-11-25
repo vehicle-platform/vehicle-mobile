@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
+import 'package:vehicle_mobile/l10n/locale_controller.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/ui/app_shell.dart';
 import 'package:vehicle_mobile/ui/auth/auth_gate.dart';
@@ -8,14 +11,23 @@ import 'package:vehicle_mobile/ui/phone/phone_tabs.dart';
 import 'package:vehicle_mobile/ui/phone/phone_tabs_factory.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
-void main() {
-  runApp(Cl250TelemetryApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final locale = await LocaleController.load();
+  runApp(Cl250TelemetryApp(localeController: locale));
 }
 
 class Cl250TelemetryApp extends StatelessWidget {
   Cl250TelemetryApp(
-      {super.key, PhoneTabs? phoneTabs, this.settingsStore = const AppSettingsStore()})
-      : phoneTabs = phoneTabs ?? createPhoneTabs();
+      {super.key,
+      PhoneTabs? phoneTabs,
+      this.settingsStore = const AppSettingsStore(),
+      LocaleController? localeController})
+      : phoneTabs = phoneTabs ?? createPhoneTabs(),
+        localeController = localeController ?? LocaleController();
+
+  /// The language choice (English default, Turkish selectable, D-125).
+  final LocaleController localeController;
 
   /// Where the login gate reads the host and its session (tests inject one).
   final AppSettingsStore settingsStore;
@@ -27,8 +39,26 @@ class Cl250TelemetryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: localeController,
+      builder: (context, _) => LocaleScope(
+        controller: localeController,
+        child: _app(),
+      ),
+    );
+  }
+
+  Widget _app() {
     return MaterialApp(
       title: 'CL250 Telemetry',
+      locale: localeController.override ?? const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(brightness: Brightness.light),
       darkTheme: buildAppTheme(),

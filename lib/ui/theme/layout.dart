@@ -9,8 +9,14 @@ abstract final class Breakpoints {
   /// Below this: bottom navigation bar, full-width content, 16 px gutters.
   static const double compact = 600;
 
+  /// From this width: list + detail panes and the assistant side panel next
+  /// to the rail (D-130 item 2). 600-900 px is the rail with single panes.
+  static const double wide = 900;
+
   /// Above this: navigation rail plus a centred, width-limited column.
   static const double expanded = 1024;
+
+  static bool isWide(double width) => width >= wide;
 
   static bool isCompact(double width) => width < compact;
   static bool usesRail(double width) => width >= compact;

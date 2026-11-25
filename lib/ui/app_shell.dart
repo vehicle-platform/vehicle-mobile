@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/models/app_notification.dart';
 import 'package:vehicle_mobile/models/rider_input.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/notifications/local_notifier.dart';
@@ -12,37 +15,28 @@ import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
-import 'package:vehicle_mobile/ui/faults/faults_screen.dart';
+import 'package:vehicle_mobile/ui/garage/garage_screen.dart';
+import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
+import 'package:vehicle_mobile/ui/shell/command_bar.dart';
+import 'package:vehicle_mobile/ui/shell/master_detail.dart';
+import 'package:vehicle_mobile/ui/shell/ride_destination.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
+import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/phone/phone_tabs.dart';
 import 'package:vehicle_mobile/ui/rides/ride_history_screen.dart';
 import 'package:vehicle_mobile/ui/settings_screen.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 
-/// Top-level destinations. The phone shows [live], [signals], [record],
-/// [diagnostics], [assistant] and [settings]; the computer (web, macOS) shows
-/// only [assistant] (Sürüş Asistanı), [rides], [faults] and [settings] (D-121 item 3).
-enum ShellTab {
-  live,
-  signals,
-  record,
-  diagnostics,
-  assistant,
-  rides,
-  faults,
-  settings
-}
+/// Top-level destinations (D-130 item 2). Ride exists on the phone only.
+enum ShellTab { ride, garage, logbook, assistant }
 
-/// Navigation shell: a Material 3 NavigationBar below 600 px of width (also in
-/// a phone browser or a narrow window), a NavigationRail from 600 px up; the
-/// destinations depend on the platform. Wide screens are width-limited per
-/// screen (`ContentColumn`).
-///
-/// Record and Settings keep their state once opened (an active recording and
-/// unsaved form input must survive tab switches); the telemetry screens are
-/// rebuilt on demand because their state lives in the telemetry store of
-/// [phoneTabs]. Assistant keeps its conversation in memory while the shell
-/// lives.
+/// Navigation shell (D-130 item 2): Ride (phone only), Garage, Logbook and
+/// Assistant; Settings from the header (phone) or the rail (600 px up). Below
+/// 600 px a bottom bar; 600-900 px a rail with single panes; from 900 px a rail
+/// with list + detail panes, the assistant as a side panel and a Ctrl/Cmd+K
+/// command bar. The Ride destination keeps its recording alive once opened and
+/// the Assistant keeps its conversation while the shell lives.
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
@@ -88,7 +82,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
-  /// Bumped when the Settings destination saves; Record listens to refresh.
+  /// Bumped when Settings saves; Record listens to refresh.
   final ValueNotifier<int> _settingsChanged = ValueNotifier<int>(0);
   late final List<ShellTab> _tabs;
   late ShellTab _tab;
@@ -102,6 +96,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late final bool _ownsCenter;
   final ValueNotifier<AssistantPrefill?> _prefill = ValueNotifier(null);
   int _prefillSeq = 0;
+  bool _panelOpen = false;
+  bool _twoPane = false;
+  bool _assistantMounted = false;
+  String? _selectedRide;
+  AppNotification? _selectedNotification;
 
   @override
   void initState() {
@@ -119,25 +118,24 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final phone = widget.phoneTabs != null;
     _tabs = phone
         ? const [
-            ShellTab.live,
-            ShellTab.signals,
-            ShellTab.record,
-            ShellTab.diagnostics,
-            ShellTab.assistant,
-            ShellTab.settings,
+            ShellTab.ride,
+            ShellTab.garage,
+            ShellTab.logbook,
+            ShellTab.assistant
           ]
-        : const [
-            ShellTab.assistant,
-            ShellTab.rides,
-            ShellTab.faults,
-            ShellTab.settings
-          ];
-    _tab = _tabs.first;
+        : const [ShellTab.garage, ShellTab.logbook, ShellTab.assistant];
+    // The computer opens on the assistant, the phone on the ride.
+    _tab = phone ? ShellTab.ride : ShellTab.assistant;
     _visited = {_tab};
+    _assistantMounted = _tab == ShellTab.assistant;
 
-    // Voice triggers bring the assistant to the front: the handlebar button (phone,
-    // BLE) and the intercom's voice-command button (Android intent).
-    _voiceBus.onNeedAssistant = () => _select(ShellTab.assistant);
+    // Voice triggers bring the assistant to the front: the handlebar button
+    // (phone, BLE) and the intercom's voice-command button (Android intent).
+    _voiceBus.onNeedAssistant = () {
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      _select(ShellTab.assistant);
+    };
     _riderInputSubscription = widget.phoneTabs?.riderInputActions?.listen(
         (action) => _voiceBus.emit(triggerOfRiderInput(action)));
     unawaited(bindVoiceCommandIntent(_intercom, _voiceBus));
@@ -156,13 +154,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _center.resumed();
-  }
-
-  /// "Sürüş Asistanı'na sor" of a notification: back to the shell, assistant
-  /// tab, question prefilled (not sent).
+  /// "Ask the assistant" of a notification or the command bar: back to the
+  /// shell, assistant destination, question prefilled (not sent).
   void _askAssistant(String question, String? sessionId) {
     Navigator.of(context).popUntil((route) => route.isFirst);
     _prefill.value = AssistantPrefill(++_prefillSeq, question, sessionId);
@@ -188,136 +181,339 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _tab = tab;
       _visited.add(tab);
+      if (tab == ShellTab.assistant) _assistantMounted = true;
     });
   }
 
+  void _togglePanel() => setState(() {
+        _panelOpen = !_panelOpen;
+        if (_panelOpen) _assistantMounted = true;
+      });
+
+  void _openSettings() {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => NotificationScope(
+        center: _center,
+        onAsk: _askAssistant,
+        child: SettingsScreen(
+            store: widget.settingsStore,
+            onSaved: () => _settingsChanged.value++),
+      ),
+    ));
+  }
+
+  void _openRide(String sessionId) => setState(() => _selectedRide = sessionId);
+
+  void _openNotification(AppNotification n) =>
+      setState(() => _selectedNotification = n);
+
+  void _openCommandBar() {
+    final l = context.l10n;
+    final wide = Breakpoints.isWide(MediaQuery.sizeOf(context).width);
+    showCommandBar(context, (query) {
+      final q = query.toLowerCase();
+      final all = <ShellCommand>[
+        for (final tab in _tabs)
+          ShellCommand(
+            label: l.commandGoTo(_label(l, tab)),
+            icon: _entry(tab).$1,
+            run: () => _select(tab),
+          ),
+        ShellCommand(
+          label: l.commandGoTo(l.navSettings),
+          icon: Icons.tune,
+          run: _openSettings,
+        ),
+        if (wide && _tab != ShellTab.assistant)
+          ShellCommand(
+            label: _panelOpen ? l.commandClosePanel : l.commandOpenPanel,
+            icon: Icons.view_sidebar_outlined,
+            run: _togglePanel,
+          ),
+      ];
+      final matches = q.isEmpty
+          ? all
+          : all.where((c) => c.label.toLowerCase().contains(q)).toList();
+      return [
+        ...matches,
+        if (query.isNotEmpty)
+          ShellCommand(
+            label: l.commandAsk(l.assistantName, query),
+            icon: Icons.keyboard_return,
+            run: () => _askAssistant(query, null),
+          ),
+      ];
+    });
+  }
+
+  static String _label(AppLocalizations l, ShellTab tab) => switch (tab) {
+        ShellTab.ride => l.navRide,
+        ShellTab.garage => l.navGarage,
+        ShellTab.logbook => l.navLogbook,
+        ShellTab.assistant => l.navAssistant,
+      };
+
+  static (IconData, IconData) _entry(ShellTab tab) => switch (tab) {
+        ShellTab.ride => (Icons.speed_outlined, Icons.speed),
+        ShellTab.garage => (Icons.garage_outlined, Icons.garage),
+        ShellTab.logbook => (Icons.menu_book_outlined, Icons.menu_book),
+        ShellTab.assistant => (Icons.graphic_eq, Icons.graphic_eq),
+      };
+
   Widget _build(ShellTab tab) {
-    final phone = widget.phoneTabs;
     switch (tab) {
-      case ShellTab.live:
-        return phone!.live(onOpenRecord: () => _select(ShellTab.record));
-      case ShellTab.signals:
-        return phone!.signals();
-      case ShellTab.record:
-        return phone!.record(settingsChanged: _settingsChanged);
-      case ShellTab.diagnostics:
-        return phone!.diagnostics();
+      case ShellTab.ride:
+        return RideDestination(
+            phone: widget.phoneTabs!, settingsChanged: _settingsChanged);
+      case ShellTab.garage:
+        return GarageScreen(
+          settingsStore: widget.settingsStore,
+          twoPane: _twoPane,
+          selected: _selectedNotification,
+          onOpenNotification: _openNotification,
+        );
+      case ShellTab.logbook:
+        final id = _selectedRide;
+        final history = RideHistoryScreen(
+          settingsStore: widget.settingsStore,
+          onOpenRide: _twoPane ? _openRide : null,
+        );
+        if (!_twoPane) return history;
+        return MasterDetail(
+          master: history,
+          detail: id == null
+              ? null
+              : RideSummaryScreen(
+                  key: ValueKey(id),
+                  sessionId: id,
+                  settingsStore: widget.settingsStore),
+          emptyMessage: context.l10n.logbookSelectRide,
+        );
       case ShellTab.assistant:
         return AssistantScreen(
             settingsStore: widget.settingsStore,
             voice: _voice,
             voiceBus: _voiceBus,
             prefill: _prefill);
-      case ShellTab.rides:
-        return RideHistoryScreen(settingsStore: widget.settingsStore);
-      case ShellTab.faults:
-        return FaultsScreen(settingsStore: widget.settingsStore);
-      case ShellTab.settings:
-        return SettingsScreen(
-            store: widget.settingsStore, onSaved: () => _settingsChanged.value++);
     }
   }
 
-  /// Tabs whose state must outlive a tab switch once they were opened.
-  bool _keepAlive(ShellTab tab) =>
-      tab == ShellTab.record ||
-      tab == ShellTab.settings ||
-      tab == ShellTab.assistant;
-
-  static (IconData, IconData, String) _entry(ShellTab tab) => switch (tab) {
-        ShellTab.live => (Icons.speed_outlined, Icons.speed, 'Live'),
-        ShellTab.signals => (Icons.sensors_outlined, Icons.sensors, 'Signals'),
-        ShellTab.record => (
-            Icons.fiber_manual_record_outlined,
-            Icons.fiber_manual_record,
-            'Record'
-          ),
-        ShellTab.diagnostics => (
-            Icons.monitor_heart_outlined,
-            Icons.monitor_heart,
-            'Diagnostics'
-          ),
-        ShellTab.assistant => (
-            Icons.chat_bubble_outline,
-            Icons.chat_bubble,
-            'Asistan'
-          ),
-        ShellTab.rides => (Icons.route_outlined, Icons.route, 'Rides'),
-        ShellTab.faults => (
-            Icons.report_problem_outlined,
-            Icons.report_problem,
-            'Faults'
-          ),
-        ShellTab.settings => (
-            Icons.settings_outlined,
-            Icons.settings,
-            'Settings'
-          ),
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final index = _tabs.indexOf(_tab);
-    final body = IndexedStack(
-      index: index,
-      children: [
-        for (final tab in _tabs)
-          if (tab == _tab || (_keepAlive(tab) && _visited.contains(tab)))
-            KeyedSubtree(key: ValueKey(tab), child: _build(tab))
-          else
-            const SizedBox.shrink(),
-      ],
-    );
-    final width = MediaQuery.sizeOf(context).width;
-    final Widget scaffold;
-    if (Breakpoints.usesRail(width)) {
-      scaffold = Scaffold(
-        body: Row(
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: NavigationRail(
-                      selectedIndex: index,
-                      labelType: NavigationRailLabelType.all,
-                      onDestinationSelected: (i) => _select(_tabs[i]),
-                      destinations: [
-                        for (final tab in _tabs)
-                          NavigationRailDestination(
-                            icon: Icon(_entry(tab).$1),
-                            selectedIcon: Icon(_entry(tab).$2),
-                            label: Text(_entry(tab).$3),
+  Widget _rail(AppLocalizations l, bool wide, int railIndex) {
+    final others = _tabs;
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: IntrinsicHeight(
+            child: NavigationRail(
+              selectedIndex: railIndex,
+              labelType: NavigationRailLabelType.all,
+              onDestinationSelected: (i) => _select(others[i]),
+              trailing: Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: Spacing.lg),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (wide && _tab != ShellTab.assistant)
+                          _RailAction(
+                            icon: Icons.view_sidebar_outlined,
+                            label: _panelOpen
+                                ? l.panelToggleClose
+                                : l.panelToggleOpen,
+                            showLabel: false,
+                            active: _panelOpen,
+                            onTap: _togglePanel,
                           ),
+                        if (wide)
+                          _RailAction(
+                            icon: Icons.search,
+                            label: l.commandBarShortcut,
+                            onTap: _openCommandBar,
+                          ),
+                        _RailAction(
+                          icon: Icons.tune,
+                          label: l.navSettings,
+                          onTap: _openSettings,
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
+              destinations: [
+                for (final tab in others)
+                  NavigationRailDestination(
+                    icon: Icon(_entry(tab).$1),
+                    selectedIcon: Icon(_entry(tab).$2),
+                    label: Text(_label(l, tab)),
+                  ),
+              ],
             ),
-            Expanded(child: body),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final t = context.vehicle;
+    final index = _tabs.indexOf(_tab);
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = Breakpoints.isWide(width);
+    final railLayout = Breakpoints.usesRail(width);
+
+    final others = [for (final tab in _tabs) if (tab != ShellTab.assistant) tab];
+    final mainStack = IndexedStack(
+      index: _tab == ShellTab.assistant ? 0 : others.indexOf(_tab),
+      children: [
+        for (final tab in others)
+          if (_visited.contains(tab))
+            KeyedSubtree(key: ValueKey(tab), child: _build(tab))
+          else
+            const SizedBox.shrink(),
+      ],
+    );
+
+    final content = LayoutBuilder(builder: (context, c) {
+      final avail = c.maxWidth;
+      final assistantFull = _tab == ShellTab.assistant;
+      final showPanel = wide && !assistantFull && _panelOpen;
+      const panelWidth = 400.0;
+      final mainWidth = assistantFull ? 0.0 : (showPanel ? avail - panelWidth : avail);
+      _twoPane = wide && MasterDetail.fits(mainWidth);
+      final assistantWidth = assistantFull ? avail : (showPanel ? panelWidth : 0.0);
+      return Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: mainWidth,
+            child: Offstage(offstage: assistantFull, child: mainStack),
+          ),
+          if (_assistantMounted)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: assistantWidth == 0 ? avail : assistantWidth,
+              child: Offstage(
+                offstage: assistantWidth == 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: showPanel
+                        ? Border(left: BorderSide(color: t.hairline))
+                        : null,
+                  ),
+                  child: KeyedSubtree(
+                      key: const ValueKey('assistant'),
+                      child: _build(ShellTab.assistant)),
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+
+    final Widget scaffold;
+    if (railLayout) {
+      scaffold = Scaffold(
+        body: Row(
+          children: [
+            _rail(l, wide, index),
+            VerticalDivider(width: 1, thickness: 1, color: t.hairline),
+            Expanded(child: content),
           ],
         ),
       );
     } else {
       scaffold = Scaffold(
-        body: body,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: index,
-          onDestinationSelected: (i) => _select(_tabs[i]),
-          destinations: [
-            for (final tab in _tabs)
-              NavigationDestination(
-                icon: Icon(_entry(tab).$1),
-                selectedIcon: Icon(_entry(tab).$2),
-                label: _entry(tab).$3,
-              ),
-          ],
+        body: content,
+        bottomNavigationBar: DecoratedBox(
+          decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: t.hairline))),
+          child: NavigationBar(
+            selectedIndex: index,
+            onDestinationSelected: (i) => _select(_tabs[i]),
+            destinations: [
+              for (final tab in _tabs)
+                NavigationDestination(
+                  icon: Icon(_entry(tab).$1),
+                  selectedIcon: Icon(_entry(tab).$2),
+                  label: _label(l, tab),
+                ),
+            ],
+          ),
         ),
       );
     }
-    return NotificationScope(
-        center: _center, onAsk: _askAssistant, child: scaffold);
+    final shortcuts = <ShortcutActivator, VoidCallback>{
+      const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+          _openCommandBar,
+      const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+          _openCommandBar,
+    };
+    return ShellScope(
+      openSettings: _openSettings,
+      openCommandBar: _openCommandBar,
+      child: NotificationScope(
+        center: _center,
+        onAsk: _askAssistant,
+        child: CallbackShortcuts(
+          bindings: shortcuts,
+          child: Focus(autofocus: true, child: scaffold),
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon + small label button at the foot of the rail.
+class _RailAction extends StatelessWidget {
+  const _RailAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.showLabel = true,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool showLabel;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.vehicle;
+    final color = active ? t.accent : t.textSecondary;
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 80,
+          height: Spacing.touchTarget + (showLabel ? 16 : 0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 24),
+              if (showLabel)
+                Text(label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium!
+                        .copyWith(color: color)),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

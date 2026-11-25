@@ -1,214 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Spacing scale (logical pixels). Screens use these instead of literals.
-abstract final class Spacing {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 24;
-  static const double xxl = 32;
+import 'package:vehicle_mobile/ui/theme/spacing.dart';
+import 'package:vehicle_mobile/ui/theme/tokens.dart';
+import 'package:vehicle_mobile/ui/theme/typography.dart';
 
-  /// Minimum interactive size (Material / WCAG touch target).
-  static const double touchTarget = 48;
-}
-
-/// Corner radii.
-abstract final class Radii {
-  static const double chip = 8;
-  static const double card = 16;
-  static const double hero = 20;
-}
-
-/// Colour tokens of the app. One place; screens read them through
-/// `context.vehicle` and never hard-code a colour.
-///
-/// Palette: near-black surfaces, one saturated accent (cyan), and semantic
-/// colours for signal/link state. Text colours keep high contrast on the
-/// surfaces so the display stays readable in direct sunlight.
-@immutable
-class VehicleTokens extends ThemeExtension<VehicleTokens> {
-  const VehicleTokens({
-    required this.background,
-    required this.surface,
-    required this.surfaceRaised,
-    required this.outline,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.accent,
-    required this.onAccent,
-    required this.live,
-    required this.stale,
-    required this.noData,
-    required this.notPolled,
-    required this.error,
-    required this.record,
-  });
-
-  /// Screen background (near-black).
-  final Color background;
-
-  /// Card / tile surface.
-  final Color surface;
-
-  /// Raised surface (inputs, chips, selected rows).
-  final Color surfaceRaised;
-
-  /// Hairline borders and dividers.
-  final Color outline;
-  final Color textPrimary;
-  final Color textSecondary;
-
-  /// The single accent colour (selection, primary actions).
-  final Color accent;
-  final Color onAccent;
-
-  /// Signal / link states.
-  final Color live;
-  final Color stale;
-  final Color noData;
-  final Color notPolled;
-  final Color error;
-
-  /// Recording indicator / record action.
-  final Color record;
-
-  /// Warning tone for caution banners (same hue as [stale]).
-  Color get warning => stale;
-
-  /// Graphite base, cool greys and one teal accent (D-121 visual identity).
-  static const VehicleTokens dark = VehicleTokens(
-    background: Color(0xFF0B0D10),
-    surface: Color(0xFF14181D),
-    surfaceRaised: Color(0xFF1C2127),
-    outline: Color(0xFF2B323A),
-    textPrimary: Color(0xFFF2F5F7),
-    textSecondary: Color(0xFFA9B4BE),
-    accent: Color(0xFF14B8A6),
-    onAccent: Color(0xFF031A17),
-    live: Color(0xFF3DDC84),
-    stale: Color(0xFFFFB82E),
-    noData: Color(0xFF93A0AD),
-    notPolled: Color(0xFF8C9CC8),
-    error: Color(0xFFFF6B7A),
-    record: Color(0xFFFF3B4E),
-  );
-
-  /// Light counterpart (follows the system setting); text and accent keep
-  /// WCAG AA contrast on the light surfaces.
-  static const VehicleTokens light = VehicleTokens(
-    background: Color(0xFFF4F6F8),
-    surface: Color(0xFFFFFFFF),
-    surfaceRaised: Color(0xFFEBEEF2),
-    outline: Color(0xFFCFD6DD),
-    textPrimary: Color(0xFF11161B),
-    textSecondary: Color(0xFF4A5661),
-    accent: Color(0xFF0F766E),
-    onAccent: Color(0xFFFFFFFF),
-    live: Color(0xFF15803D),
-    stale: Color(0xFFB45309),
-    noData: Color(0xFF5B6672),
-    notPolled: Color(0xFF4F5F8F),
-    error: Color(0xFFB42318),
-    record: Color(0xFFC81E2E),
-  );
-
-  @override
-  VehicleTokens copyWith({
-    Color? background,
-    Color? surface,
-    Color? surfaceRaised,
-    Color? outline,
-    Color? textPrimary,
-    Color? textSecondary,
-    Color? accent,
-    Color? onAccent,
-    Color? live,
-    Color? stale,
-    Color? noData,
-    Color? notPolled,
-    Color? error,
-    Color? record,
-  }) {
-    return VehicleTokens(
-      background: background ?? this.background,
-      surface: surface ?? this.surface,
-      surfaceRaised: surfaceRaised ?? this.surfaceRaised,
-      outline: outline ?? this.outline,
-      textPrimary: textPrimary ?? this.textPrimary,
-      textSecondary: textSecondary ?? this.textSecondary,
-      accent: accent ?? this.accent,
-      onAccent: onAccent ?? this.onAccent,
-      live: live ?? this.live,
-      stale: stale ?? this.stale,
-      noData: noData ?? this.noData,
-      notPolled: notPolled ?? this.notPolled,
-      error: error ?? this.error,
-      record: record ?? this.record,
-    );
-  }
-
-  @override
-  VehicleTokens lerp(ThemeExtension<VehicleTokens>? other, double t) {
-    if (other is! VehicleTokens) return this;
-    Color mix(Color a, Color b) => Color.lerp(a, b, t)!;
-    return VehicleTokens(
-      background: mix(background, other.background),
-      surface: mix(surface, other.surface),
-      surfaceRaised: mix(surfaceRaised, other.surfaceRaised),
-      outline: mix(outline, other.outline),
-      textPrimary: mix(textPrimary, other.textPrimary),
-      textSecondary: mix(textSecondary, other.textSecondary),
-      accent: mix(accent, other.accent),
-      onAccent: mix(onAccent, other.onAccent),
-      live: mix(live, other.live),
-      stale: mix(stale, other.stale),
-      noData: mix(noData, other.noData),
-      notPolled: mix(notPolled, other.notPolled),
-      error: mix(error, other.error),
-      record: mix(record, other.record),
-    );
-  }
-}
-
-/// `context.vehicle` -> the active [VehicleTokens].
-extension VehicleThemeContext on BuildContext {
-  VehicleTokens get vehicle => Theme.of(this).extension<VehicleTokens>() ?? VehicleTokens.dark;
-}
-
-/// Tabular (fixed-width) numerals so changing values do not jitter.
-const List<FontFeature> _tabular = <FontFeature>[FontFeature.tabularFigures()];
-
-TextTheme _buildTextTheme(VehicleTokens t) {
-  TextStyle s(double size, FontWeight w, {Color? color, double? height, double? letterSpacing}) => TextStyle(
-        fontSize: size,
-        fontWeight: w,
-        color: color ?? t.textPrimary,
-        height: height,
-        letterSpacing: letterSpacing,
-        fontFeatures: _tabular,
-      );
-  return TextTheme(
-    // Hero numerals (speed).
-    displayLarge: s(104, FontWeight.w800, height: 1.0, letterSpacing: -2),
-    // Large numerals (RPM, throttle).
-    displayMedium: s(56, FontWeight.w800, height: 1.05, letterSpacing: -1),
-    // Tile numerals (coolant, battery).
-    displaySmall: s(36, FontWeight.w700, height: 1.1),
-    headlineMedium: s(26, FontWeight.w700),
-    headlineSmall: s(22, FontWeight.w700),
-    titleLarge: s(22, FontWeight.w700),
-    titleMedium: s(17, FontWeight.w600),
-    titleSmall: s(15, FontWeight.w600),
-    bodyLarge: s(16, FontWeight.w400, height: 1.35),
-    bodyMedium: s(14, FontWeight.w400, height: 1.35),
-    bodySmall: s(12.5, FontWeight.w400, color: t.textSecondary, height: 1.3),
-    labelLarge: s(15, FontWeight.w700, letterSpacing: 0.3),
-    labelMedium: s(13, FontWeight.w600, color: t.textSecondary, letterSpacing: 0.4),
-    // Upper-case section captions.
-    labelSmall: s(12, FontWeight.w700, color: t.textSecondary, letterSpacing: 1.1),
-  );
-}
+export 'package:vehicle_mobile/ui/theme/spacing.dart';
+export 'package:vehicle_mobile/ui/theme/tokens.dart';
+export 'package:vehicle_mobile/ui/theme/typography.dart';
 
 /// The app theme: high contrast, Material 3; dark by default, [Brightness.light]
 /// for the system light mode.
@@ -233,12 +31,13 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
     surfaceContainerHigh: t.surfaceRaised,
     surfaceContainerHighest: t.surfaceRaised,
   );
-  final textTheme = _buildTextTheme(t);
+  final textTheme = buildTextTheme(t);
   final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.chip));
   const minButton = Size(64, Spacing.touchTarget);
 
   return ThemeData(
     useMaterial3: true,
+    fontFamily: VehicleFonts.text,
     brightness: brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: t.background,
@@ -268,20 +67,36 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: t.surface,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: t.accent,
-      height: 72,
+      shadowColor: Colors.transparent,
+      elevation: 0,
+      indicatorColor: Colors.transparent,
+      height: 68,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
-        return IconThemeData(color: selected ? t.onAccent : t.textSecondary, size: 26);
+        return IconThemeData(
+            color: selected ? t.accent : t.textSecondary, size: 24);
       }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return textTheme.labelMedium!.copyWith(
-          color: selected ? t.textPrimary : t.textSecondary,
-          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+          color: selected ? t.accent : t.textSecondary,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          letterSpacing: 0.4,
         );
       }),
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: t.surface,
+      elevation: 0,
+      indicatorColor: Colors.transparent,
+      minWidth: 80,
+      labelType: NavigationRailLabelType.all,
+      selectedIconTheme: IconThemeData(color: t.accent, size: 24),
+      unselectedIconTheme: IconThemeData(color: t.textSecondary, size: 24),
+      selectedLabelTextStyle: textTheme.labelMedium!
+          .copyWith(color: t.accent, fontWeight: FontWeight.w600),
+      unselectedLabelTextStyle: textTheme.labelMedium,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -365,8 +180,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
         minimumSize: minButton,
         backgroundColor: t.surface,
         foregroundColor: t.textPrimary,
-        selectedBackgroundColor: t.accent,
-        selectedForegroundColor: t.onAccent,
+        selectedBackgroundColor: t.surfaceRaised,
+        selectedForegroundColor: t.accent,
         side: BorderSide(color: t.outline),
         textStyle: textTheme.labelLarge,
       ),

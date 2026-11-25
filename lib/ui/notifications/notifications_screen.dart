@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
+
 import 'package:vehicle_mobile/models/app_notification.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
@@ -48,7 +50,15 @@ String notificationDayLabel(DateTime? day, {DateTime? now}) {
 
 /// Inbox of the rider notifications (D-123), newest first, grouped by day.
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key, this.now});
+  const NotificationsScreen(
+      {super.key, this.now, this.embedded = false, this.onOpen});
+
+  /// Inside the Garage destination: no scaffold or app bar of its own.
+  final bool embedded;
+
+  /// Wide layout: shows the notification in the detail pane instead of
+  /// pushing the detail route.
+  final ValueChanged<AppNotification>? onOpen;
 
   /// Clock for the day headers (tests).
   final DateTime? now;
@@ -75,6 +85,11 @@ class NotificationsScreen extends StatelessWidget {
         notification: n,
         onTap: () {
           center!.markRead(n.id);
+          final onOpen = this.onOpen;
+          if (onOpen != null) {
+            onOpen(n);
+            return;
+          }
           Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => NotificationScope(
               center: center,
@@ -86,44 +101,54 @@ class NotificationsScreen extends StatelessWidget {
       ));
     }
 
+    final body = RefreshIndicator(
+      onRefresh: () => center?.refresh(full: true) ?? Future.value(),
+      child: items.isEmpty
+          ? LayoutBuilder(
+              builder: (_, c) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: c.maxHeight,
+                  child: const EmptyState(
+                    icon: Icons.notifications_none,
+                    message: 'Henüz bildirim yok',
+                    hint: 'Sürüş özetleri ve uyarılar burada görünür.',
+                  ),
+                ),
+              ),
+            )
+          : ContentColumn(
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                    Spacing.lg, 0, Spacing.lg, Spacing.xl),
+                children: rows,
+              ),
+            ),
+    );
+    final markAll = IconButton(
+      tooltip: embedded
+          ? context.l10n.garageMarkAllRead
+          : 'Tümünü okundu say',
+      icon: const Icon(Icons.done_all),
+      onPressed: (center == null || center.unreadCount == 0)
+          ? null
+          : center.markAllRead,
+    );
+    if (embedded) {
+      return Column(
+        children: [
+          Align(alignment: Alignment.centerRight, child: markAll),
+          Expanded(child: body),
+        ],
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bildirimler'),
-        actions: [
-          IconButton(
-            tooltip: 'Tümünü okundu say',
-            icon: const Icon(Icons.done_all),
-            onPressed: (center == null || center.unreadCount == 0)
-                ? null
-                : center.markAllRead,
-          ),
-        ],
+        actions: [markAll],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => center?.refresh(full: true) ?? Future.value(),
-        child: items.isEmpty
-            ? LayoutBuilder(
-                builder: (_, c) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: c.maxHeight,
-                    child: const EmptyState(
-                      icon: Icons.notifications_none,
-                      message: 'Henüz bildirim yok',
-                      hint: 'Sürüş özetleri ve uyarılar burada görünür.',
-                    ),
-                  ),
-                ),
-              )
-            : ContentColumn(
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                      Spacing.lg, 0, Spacing.lg, Spacing.xl),
-                  children: rows,
-                ),
-              ),
-      ),
+      body: body,
     );
   }
 }

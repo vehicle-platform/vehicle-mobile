@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
-import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
@@ -13,7 +14,13 @@ import 'package:vehicle_mobile/ui/widgets/common.dart';
 /// are the server's (catalogue from vehicle-defs); the app adds no advice.
 class FaultsScreen extends StatefulWidget {
   const FaultsScreen(
-      {super.key, this.settingsStore = const AppSettingsStore(), this.client});
+      {super.key,
+      this.settingsStore = const AppSettingsStore(),
+      this.client,
+      this.embedded = false});
+
+  /// Inside the Garage destination: no scaffold or app bar of its own.
+  final bool embedded;
 
   final AppSettingsStore settingsStore;
   final RideClient? client;
@@ -76,11 +83,26 @@ class _FaultsScreenState extends State<FaultsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: context.l10n.garageRefresh,
+              onPressed: _loading ? null : _refresh,
+            ),
+          ),
+          Expanded(child: ContentColumn(child: _body())),
+        ],
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Faults'),
         actions: [
-          const NotificationBell(),
+          const HeaderActions(),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',

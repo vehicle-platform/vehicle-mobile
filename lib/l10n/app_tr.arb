@@ -1,0 +1,40 @@
+{
+  "@@locale": "tr",
+  "appTitle": "Araç",
+  "assistantName": "Sürüş Asistanı",
+  "navRide": "Sürüş",
+  "navGarage": "Garaj",
+  "navLogbook": "Günlük",
+  "navAssistant": "Asistan",
+  "navSettings": "Ayarlar",
+  "rideSubLive": "Canlı",
+  "rideSubSignals": "Sinyaller",
+  "rideSubRecord": "Kayıt",
+  "rideSubDiagnostics": "Tanılama",
+  "garageInbox": "Gelen kutusu",
+  "garageFaults": "Arızalar",
+  "garageMarkAllRead": "Tümünü okundu say",
+  "garageRefresh": "Yenile",
+  "garageSelectItem": "Ayrıntıları görmek için bir öğe seç",
+  "logbookSelectRide": "Ayrıntıları görmek için bir sürüş seç",
+  "commandBarTitle": "Komut çubuğu",
+  "commandBarHint": "Bir ekrana git veya soru sor",
+  "commandBarShortcut": "Ctrl+K",
+  "commandBarNoMatch": "Eşleşen komut yok",
+  "commandGoTo": "{destination} ekranına git",
+  "@commandGoTo": {
+    "placeholders": {"destination": {"type": "String"}}
+  },
+  "commandAsk": "{assistant}'na sor: {query}",
+  "@commandAsk": {
+    "placeholders": {"assistant": {"type": "String"}, "query": {"type": "String"}}
+  },
+  "commandOpenPanel": "Asistan panelini aç",
+  "commandClosePanel": "Asistan panelini kapat",
+  "panelToggleOpen": "Asistan panelini göster",
+  "panelToggleClose": "Asistan panelini gizle",
+  "settingsLanguage": "Dil",
+  "settingsLanguageHint": "Asistanın cevap dili de budur.",
+  "languageEnglish": "English",
+  "languageTurkish": "Türkçe"
+}

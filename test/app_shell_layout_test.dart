@@ -12,7 +12,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   testWidgets(
-      'without phone tabs (web, desktop) only Assistant, Rides, Faults and Settings show',
+      'without phone tabs (web, desktop) only Garage, Logbook and Assistant show',
       (tester) async {
     tester.view.physicalSize = const Size(420, 900);
     tester.view.devicePixelRatio = 1;
@@ -22,12 +22,12 @@ void main() {
 
     final bar = find.byType(NavigationBar);
     expect(bar, findsOneWidget);
-    for (final label in ['Asistan', 'Rides', 'Faults', 'Settings']) {
+    for (final label in ['Garage', 'Logbook', 'Assistant']) {
       expect(
           find.descendant(of: bar, matching: find.text(label)), findsOneWidget,
           reason: label);
     }
-    for (final label in ['Live', 'Signals', 'Record', 'Diagnostics']) {
+    for (final label in ['Ride', 'Live', 'Signals', 'Record', 'Diagnostics']) {
       expect(find.descendant(of: bar, matching: find.text(label)), findsNothing,
           reason: label);
     }

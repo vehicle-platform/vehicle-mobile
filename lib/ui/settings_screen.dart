@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/locale_controller.dart';
 import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
@@ -231,6 +233,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     widget.onSaved?.call();
   }
 
+  Widget _languageSection(BuildContext context) {
+    final controller = LocaleScope.maybeOf(context);
+    if (controller == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    final code = controller.override?.languageCode ?? 'en';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionLabel(l.settingsLanguage),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: 'en', label: Text(l.languageEnglish)),
+            ButtonSegment(value: 'tr', label: Text(l.languageTurkish)),
+          ],
+          selected: {code},
+          onSelectionChanged: (s) => controller.set(Locale(s.first)),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: Spacing.sm),
+          child: Text(l.settingsLanguageHint,
+              style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -317,6 +346,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                   ],
+                  const SizedBox(height: Spacing.lg),
+                  _languageSection(context),
                   const SizedBox(height: Spacing.lg),
                   const SectionLabel('Upload'),
                   SectionCard(
