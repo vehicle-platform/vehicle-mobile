@@ -39,6 +39,39 @@ class ChatToolCall {
   }
 }
 
+/// The model that actually answered (`model` of `POST /chat`, D-127 item 1),
+/// after any fallback. Absent when a template or the keyword matcher answered
+/// and on older servers.
+class AnsweringModel {
+  const AnsweringModel(
+      {required this.providerId, required this.label, this.model});
+
+  final String providerId;
+  final String label;
+  final String? model;
+
+  /// `label · model`, or just the label when the provider has no model name.
+  String get caption {
+    final name = model;
+    return name == null || name.isEmpty ? label : '$label · $name';
+  }
+
+  static AnsweringModel? tryFromJson(Object? json) {
+    if (json is! Map) return null;
+    final id = json['provider_id'];
+    final label = json['label'];
+    final model = json['model'];
+    final hasLabel = label is String && label.isNotEmpty;
+    final hasId = id is String && id.isNotEmpty;
+    if (!hasLabel && !hasId) return null;
+    return AnsweringModel(
+      providerId: hasId ? id : '',
+      label: hasLabel ? label : id as String,
+      model: model is String && model.isNotEmpty ? model : null,
+    );
+  }
+}
+
 /// A parsed 200 response of `POST /chat`.
 class ChatAnswer {
   const ChatAnswer({
@@ -47,6 +80,7 @@ class ChatAnswer {
     this.tool,
     this.result,
     this.elapsedMs,
+    this.model,
   });
 
   final String answer;
@@ -56,6 +90,9 @@ class ChatAnswer {
   /// Tool result as sent (object, array, string or null), shown verbatim.
   final Object? result;
   final int? elapsedMs;
+
+  /// Model that answered; null for a template answer or an older server.
+  final AnsweringModel? model;
 
   /// Throws [FormatException] when the body is not a chat answer.
   factory ChatAnswer.fromJson(Object? json) {
@@ -73,6 +110,7 @@ class ChatAnswer {
       tool: ChatToolCall.tryFromJson(json['tool']),
       result: json['result'],
       elapsedMs: elapsed is num ? elapsed.toInt() : null,
+      model: AnsweringModel.tryFromJson(json['model']),
     );
   }
 }
@@ -86,6 +124,7 @@ class ChatMessage {
         tool = null,
         result = null,
         elapsedMs = null,
+        model = null,
         isFailure = false;
 
   ChatMessage.fromAnswer(ChatAnswer answer)
@@ -95,6 +134,7 @@ class ChatMessage {
         tool = answer.tool,
         result = answer.result,
         elapsedMs = answer.elapsedMs,
+        model = answer.model,
         isFailure = false;
 
   /// A client-side problem (rate limit, host unreachable, ...), not a server answer.
@@ -104,6 +144,7 @@ class ChatMessage {
         tool = null,
         result = null,
         elapsedMs = null,
+        model = null,
         isFailure = true;
 
   final ChatRole role;
@@ -112,7 +153,25 @@ class ChatMessage {
   final ChatToolCall? tool;
   final Object? result;
   final int? elapsedMs;
+  final AnsweringModel? model;
   final bool isFailure;
+
+  /// Muted line under an answer: the model that answered (`label · model`),
+  /// or a plain note when a template answered or nothing could. Null for the
+  /// rider's question, failure and error bubbles, and an LLM answer from an
+  /// older server that does not name its model.
+  String? get modelCaption {
+    if (role != ChatRole.assistant || isFailure || source == ChatSource.error) {
+      return null;
+    }
+    final answering = model;
+    if (answering != null) return answering.caption;
+    return switch (source) {
+      ChatSource.template => 'Template answer (no model)',
+      ChatSource.unsupported => 'Not answered (no model)',
+      _ => null,
+    };
+  }
 }
 
 /// One key/value row of a flattened tool argument or result.
