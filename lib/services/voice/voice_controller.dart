@@ -45,7 +45,7 @@ enum EmptyTranscript {
   repeat,
 }
 
-/// Voice front end of Usta: microphone (speech to text), reading answers
+/// Voice front end of Sürüş Asistanı: microphone (speech to text), reading answers
 /// aloud and the audio route to the rider's intercom (Android). It owns no
 /// chat logic: a final transcript goes to [onTranscript], which sends it down
 /// the normal `POST /chat` path. Informational only (invariant 3).

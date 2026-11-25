@@ -73,7 +73,7 @@ void main() {
       await tester.pumpWidget(_host(ChatBubble(message: message)));
 
       expect(find.text('Son sürüşün 12.4 km idi.'), findsOneWidget);
-      expect(find.text('Usta'), findsWidgets);
+      expect(find.text('Asistan'), findsWidgets);
     expect(find.text('LLM'), findsNothing);
       expect(find.textContaining('computed by', findRichText: true),
           findsOneWidget);

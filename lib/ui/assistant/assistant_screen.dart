@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/services.dart' show MaxLengthEnforcement;
 
 import 'package:vehicle_mobile/models/chat_message.dart';
@@ -12,7 +13,9 @@ import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/theme/layout.dart';
 
 /// Example questions of the empty state (the rider talks Turkish to the bike).
 const List<String> assistantExampleQuestions = [
@@ -21,7 +24,17 @@ const List<String> assistantExampleQuestions = [
   'Kayıtlı arızalar var mı?',
 ];
 
-/// Rider assistant (D-121): a text chat against `POST /chat` of the active
+/// A question handed to the assistant from outside (a notification's "ask"
+/// button): shown in the input, not sent. [seq] tells a repeat from a new one.
+class AssistantPrefill {
+  const AssistantPrefill(this.seq, this.question, this.sessionId);
+
+  final int seq;
+  final String question;
+  final String? sessionId;
+}
+
+/// Rider assistant "Sürüş Asistanı" (D-121): a text chat against `POST /chat` of the active
 /// host. The server picks one read-only vehicle-mcp tool and phrases its
 /// result; this screen only shows the answer and the tool that computed the
 /// numbers. It never computes or rephrases a number and adds no advice. The
@@ -34,6 +47,7 @@ class AssistantScreen extends StatefulWidget {
     this.sessionId,
     this.voice,
     this.voiceBus,
+    this.prefill,
   });
 
   final AppSettingsStore settingsStore;
@@ -46,6 +60,9 @@ class AssistantScreen extends StatefulWidget {
   /// Where handlebar push-to-talk and the voice-command button arrive;
   /// defaults to [VoiceTriggerBus.instance].
   final VoiceTriggerBus? voiceBus;
+
+  /// Prefilled question from a notification (D-123).
+  final ValueListenable<AssistantPrefill?>? prefill;
 
   /// Ride the question is about (opened from a ride screen), sent as `session_id`.
   final String? sessionId;
@@ -89,10 +106,27 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
       if (mounted) _bus.attach(_onTrigger);
     });
     _voice.refreshIntercom();
+    widget.prefill?.addListener(_onPrefill);
+    _onPrefill();
+  }
+
+  int _prefillSeen = 0;
+
+  void _onPrefill() {
+    final prefill = widget.prefill?.value;
+    if (prefill == null || prefill.seq == _prefillSeen) return;
+    _prefillSeen = prefill.seq;
+    _controller.value = TextEditingValue(
+      text: prefill.question,
+      selection: TextSelection.collapsed(offset: prefill.question.length),
+    );
+    if (prefill.sessionId != null) _sessionId = prefill.sessionId;
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    widget.prefill?.removeListener(_onPrefill);
     _bus.detach(_onTrigger);
     _voice.removeListener(_onVoiceChanged);
     _voice.onTranscript = null;
@@ -261,12 +295,13 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            UstaAvatar(size: 30),
-            SizedBox(width: Spacing.md),
-            Text('Usta'),
+            AssistantAvatar(size: 28),
+            SizedBox(width: Spacing.sm),
+            Flexible(child: Text('Sürüş Asistanı', overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
+          const NotificationBell(),
           if (_messages.isNotEmpty)
             IconButton(
               tooltip: 'Clear conversation',
@@ -279,7 +314,7 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         // One centred column: full width on a phone, at most 720 px on a wide window.
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
+            constraints: const BoxConstraints(maxWidth: ContentWidth.assistant),
             child: Column(
               children: [
                 if (_sessionId != null)
@@ -368,37 +403,12 @@ class _AssistantScreenState extends State<AssistantScreen> with SingleTickerProv
         },
       );
 
-  Widget _emptyState(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(Spacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const UstaAvatar(size: 56),
-            const SizedBox(height: Spacing.lg),
-            Text('Merhaba, ben Usta. Ne öğrenmek istersin?',
-                textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
-            const SizedBox(height: Spacing.xl),
-            Wrap(
-              spacing: Spacing.sm,
-              runSpacing: Spacing.sm,
-              alignment: WrapAlignment.center,
-              children: [
-                for (final question in assistantExampleQuestions)
-                  ActionChip(
-                    label: Text(question),
-                    materialTapTargetSize: MaterialTapTargetSize.padded,
-                    onPressed: () => _send(question),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _emptyState(BuildContext context) => EmptyState(
+        icon: Icons.two_wheeler,
+        message: 'Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?',
+        chips: assistantExampleQuestions,
+        onChip: _send,
+      );
 }
 
 /// Placeholder card with a soft pulse while the host answers.
@@ -433,7 +443,7 @@ class PendingAnswerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const UstaAvatar(size: 24),
+                const AssistantAvatar(size: 24),
                 const SizedBox(height: Spacing.md),
                 bar(0.9),
                 const SizedBox(height: Spacing.sm),

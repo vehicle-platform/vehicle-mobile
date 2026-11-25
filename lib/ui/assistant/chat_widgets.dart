@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
-/// Short Turkish label of where an answer text came from: `Usta` for text the
+/// Short Turkish label of where an answer text came from: `Asistan` for text the
 /// local model phrased, `Veriden doğrulandı` for a fixed template over the
 /// tool result (every number checked against the data).
 String chatSourceLabel(ChatSource source) => switch (source) {
-      ChatSource.llm => 'Usta',
+      ChatSource.llm => 'Asistan',
       ChatSource.template => 'Veriden doğrulandı',
       ChatSource.unsupported => 'Yanıtlanamadı',
       ChatSource.error => 'Hata',
     };
 
-/// Usta's avatar: a wrench glyph on a soft accent disc (no brand marks).
-class UstaAvatar extends StatelessWidget {
-  const UstaAvatar({super.key, this.size = 28});
+/// Assistant avatar: a motorcycle glyph on a soft accent disc (no brand marks).
+class AssistantAvatar extends StatelessWidget {
+  const AssistantAvatar({super.key, this.size = 28});
 
   final double size;
 
@@ -26,13 +26,13 @@ class UstaAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: t.accent.withValues(alpha: 0.16)),
-      child: Icon(Icons.build_outlined, size: size * 0.55, color: t.accent),
+      child: Icon(Icons.two_wheeler, size: size * 0.55, color: t.accent),
     );
   }
 }
 
 /// One conversation entry: the rider's question as a compact right-aligned
-/// pill, Usta's answer as a full-width flat card. New entries fade and slide
+/// pill, the assistant's answer as a full-width flat card. New entries fade and slide
 /// in (<= 200 ms).
 class ChatBubble extends StatelessWidget {
   const ChatBubble({super.key, required this.message});
@@ -104,7 +104,7 @@ class _AnswerCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                if (failure) Icon(Icons.info_outline, size: 20, color: t.error) else const UstaAvatar(size: 24),
+                if (failure) Icon(Icons.info_outline, size: 20, color: t.error) else const AssistantAvatar(size: 24),
                 const SizedBox(width: Spacing.sm),
                 if (message.source != null) SourceBadge(message.source!),
                 const Spacer(),

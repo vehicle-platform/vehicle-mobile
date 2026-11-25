@@ -7,7 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
 
-/// Preferred recognition and speech language of Usta.
+/// Preferred recognition and speech language of Sürüş Asistanı.
 const String voiceLocaleTag = 'tr-TR';
 
 /// Speech recognition behind a small port so tests use a fake.
