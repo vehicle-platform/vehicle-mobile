@@ -19,23 +19,32 @@ enum VoiceState {
   speaking,
 }
 
-const String voiceInitTimeoutMessage =
-    'Ses tanıma kullanılamıyor. Soruyu yazabilirsin.';
-const String voiceNoSpeechMessage = 'Seni duyamadım. Tekrar dener misin?';
-const String voiceUnavailableMessage =
-    'Ses tanıma şu an kullanılamıyor. Soruyu yazabilirsin.';
-const String voicePermissionMessage =
-    'Mikrofon izni verilmedi ya da ses tanıma bu cihazda yok. İzni ayarlardan açabilir ya da soruyu yazabilirsin.';
-const String voiceLanguageMessage =
-    'Türkçe ses tanıma bu cihazda yok. Soruyu yazabilirsin.';
-const String voiceNetworkMessage =
-    'Ses tanıma için internet bağlantısı gerekiyor.';
-const String intercomConnectedLabel = 'İntercom bağlı';
-const String phoneMicLabel = 'Telefon mikrofonu';
+/// Why the last voice action failed. The UI maps each to a localized message
+/// (`assistantVoiceError*`); the controller carries no user-facing text.
+enum VoiceError {
+  /// The recogniser did not start in time.
+  initTimeout,
+
+  /// Nothing was heard.
+  noSpeech,
+  unavailable,
+
+  /// Microphone permission denied or no recogniser on this device.
+  permission,
+
+  /// The recognition language is not installed.
+  language,
+
+  /// Recognition needs a network connection.
+  network,
+}
+
+/// Where the sound goes (Android only): the rider's intercom or the phone.
+enum VoiceRoute { intercom, phone }
 
 /// What an empty transcript does after the rider stopped listening.
 enum EmptyTranscript {
-  /// Show "Seni duyamadım" (mic button).
+  /// Show the "did not hear you" error (mic button).
   message,
 
   /// Nothing (handlebar button after a long hold).
@@ -45,7 +54,7 @@ enum EmptyTranscript {
   repeat,
 }
 
-/// Voice front end of Sürüş Asistanı: microphone (speech to text), reading answers
+/// Voice front end of the ride assistant: microphone (speech to text), reading answers
 /// aloud and the audio route to the rider's intercom (Android). It owns no
 /// chat logic: a final transcript goes to [onTranscript], which sends it down
 /// the normal `POST /chat` path. Informational only (invariant 3).
@@ -91,7 +100,7 @@ class VoiceController extends ChangeNotifier {
 
   VoiceState _state = VoiceState.idle;
   String _partial = '';
-  String? _error;
+  VoiceError? _error;
   bool? _headset;
   bool _initialized = false;
   bool _routeHeld = false;
@@ -107,14 +116,13 @@ class VoiceController extends ChangeNotifier {
   /// Live partial transcript while listening.
   String get partial => _partial;
 
-  /// Friendly Turkish error of the last voice action, or null.
-  String? get error => _error;
+  /// Error of the last voice action, or null.
+  VoiceError? get error => _error;
 
-  /// "İntercom bağlı" / "Telefon mikrofonu"; null where there is no routing
-  /// (everything but Android).
-  String? get routeLabel {
+  /// Audio route; null where there is no routing (everything but Android).
+  VoiceRoute? get route {
     if (!_intercom.supported) return null;
-    return _headset == true ? intercomConnectedLabel : phoneMicLabel;
+    return _headset == true ? VoiceRoute.intercom : VoiceRoute.phone;
   }
 
   void clearError() {
@@ -210,11 +218,11 @@ class VoiceController extends ChangeNotifier {
       }
       if (session != _session) return;
       if (timedOut) {
-        _fail(voiceInitTimeoutMessage);
+        _fail(VoiceError.initTimeout);
         return;
       }
       if (!ok) {
-        _fail(voicePermissionMessage);
+        _fail(VoiceError.permission);
         return;
       }
       _initialized = true;
@@ -227,7 +235,7 @@ class VoiceController extends ChangeNotifier {
     try {
       await _recognizer.listen(onResult: _onResult);
     } catch (_) {
-      if (session == _session) _fail(voiceUnavailableMessage);
+      if (session == _session) _fail(VoiceError.unavailable);
       return;
     }
     if (session != _session) return;
@@ -258,16 +266,16 @@ class VoiceController extends ChangeNotifier {
   void _onError(String code, bool permanent) {
     if (_sessionDone) return;
     final message = switch (code) {
-      'error_permission' => voicePermissionMessage,
+      'error_permission' => VoiceError.permission,
       'error_language_unavailable' ||
       'error_language_not_supported' =>
-        voiceLanguageMessage,
+        VoiceError.language,
       'error_network' ||
       'error_network_timeout' ||
       'error_server' =>
-        voiceNetworkMessage,
-      'error_no_match' || 'error_speech_timeout' => voiceNoSpeechMessage,
-      _ => voiceUnavailableMessage,
+        VoiceError.network,
+      'error_no_match' || 'error_speech_timeout' => VoiceError.noSpeech,
+      _ => VoiceError.unavailable,
     };
     final silent = code == 'error_no_match' || code == 'error_speech_timeout';
     // Already released (finishing): nothing heard is an empty transcript.
@@ -326,7 +334,7 @@ class VoiceController extends ChangeNotifier {
     if (transcript.isEmpty) {
       switch (_emptyPolicy) {
         case EmptyTranscript.message:
-          _error = voiceNoSpeechMessage;
+          _error = VoiceError.noSpeech;
           _notify();
         case EmptyTranscript.nothing:
           break;
@@ -338,7 +346,7 @@ class VoiceController extends ChangeNotifier {
     onTranscript?.call(transcript);
   }
 
-  void _fail(String message) {
+  void _fail(VoiceError message) {
     _sessionDone = true;
     _session++;
     _partial = '';
@@ -350,7 +358,7 @@ class VoiceController extends ChangeNotifier {
 
   // --- speaking ------------------------------------------------------------
 
-  /// Reads [text] aloud when "Cevapları sesli oku" is on (or [force]).
+  /// Reads [text] aloud when "read answers aloud" is on (or [force]).
   /// Completes with true when it was spoken to the end, false when it was
   /// skipped (setting off), interrupted or failed.
   Future<bool> speak(String text, {bool force = false}) async {

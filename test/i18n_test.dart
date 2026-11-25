@@ -34,4 +34,10 @@ void main() {
       expect(turkish.hasMatch(en[key] as String), isFalse, reason: key);
     }
   });
+
+  test('merged ARB files are up to date with l10n_src (run tool/l10n_merge.py)',
+      () {
+    final r = Process.runSync('python3', ['tool/l10n_merge.py', '--check']);
+    expect(r.exitCode, 0, reason: '${r.stdout}${r.stderr}');
+  });
 }

@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
 import 'package:vehicle_mobile/services/auth_client.dart';
 import 'package:vehicle_mobile/services/notifications/local_notifier.dart';
 import 'package:vehicle_mobile/services/notifications/notification_center.dart';
@@ -32,8 +34,8 @@ Map<String, Object?> _note(int id,
       'vehicle_id': 'veh-1',
       'kind': kind,
       'severity': severity,
-      'title': 'Başlık $id',
-      'body': 'Gövde $id',
+      'title': 'Title $id',
+      'body': 'Body $id',
       'session_id': session,
       'fault_id': null,
       'created_utc': (created ?? DateTime.now()).toUtc().toIso8601String(),
@@ -158,19 +160,20 @@ void main() {
           find.descendant(
               of: find.byType(NavigationBar), matching: find.text('Assistant')),
           findsOneWidget);
-      expect(find.text('Sürüş Asistanı'), findsOneWidget); // app bar title
-      expect(find.text('Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?'),
+      expect(find.text('Ride Assistant'), findsOneWidget); // app bar title
+      expect(
+          find.text('Hello, I am the Ride Assistant. What would you like to know?'),
           findsOneWidget);
       expect(find.textContaining('Usta'), findsNothing);
     });
 
-    testWidgets('settings section is named Sürüş Asistanı', (tester) async {
+    testWidgets('settings section is named after the assistant', (tester) async {
       await _size(tester, 390, 2000);
       await tester.pumpWidget(_shell(_center([])));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
-      expect(find.text('SÜRÜŞ ASISTANI'), findsOneWidget);
+      expect(find.text('RIDE ASSISTANT'), findsOneWidget);
       expect(find.textContaining('Usta'), findsNothing);
     });
   });
@@ -191,17 +194,19 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.notifications_outlined));
       await tester.pumpAndSettle();
-      expect(find.text('Bildirimler'), findsOneWidget);
-      expect(find.text('BUGÜN'), findsOneWidget);
-      expect(find.text('DÜN'), findsOneWidget);
-      expect(find.text('Başlık 2'), findsOneWidget);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('TODAY'), findsOneWidget);
+      expect(find.text('YESTERDAY'), findsOneWidget);
+      // The unread critical one is also the alert banner at the top.
+      expect(find.byKey(const ValueKey('inbox-alert-banner')), findsOneWidget);
+      expect(find.text('Title 2'), findsNWidgets(2));
       // Newest first within the day.
-      expect(tester.getTopLeft(find.text('Başlık 3')).dy,
-          lessThan(tester.getTopLeft(find.text('Başlık 2')).dy));
+      expect(tester.getTopLeft(find.text('Title 3')).dy,
+          lessThan(tester.getTopLeft(find.text('Title 1')).dy));
       expect(find.byKey(const ValueKey('unread-dot')), findsNWidgets(2));
     });
 
-    testWidgets('"Tümünü okundu say" clears the badge and posts read-all',
+    testWidgets('"Mark all as read" clears the badge and posts read-all',
         (tester) async {
       await _size(tester, 390, 844);
       final calls = <String>[];
@@ -211,7 +216,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.notifications_outlined));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Tümünü okundu say'));
+      await tester.tap(find.byTooltip('Mark all as read'));
       await tester.pumpAndSettle();
       expect(center.unreadCount, 0);
       expect(calls, contains('POST /notifications/read-all'));
@@ -234,21 +239,79 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.notifications_outlined));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Başlık 7'));
+      await tester.tap(find.text('Title 7'));
       await tester.pumpAndSettle();
-      expect(find.text('Gövde 7'), findsOneWidget);
-      expect(find.text('Sürüşü aç'), findsOneWidget);
+      expect(find.text('Body 7'), findsOneWidget);
+      expect(find.text('Open ride'), findsOneWidget);
       expect(center.unreadCount, 0); // opening marks it read
 
-      await tester.tap(find.text("Sürüş Asistanı'na sor"));
+      await tester.tap(find.text('Ask Ride Assistant'));
       await tester.pumpAndSettle();
       // Back in the shell on the assistant tab, question prefilled, not sent.
       expect(find.byType(NotificationDetailScreen), findsNothing);
       final field = tester.widget<TextField>(find.descendant(
           of: find.byType(AssistantComposer),
           matching: find.byType(TextField)));
-      expect(field.controller!.text, contains('Başlık 7'));
+      expect(field.controller!.text, contains('Title 7'));
       expect(find.text('Ride sess-1'), findsOneWidget);
+    });
+
+    testWidgets('banner: newest unread critical wins, info and read never show',
+        (tester) async {
+      await _size(tester, 390, 844);
+      final center = _center([
+        _note(1, severity: 'warning'),
+        _note(2, severity: 'info'),
+        _note(3, severity: 'critical', read: true),
+      ]);
+      await tester.pumpWidget(_shell(center));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.notifications_outlined));
+      await tester.pumpAndSettle();
+      // Only the unread warning (P2) qualifies.
+      final banner = find.byKey(const ValueKey('inbox-alert-banner'));
+      expect(banner, findsOneWidget);
+      expect(find.descendant(of: banner, matching: find.text('Title 1')),
+          findsOneWidget);
+      // Opening it (tap) marks it read and the banner goes away.
+      await tester.tap(banner);
+      await tester.pumpAndSettle();
+      expect(find.byType(NotificationDetailScreen), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(banner, findsNothing);
+    });
+
+    testWidgets('Turkish locale: day labels, severity and empty state',
+        (tester) async {
+      await _size(tester, 390, 844);
+      final center = _center([_note(1, severity: 'critical')]);
+      await tester.pumpWidget(MaterialApp(
+        theme: buildAppTheme(),
+        locale: const Locale('tr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: AppShell(
+          settingsStore: center.sync.settingsStore,
+          notifications: center,
+          localNotifier: const NoopLocalNotifier(),
+          backgroundPull: false,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.notifications_outlined));
+      await tester.pumpAndSettle();
+      expect(find.text('Bildirimler'), findsOneWidget);
+      expect(find.text('BUGÜN'), findsOneWidget);
+      await tester.tap(find.text('Title 1').last);
+      await tester.pumpAndSettle();
+      expect(find.text('KRİTİK'), findsOneWidget);
+      expect(find.text("Sürüş Asistanı'na sor"), findsOneWidget);
     });
 
     testWidgets('empty inbox shows a compact empty state', (tester) async {
@@ -258,7 +321,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byIcon(Icons.notifications_outlined));
       await tester.pumpAndSettle();
-      expect(find.text('Henüz bildirim yok'), findsOneWidget);
+      expect(find.text('No notifications yet'), findsOneWidget);
     });
   });
 
@@ -286,14 +349,14 @@ void main() {
         home: SettingsScreen(store: store, authClient: auth),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Giriş yapan: rider'), findsOneWidget);
+      expect(find.text('Signed in as rider'), findsOneWidget);
       expect(find.text('CL250'), findsOneWidget);
-      expect(find.text('Araç ekle'), findsOneWidget);
+      expect(find.text('Add vehicle'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('logout')));
       await tester.pumpAndSettle();
       expect(calls, ['POST /auth/logout Bearer tok']);
-      expect(find.text('Giriş yapılmadı'), findsOneWidget);
+      expect(find.text('Not signed in'), findsOneWidget);
     });
   });
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
 
-/// A warning the app reads out in fixed Turkish wording, never through the
+import 'package:vehicle_mobile/l10n/app_localizations.dart';
+
+/// A warning the app reads out in fixed wording of the active language, never through the
 /// LLM and never through `/chat` (D-085 item 4, D-121 item 7). Informational
 /// only: it is not a safety output (invariant 3).
 sealed class CriticalEvent {
@@ -21,20 +23,48 @@ class HighSeverityFaultEvent extends CriticalEvent {
   final String title;
 }
 
+/// The fixed sentences of one language. The UI passes the active locale's
+/// sentences in (a provider, so a language change applies at once).
+class AnnouncerSentences {
+  const AnnouncerSentences({required this.adviseStop, required this.fault});
+
+  /// English wording, the default when no provider is given.
+  static const AnnouncerSentences english = AnnouncerSentences(
+    adviseStop: CriticalAnnouncer.adviseStopSentence,
+    fault: CriticalAnnouncer.faultSentence,
+  );
+
+  factory AnnouncerSentences.fromL10n(AppLocalizations l) => AnnouncerSentences(
+        adviseStop: l.garageAnnounceAdviseStop,
+        fault: l.garageAnnounceFault,
+      );
+
+  final String adviseStop;
+
+  /// Template of a live high-severity entry; the argument is the server's text.
+  final String Function(String title) fault;
+}
+
 /// Speaks fixed templates offline. [speak] is the voice output (it completes
 /// when the sentence ended).
 class CriticalAnnouncer {
-  CriticalAnnouncer({required this.speak});
+  CriticalAnnouncer({required this.speak, this.sentences});
 
-  /// Fixed sentence after an answer whose tool result advises stopping.
+  /// English sentence after an answer whose tool result advises stopping.
   static const String adviseStopSentence =
-      'Güvenli bir yerde dur ve motoru kontrol ettir.';
+      'Stop in a safe place and have the engine checked.';
 
-  /// Template of a live high-severity entry; [title] is the server's own text.
+  /// English template of a live high-severity entry; [title] is the server's
+  /// own text.
   static String faultSentence(String title) =>
-      'Yüksek öncelikli uyarı: $title. $adviseStopSentence';
+      'High-priority warning: $title. $adviseStopSentence';
 
   final Future<void> Function(String sentence) speak;
+
+  /// The sentences of the active language; null = English.
+  final AnnouncerSentences Function()? sentences;
+
+  AnnouncerSentences get _s => sentences?.call() ?? AnnouncerSentences.english;
   final Set<String> _announcedFaults = {};
 
   /// Speaks [event]; a fault id already announced is not announced again.
@@ -42,11 +72,11 @@ class CriticalAnnouncer {
   Future<bool> announce(CriticalEvent event) async {
     switch (event) {
       case AdviseStopEvent():
-        await speak(adviseStopSentence);
+        await speak(_s.adviseStop);
         return true;
       case HighSeverityFaultEvent(:final id, :final title):
         if (!_announcedFaults.add(id)) return false;
-        await speak(faultSentence(title));
+        await speak(_s.fault(title));
         return true;
     }
   }

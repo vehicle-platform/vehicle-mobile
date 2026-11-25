@@ -77,8 +77,8 @@ class _Server {
   final providers = [
     _provider('local', 'Yerel model', cloud: false),
     _provider('anthropic', 'Claude', model: 'claude-x'),
-    _provider('gemini', 'Gemini', available: false, reason: 'Sunucuda kapalı'),
-    _provider('custom', 'Özel (OpenAI uyumlu)'),
+    _provider('gemini', 'Gemini', available: false, reason: 'Disabled on the server'),
+    _provider('custom', 'Custom (OpenAI compatible)'),
   ];
 
   AssistantProviderClient get client =>
@@ -157,7 +157,7 @@ void main() {
     await _pumpScreen(tester, server);
     expect(find.text('Yerel model'), findsOneWidget);
     expect(find.text('Claude'), findsOneWidget);
-    expect(find.text('Sunucuda kapalı'), findsOneWidget);
+    expect(find.text('Disabled on the server'), findsOneWidget);
     // No key/model fields for the local model.
     expect(find.byKey(const ValueKey('provider-key')), findsNothing);
 
@@ -176,11 +176,11 @@ void main() {
     final server = _Server();
     await _pumpScreen(tester, server);
     await _chooseClaude(tester, accept: false);
-    expect(find.textContaining('Sorun ve sunucunun hesapladığı sürüş verileri'),
+    expect(find.textContaining('Your question and the ride data the server computed are sent to'),
         findsOneWidget);
-    expect(find.textContaining('kendi Claude hesabından faturalanır'),
+    expect(find.textContaining('billed to your own Claude account'),
         findsOneWidget);
-    expect(find.text('Konum verisi de gönderilsin'), findsOneWidget);
+    expect(find.text('Also send position data'), findsOneWidget);
     final sw = tester.widget<Switch>(find.descendant(
         of: find.byKey(const ValueKey('consent-position')),
         matching: find.byType(Switch)));
@@ -210,8 +210,8 @@ void main() {
     // The key is gone from the field and nowhere on screen; only the hint.
     expect(_field(tester, 'provider-key').controller!.text, isEmpty);
     expect(find.textContaining('sk-secret'), findsNothing);
-    expect(find.text('Kayıtlı anahtar ••••wxyz'), findsOneWidget);
-    expect(find.text('Kaydedildi.'), findsOneWidget);
+    expect(find.text('Saved key ••••wxyz'), findsOneWidget);
+    expect(find.text('Saved.'), findsOneWidget);
     // Models were fetched after the key was set: a dropdown now.
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
     expect(server.paths, contains('GET /assistant/models'));
@@ -243,15 +243,15 @@ void main() {
             consent: true));
     await _pumpScreen(tester, server);
     expect(_field(tester, 'provider-key').controller!.text, isEmpty);
-    expect(find.text('Kayıtlı anahtar ••••ab12'), findsOneWidget);
+    expect(find.text('Saved key ••••ab12'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('delete-key')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sil'));
+    await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
     expect(server.puts.single['api_key'], '');
-    expect(find.textContaining('Kayıtlı anahtar'), findsNothing);
-    expect(find.text('Anahtar silindi.'), findsOneWidget);
+    expect(find.textContaining('Saved key'), findsNothing);
+    expect(find.text('Key deleted.'), findsOneWidget);
   });
 
   testWidgets('models 502 falls back to a free-text model field',
@@ -305,22 +305,22 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         find.textContaining(
-            'Anahtar yalnızca güvenli bağlantıyla (HTTPS) ya da Pi üzerinde komutla girilebilir'),
+            'The key can only be entered over a secure connection (HTTPS) or on the Pi'),
         findsOneWidget);
     expect(
         find.textContaining(
-            'vehicle-server user set-llm <kullanıcı> --provider <id>'),
+            'vehicle-server user set-llm <user> --provider <id>'),
         findsOneWidget);
     expect(_field(tester, 'provider-key').controller!.text, isEmpty);
   });
 
   for (final c in [
-    (400, 'consent required', 'onay gerekli'),
-    (503, 'cloud providers disabled', 'bulut sağlayıcılar kapalı'),
-    (422, 'bad input', 'Sunucu girişi kabul etmedi'),
-    (502, 'provider error', 'Sağlayıcı hata verdi'),
+    (400, 'consent required', 'need your consent'),
+    (503, 'cloud providers disabled', 'Cloud providers are turned off'),
+    (422, 'bad input', 'did not accept the input'),
+    (502, 'provider error', 'provider returned an error'),
   ]) {
-    testWidgets('save ${c.$1} shows a Turkish message', (tester) async {
+    testWidgets('save ${c.$1} shows a localized message', (tester) async {
       final server = _Server()
         ..putStatus = c.$1
         ..putBody = {'detail': c.$2};
@@ -359,12 +359,12 @@ void main() {
     await _pumpScreen(tester, server);
     await tester.tap(find.byKey(const ValueKey('test-provider')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Bağlantı çalışıyor (321 ms)'), findsOneWidget);
+    expect(find.textContaining('The connection works (321 ms)'), findsOneWidget);
 
     server.testBody = {'ok': false, 'latency_ms': 0, 'detail': 'bad key'};
     await tester.tap(find.byKey(const ValueKey('test-provider')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Bağlantı kurulamadı: bad key'), findsOneWidget);
+    expect(find.textContaining('The connection failed: bad key'), findsOneWidget);
   });
 
   group('settings integration', () {
@@ -388,7 +388,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final server = _Server();
       await pumpSettings(tester, server);
-      expect(find.text('Yerel model (varsayılan)'), findsOneWidget);
+      expect(find.text('Local model (default)'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('assistant-model-row')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('provider-anthropic')), findsOneWidget);
@@ -419,14 +419,14 @@ void main() {
           theme: buildAppTheme(),
           home: SettingsScreen(store: store, assistantClient: client)));
       await tester.pumpAndSettle();
-      expect(find.text('Asistan modeli', skipOffstage: false), findsNothing);
+      expect(find.text('Assistant model', skipOffstage: false), findsNothing);
     });
 
     testWidgets('hidden when not signed in, without calling the server',
         (tester) async {
       final server = _Server();
       await pumpSettings(tester, server, account: false);
-      expect(find.text('Asistan modeli', skipOffstage: false), findsNothing);
+      expect(find.text('Assistant model', skipOffstage: false), findsNothing);
       expect(server.paths, isEmpty);
     });
   });

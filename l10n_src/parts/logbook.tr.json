@@ -1,0 +1,224 @@
+{
+  "logbookRideHistoryTitle": "Sürüş geçmişi",
+  "logbookRideSummaryTitle": "Sürüş özeti",
+  "logbookBringupTitle": "Devreye alma kontrolü",
+  "logbookRefresh": "Yenile",
+  "logbookRetry": "Tekrar dene",
+  "logbookOpenSettings": "Ayarları aç",
+  "logbookAskAssistant": "Asistana sor",
+  "logbookLoadingRides": "Sürüşler yükleniyor...",
+  "logbookLoadingSummary": "Sürüş özeti yükleniyor...",
+  "logbookLoadingBringup": "Devreye alma kontrolü yükleniyor...",
+  "logbookNoServer": "Vehicle-server ayarlanmamış. Sunucu adresini ve API anahtarını Ayarlar'dan gir.",
+  "logbookCleartextWarning": "Uyarı: http:// API anahtarını ve sürüş verisini şifresiz gönderir. Yalnızca güvenilir yerel ağda kullan; dışarıdan erişilen sunucular için https:// kullan.",
+  "logbookAllRides": "Tüm sürüşler",
+  "logbookRangeUtc": "{from} – {to} (UTC günleri)",
+  "@logbookRangeUtc": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoRidesInRange": "Bu aralıkta sürüş yok.",
+  "logbookSkippedHint": "{count, plural, =1{Özeti kayıtlı olmayan 1 oturum atlandı.} other{Özeti kayıtlı olmayan {count} oturum atlandı.}}",
+  "@logbookSkippedHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookDateRange": "Tarih aralığı",
+  "logbookChangeRange": "Aralığı değiştir",
+  "logbookClear": "Temizle",
+  "logbookColumns": "Sütunlar",
+  "logbookUpToTwo": "en fazla iki",
+  "logbookRideCount": "{count, plural, =1{1 sürüş} other{{count} sürüş}}",
+  "@logbookRideCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookSkippedCount": "{count} atlandı",
+  "@logbookSkippedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookUnknownTime": "bilinmeyen zaman",
+  "logbookSignals": "Sinyaller",
+  "logbookPerGear": "Vites başına sinyaller",
+  "logbookBinned": "Aralıklı sinyaller",
+  "logbookCoverage": "Kapsam",
+  "logbookHealthWindows": "Sağlık pencereleri",
+  "logbookNoSummary": "Bu oturum için kayıtlı sürüş özeti yok.",
+  "logbookDefsMismatch": "Başka defs aralık sınırlarıyla çözüldü: {names}.",
+  "@logbookDefsMismatch": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRideDefinition": "sürüş {value}",
+  "@logbookRideDefinition": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookDefsVersion": "defs {value}",
+  "@logbookDefsVersion": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNoSignals": "Bu sürüş özetinde kayıtlı sinyal yok.",
+  "logbookGear": "Vites {n}",
+  "@logbookGear": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookNoGears": "Kayıtlı vites yok.",
+  "logbookAxisUnsupported": "{n} eksenli özetler henüz telefonda gösterilmiyor.",
+  "@logbookAxisUnsupported": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookTotalOutside": "toplam {total} · dışında {outside}",
+  "@logbookTotalOutside": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "outside": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookNotAvailable": "Mevcut değil ({n})",
+  "@logbookNotAvailable": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookPendingInputs": "bekleyen: {list}",
+  "@logbookPendingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookMissingInputs": "eksik: {list}",
+  "@logbookMissingInputs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookColumnsAxis": "sütunlar: {input} [{unit}]",
+  "@logbookColumnsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookRowsAxis": "satırlar: {input} [{unit}]",
+  "@logbookRowsAxis": {
+    "placeholders": {
+      "input": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookSession": "Oturum",
+  "logbookBringupUnsupported": "bu sunucuda devreye alma kontrolü yok (bring-up rotalı vehicle-server gerekir, server#50)",
+  "logbookBringupUnauthorized": "Yetkisiz: Ayarlar'daki API anahtarını kontrol et.",
+  "logbookBringupNotFound": "sunucuda bu oturum yok (önce yükle)",
+  "logbookBringupInvalid": "geçersiz istek",
+  "logbookBringupUnavailable": "sunucu kullanılamıyor",
+  "logbookBringupFailed": "istek başarısız",
+  "logbookSettingsReadFailed": "Sunucu ayarları okunamadı.",
+  "logbookNoBringupAnswer": "Sunucu devreye alma yanıtı döndürmedi.",
+  "logbookNoChecks": "Sunucu bu kapı için kontrol döndürmedi.",
+  "logbookChecks": "Kontroller",
+  "logbookManualPending": "{count, plural, =1{1 elle kontrol bekliyor: {list}} other{{count} elle kontrol bekliyor: {list}}}",
+  "@logbookManualPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookWarningsList": "{count, plural, =1{1 uyarı: {list}} other{{count} uyarı: {list}}}",
+  "@logbookWarningsList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookBringupLegend": "manual = bisiklet başında sen değerlendirirsin; unknown = oturumda bunun için veri yok.",
+  "logbookMeasured": "Ölçülen",
+  "logbookExpected": "Beklenen",
+  "logbookSource": "Kaynak",
+  "logbookNote": "Not",
+  "logbookWindowsLoading": "Pencere örnekleri yükleniyor...",
+  "logbookWindowsMissingReport": "Bu raporda pencere örneği yok (eski sunucu olabilir, veya sunucuda `vehicle-server derive <id>` çalıştır).",
+  "logbookWindowsUnavailable": "Kullanılamıyor.",
+  "logbookWindowsNone": "Kayıtlı pencere örneği yok.",
+  "logbookWindowsCounts": "{instances} örnek, {qualifying} uygun",
+  "@logbookWindowsCounts": {
+    "placeholders": {
+      "instances": {
+        "type": "int"
+      },
+      "qualifying": {
+        "type": "int"
+      }
+    }
+  },
+  "logbookColStart": "Başlangıç",
+  "logbookColEnd": "Bitiş",
+  "logbookColDuration": "Süre",
+  "logbookColCloseReason": "Kapanış nedeni",
+  "logbookColQualifies": "Uygun",
+  "logbookColFirst": "İlk",
+  "logbookYes": "evet",
+  "logbookNo": "hayır",
+  "logbookFirstMark": "ilk"
+}

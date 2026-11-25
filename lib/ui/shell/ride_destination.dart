@@ -67,7 +67,8 @@ class _RideDestinationState extends State<RideDestination> {
               index: _sub.index,
               children: [
                 for (final sub in RideSub.values)
-                  if (sub == _sub || (sub == RideSub.record && _visited.contains(sub)))
+                  if (sub == _sub ||
+                      (sub == RideSub.record && _visited.contains(sub)))
                     KeyedSubtree(key: ValueKey(sub), child: _build(sub))
                   else
                     const SizedBox.shrink(),
@@ -113,13 +114,12 @@ class _SubNav extends StatelessWidget {
                       alignment: Alignment.center,
                       children: [
                         Text(
-                          labels[sub]!.toUpperCase(),
+                          upperFor(context, labels[sub]!),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: style.copyWith(
-                              color: sub == selected
-                                  ? t.accent
-                                  : t.textSecondary),
+                              color:
+                                  sub == selected ? t.accent : t.textSecondary),
                         ),
                         Positioned(
                           left: 0,
@@ -129,9 +129,8 @@ class _SubNav extends StatelessWidget {
                             duration: Motion.standard,
                             curve: Motion.curve,
                             height: 2,
-                            color: sub == selected
-                                ? t.accent
-                                : Colors.transparent,
+                            color:
+                                sub == selected ? t.accent : Colors.transparent,
                           ),
                         ),
                       ],

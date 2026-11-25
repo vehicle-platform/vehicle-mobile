@@ -7,11 +7,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/chat_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
+import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 import 'support/memory_secrets.dart';
@@ -55,6 +57,8 @@ Future<void> _ask(WidgetTester tester, String text) async {
   await tester.pump(const Duration(milliseconds: 50));
 }
 
+final _example1 = assistantExampleQuestions(lookupAppLocalizations(const Locale('en'))).first;
+
 const _host = Host(id: 'h1', name: 'Bike', baseUrl: 'https://bike.example.com');
 
 void main() {
@@ -63,10 +67,11 @@ void main() {
     final store = await _store([_host], tokens: {'h1': 't'});
     await _pump(tester, store,
         ChatClient(httpClient: MockClient((_) async => _json(200, {}))));
-    for (final q in assistantExampleQuestions) {
+    final examples = assistantExampleQuestions(lookupAppLocalizations(const Locale('en')));
+    for (final q in examples) {
       expect(find.widgetWithText(ActionChip, q), findsOneWidget);
     }
-    expect(assistantExampleQuestions, hasLength(3));
+    expect(examples, hasLength(3));
   });
 
   testWidgets(
@@ -77,7 +82,7 @@ void main() {
     final client = ChatClient(httpClient: MockClient((request) async {
       captured = request;
       return _json(200, {
-        'answer': 'Son sürüşün 12.4 km idi.',
+        'answer': 'Your last ride was 12.4 km.',
         'source': 'llm',
         'tool': {'name': 'get_ride_summary', 'arguments': {}},
         'result': {'distance_km': 12.4},
@@ -86,18 +91,18 @@ void main() {
     }));
     await _pump(tester, store, client);
     await tester
-        .tap(find.widgetWithText(ActionChip, assistantExampleQuestions.first));
+        .tap(find.widgetWithText(ActionChip, _example1));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(captured.url.toString(), 'https://bike.example.com/chat');
     expect(captured.headers['Authorization'], 'Bearer tok');
     expect(
-        jsonDecode(captured.body)['message'], assistantExampleQuestions.first);
-    expect(find.text(assistantExampleQuestions.first),
+        jsonDecode(captured.body)['message'], _example1);
+    expect(find.text(_example1),
         findsOneWidget); // user bubble
-    expect(find.text('Son sürüşün 12.4 km idi.'), findsOneWidget);
-    expect(find.text('Asistan'), findsWidgets);
+    expect(find.text('Your last ride was 12.4 km.'), findsOneWidget);
+    expect(find.text('ASSISTANT'), findsWidgets);
     expect(find.text('LLM'), findsNothing);
     expect(find.textContaining('get_ride_summary', findRichText: true),
         findsOneWidget);
@@ -112,7 +117,7 @@ void main() {
           () => _json(200, {'answer': 'ok', 'source': 'template'}))),
     );
     await _pump(tester, store, client);
-    await _ask(tester, 'merhaba');
+    await _ask(tester, 'hello');
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(LinearProgressIndicator), findsNothing);
@@ -129,7 +134,7 @@ void main() {
     }));
     await _pump(tester, store, client, sessionId: '20260927-120000-ab12');
     expect(find.text('Ride 20260927-120000-ab12'), findsOneWidget);
-    await _ask(tester, 'Bu sürüş nasıldı?');
+    await _ask(tester, 'How was this ride?');
     expect(jsonDecode(captured.body)['session_id'], '20260927-120000-ab12');
   });
 
@@ -244,26 +249,78 @@ void main() {
     expect(composer.center.dx, closeTo(800, 1));
   });
 
-  testWidgets('a pulsing placeholder card shows while waiting, no typing dots', (tester) async {
+  testWidgets('an honest step line shows while waiting, no typing dots', (tester) async {
     final store = await _store([_host], tokens: {'h1': 'tok'});
     final client = ChatClient(
       httpClient: MockClient((_) => Future.delayed(
           const Duration(milliseconds: 300), () => _json(200, {'answer': 'ok', 'source': 'template'}))),
     );
     await _pump(tester, store, client);
-    await _ask(tester, 'merhaba');
-    expect(find.byType(PendingAnswerCard), findsOneWidget);
+    await _ask(tester, 'hello');
+    expect(find.byType(AssistantStepLine), findsOneWidget);
+    expect(find.text('Reading the data ...'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.byType(PendingAnswerCard), findsNothing);
+    expect(find.byType(AssistantStepLine), findsNothing);
   });
 
   testWidgets('the UI carries no brand or AI wording', (tester) async {
     final store = await _store([_host], tokens: {'h1': 'tok'});
     await _pump(tester, store, ChatClient(httpClient: MockClient((_) async => _json(200, {}))));
     final texts = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').join(' ').toLowerCase();
-    for (final word in ['claude', 'anthropic', 'yapay zeka', ' ai ']) {
+    for (final word in ['claude', 'anthropic', ' ai ']) {
       expect(texts.contains(word), isFalse, reason: word);
     }
+  });
+
+  testWidgets('chips of the response appear under the last answer and ask the next question',
+      (tester) async {
+    final store = await _store([_host], tokens: {'h1': 'tok'});
+    final asked = <String>[];
+    final client = ChatClient(httpClient: MockClient((request) async {
+      asked.add(jsonDecode(request.body)['message'] as String);
+      return _json(200, {
+        'answer': 'ok',
+        'source': 'template',
+        if (asked.length == 1) 'chips': ['Coolant']
+      });
+    }));
+    await _pump(tester, store, client);
+    await _ask(tester, 'first');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.widgetWithText(ActionChip, 'Coolant'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(asked, ['first', 'Coolant']);
+    // The second answer carried no chips, so the row is gone.
+    expect(find.byType(ActionChip), findsNothing);
+  });
+
+  testWidgets('the question line carries a timestamp and the locale is sent',
+      (tester) async {
+    final store = await _store([_host], tokens: {'h1': 'tok'});
+    late Map<String, dynamic> body;
+    final client = ChatClient(httpClient: MockClient((request) async {
+      body = jsonDecode(request.body) as Map<String, dynamic>;
+      return _json(200, {'answer': 'ok', 'source': 'template'});
+    }));
+    await _pump(tester, store, client);
+    await _ask(tester, 'x');
+    expect(find.byKey(const ValueKey('line-time')), findsOneWidget);
+    expect(body['locale'], 'en');
+  });
+
+  testWidgets('phone width shows a large full-width hold-to-talk control',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final store = await _store([_host], tokens: {'h1': 'tok'});
+    await _pump(tester, store,
+        ChatClient(httpClient: MockClient((_) async => _json(200, {}))));
+    final size = tester.getSize(find.byKey(const ValueKey('hold-to-talk')));
+    expect(size.height, greaterThanOrEqualTo(72));
+    expect(size.width, 390 - 2 * Spacing.lg);
+    expect(find.text('HOLD TO TALK'), findsOneWidget);
   });
 
   test('light theme follows the same tokens with its own contrast-safe palette', () {

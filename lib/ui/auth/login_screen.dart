@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/host.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/auth_client.dart';
@@ -10,35 +11,37 @@ import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 
-/// Turkish text of a failed account call; never contains the password.
-String authFailureText(AuthResult result, {required bool registering}) {
+/// Localized text of a failed account call; never contains the password.
+String authFailureText(AppLocalizations l, AuthResult result) {
   switch (result.outcome) {
     case AuthOutcome.ok:
       return '';
     case AuthOutcome.unauthorized:
-      return 'Kullanıcı adı veya parola hatalı.';
+      return l.settingsAuthBadCredentials;
     case AuthOutcome.forbidden:
-      return 'Araç kimliği veya kod geçersiz.';
+      return l.settingsClaimInvalid;
     case AuthOutcome.conflict:
-      return 'Bu kullanıcı adı alınmış.';
+      return l.settingsAuthUsernameTaken;
     case AuthOutcome.invalid:
-      return 'Bilgiler kabul edilmedi: ${result.message ?? 'geçersiz giriş'}';
+      return l
+          .settingsAuthInvalid(result.message ?? l.settingsAuthInvalidFallback);
     case AuthOutcome.rateLimited:
       final wait = result.retryAfterSeconds;
       return wait == null
-          ? 'Çok fazla deneme. Biraz sonra tekrar dene.'
-          : 'Çok fazla deneme. $wait sn sonra tekrar dene.';
+          ? l.settingsRateLimited
+          : l.settingsRateLimitedWait(wait);
     case AuthOutcome.notSupported:
-      return 'Bu sunucu hesap girişini desteklemiyor. Gelişmiş bölümünden cihaz token\'ı ile bağlan.';
+      return l.settingsAuthNotSupported;
     case AuthOutcome.unreachable:
-      return 'Sunucuya ulaşılamadı.';
+      return l.settingsUnreachable;
     case AuthOutcome.failed:
-      return 'İstek başarısız: ${result.message ?? 'bilinmeyen hata'}';
+      return l
+          .settingsAuthRequestFailed(result.message ?? l.settingsUnknownError);
   }
 }
 
 /// Login and registration against the active host (D-122). A manual device
-/// token stays available under "Gelişmiş".
+/// token stays available under "Advanced".
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
     super.key,
@@ -113,26 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String? _validUrl() {
+    final l = context.l10n;
     final url = _url.text.trim();
-    if (url.isEmpty) return 'Sunucu adresini gir.';
+    if (url.isEmpty) return l.settingsLoginEnterUrl;
     final refusal = tokenSendRefusal(url);
-    if (refusal != null) {
-      return 'Güvenli olmayan adres: https:// veya yerel ağdaki bir sunucu kullan.';
-    }
+    if (refusal != null) return l.settingsLoginInsecureUrl;
     return null;
   }
 
   Future<void> _submit() async {
+    final l = context.l10n;
     final urlError = _validUrl();
     if (urlError != null) return setState(() => _error = urlError);
     final user = _username.text.trim();
     final password = _password.text;
     if (user.isEmpty || password.isEmpty) {
-      return setState(() => _error = 'Kullanıcı adı ve parola gerekli.');
+      return setState(() => _error = l.settingsLoginNeedCredentials);
     }
     if (_registering &&
         (_vehicleId.text.trim().isEmpty || _claimCode.text.trim().isEmpty)) {
-      return setState(() => _error = 'Araç kimliği ve talep kodu gerekli.');
+      return setState(() => _error = l.settingsLoginNeedVehicle);
     }
     setState(() {
       _busy = true;
@@ -158,15 +161,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() {
       _busy = false;
-      _error = authFailureText(result, registering: _registering);
+      _error = authFailureText(l, result);
     });
   }
 
   Future<void> _useDeviceToken() async {
+    final l = context.l10n;
     final urlError = _validUrl();
     if (urlError != null) return setState(() => _error = urlError);
     final token = _deviceToken.text.trim();
-    if (token.isEmpty) return setState(() => _error = 'Cihaz token\'ını gir.');
+    if (token.isEmpty) return setState(() => _error = l.settingsLoginNeedToken);
     final host = await _auth.ensureHost(_url.text.trim());
     await _auth.saveDeviceToken(host.id, token);
     _deviceToken.clear();
@@ -176,7 +180,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = context.vehicle;
+    final l = context.l10n;
     final message = _error ?? widget.message;
+    final title =
+        _registering ? l.settingsLoginRegister : l.settingsLoginSignIn;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -188,16 +195,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(Icons.two_wheeler,
-                        size: IconSizes.empty, color: t.accent),
-                    const SizedBox(height: Spacing.md),
-                    Text(_registering ? 'Hesap oluştur' : 'Giriş yap',
-                        style: theme.textTheme.titleLarge),
+                    Container(
+                      height: 2,
+                      width: Spacing.xxl,
+                      color: t.accent,
+                      margin: const EdgeInsets.only(bottom: Spacing.lg),
+                    ),
+                    Text(title, style: theme.textTheme.headlineSmall),
                     const SizedBox(height: Spacing.xs),
                     Text(
                         _registering
-                            ? 'Araç kimliği ve sahiplik kodu ile hesabını oluştur.'
-                            : 'Sürüşlerini ve bildirimlerini görmek için hesabınla gir.',
+                            ? l.settingsLoginSubRegister
+                            : l.settingsLoginSubSignIn,
                         style: theme.textTheme.bodySmall),
                     const SizedBox(height: Spacing.lg),
                     if (message != null) ...[
@@ -214,8 +223,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         initialValue: _hosts.any((h) => h.baseUrl == _url.text)
                             ? _url.text
                             : null,
-                        decoration:
-                            const InputDecoration(labelText: 'Kayıtlı sunucu'),
+                        decoration: InputDecoration(
+                            labelText: l.settingsLoginSavedHost),
                         items: [
                           for (final h in _hosts)
                             DropdownMenuItem(
@@ -232,8 +241,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.url,
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: const InputDecoration(
-                          labelText: 'Sunucu adresi',
+                      decoration: InputDecoration(
+                          labelText: l.settingsLoginServer,
                           hintText: 'https://vehicle-server.example.com'),
                     ),
                     const SizedBox(height: Spacing.md),
@@ -245,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       autofillHints: const [AutofillHints.username],
                       decoration:
-                          const InputDecoration(labelText: 'Kullanıcı adı'),
+                          InputDecoration(labelText: l.settingsLoginUsername),
                     ),
                     const SizedBox(height: Spacing.md),
                     TextField(
@@ -263,7 +272,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? TextInputAction.next
                           : TextInputAction.done,
                       onSubmitted: _registering ? null : (_) => _submit(),
-                      decoration: const InputDecoration(labelText: 'Parola'),
+                      decoration:
+                          InputDecoration(labelText: l.settingsLoginPassword),
                     ),
                     if (_registering) ...[
                       const SizedBox(height: Spacing.md),
@@ -274,7 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         enableSuggestions: false,
                         textInputAction: TextInputAction.next,
                         decoration:
-                            const InputDecoration(labelText: 'Araç kimliği'),
+                            InputDecoration(labelText: l.settingsVehicleId),
                       ),
                       const SizedBox(height: Spacing.md),
                       TextField(
@@ -285,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => _submit(),
                         decoration:
-                            const InputDecoration(labelText: 'Talep kodu'),
+                            InputDecoration(labelText: l.settingsClaimCode),
                       ),
                     ],
                     const SizedBox(height: Spacing.lg),
@@ -297,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: IconSizes.inline,
                               height: IconSizes.inline,
                               child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(_registering ? 'Hesap oluştur' : 'Giriş yap'),
+                          : Text(title),
                     ),
                     const SizedBox(height: Spacing.sm),
                     TextButton(
@@ -308,15 +318,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _registering = !_registering;
                                 _error = null;
                               }),
-                      child: Text(
-                          _registering ? 'Zaten hesabım var' : 'Hesap oluştur'),
+                      child: Text(_registering
+                          ? l.settingsLoginHaveAccount
+                          : l.settingsLoginRegister),
                     ),
                     Theme(
                       data: theme.copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         key: const ValueKey('advanced'),
                         tilePadding: EdgeInsets.zero,
-                        title: Text("Gelişmiş: cihaz token'ı ile bağlan",
+                        title: Text(l.settingsLoginAdvanced,
                             style: theme.textTheme.bodyMedium),
                         childrenPadding:
                             const EdgeInsets.only(bottom: Spacing.md),
@@ -327,14 +338,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: true,
                             autocorrect: false,
                             enableSuggestions: false,
-                            decoration: const InputDecoration(
-                                labelText: 'Cihaz token\'ı'),
+                            decoration:
+                                InputDecoration(labelText: l.settingsHostToken),
                           ),
                           const SizedBox(height: Spacing.md),
                           OutlinedButton(
                             key: const ValueKey('connect-token'),
                             onPressed: _useDeviceToken,
-                            child: const Text('Bağlan'),
+                            child: Text(l.settingsLoginConnect),
                           ),
                         ],
                       ),
@@ -343,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextButton(
                         key: const ValueKey('skip'),
                         onPressed: widget.onSkip,
-                        child: const Text('Şimdilik atla'),
+                        child: Text(l.settingsLoginSkip),
                       ),
                   ],
                 ),

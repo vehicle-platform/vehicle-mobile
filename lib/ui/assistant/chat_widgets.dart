@@ -1,155 +1,148 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 
-/// Short Turkish label of where an answer text came from: `Asistan` for text the
-/// local model phrased, `Veriden doğrulandı` for a fixed template over the
-/// tool result (every number checked against the data).
-String chatSourceLabel(ChatSource source) => switch (source) {
-      ChatSource.llm => 'Asistan',
-      ChatSource.template => 'Veriden doğrulandı',
-      ChatSource.unsupported => 'Yanıtlanamadı',
-      ChatSource.error => 'Hata',
+/// Localized label of where an answer text came from: text the model
+/// phrased, or a fixed template over the tool result (every number checked
+/// against the data).
+String chatSourceLabel(AppLocalizations l, ChatSource source) =>
+    switch (source) {
+      ChatSource.llm => l.assistantSourceLlm,
+      ChatSource.template => l.assistantSourceTemplate,
+      ChatSource.unsupported => l.assistantSourceUnsupported,
+      ChatSource.error => l.assistantSourceError,
     };
 
-/// Assistant avatar: a motorcycle glyph on a soft accent disc (no brand marks).
-class AssistantAvatar extends StatelessWidget {
-  const AssistantAvatar({super.key, this.size = 28});
+/// `HH:mm` of a transcript line.
+String chatClock(DateTime time) =>
+    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.vehicle;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-          shape: BoxShape.circle, color: t.accent.withValues(alpha: 0.16)),
-      child: Icon(Icons.two_wheeler, size: size * 0.55, color: t.accent),
-    );
-  }
-}
-
-/// One conversation entry: the rider's question as a compact right-aligned
-/// pill, the assistant's answer as a full-width flat card. New entries fade and slide
-/// in (<= 200 ms).
-class ChatBubble extends StatelessWidget {
-  const ChatBubble({super.key, required this.message});
+/// One transcript entry (D-130 item 3): the rider's question as a plain
+/// timestamped line, the assistant's answer as plain text followed by data
+/// cards. No bubbles, no avatars. New entries fade in (<= 200 ms).
+class TranscriptEntry extends StatelessWidget {
+  const TranscriptEntry({super.key, required this.message});
 
   final ChatMessage message;
 
   @override
   Widget build(BuildContext context) {
     final child = message.role == ChatRole.user
-        ? _QuestionPill(text: message.text)
-        : _AnswerCard(message: message);
+        ? _QuestionLine(message: message)
+        : _Answer(message: message);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      builder: (context, v, child) => Opacity(
-        opacity: v,
-        child:
-            Transform.translate(offset: Offset(0, 8 * (1 - v)), child: child),
-      ),
-      child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: Spacing.xs + 2),
-          child: child),
+      duration: Motion.standard,
+      curve: Motion.curve,
+      builder: (context, v, child) => Opacity(opacity: v, child: child),
+      child: child,
     );
   }
 }
 
-class _QuestionPill extends StatelessWidget {
-  const _QuestionPill({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.vehicle;
-    return Align(
-      alignment: Alignment.centerRight,
-      child: ConstrainedBox(
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: Spacing.lg, vertical: Spacing.md - 2),
-          decoration: BoxDecoration(
-            color: t.accent.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: SelectableText(text,
-              style: Theme.of(context).textTheme.bodyLarge),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnswerCard extends StatelessWidget {
-  const _AnswerCard({required this.message});
+class _QuestionLine extends StatelessWidget {
+  const _QuestionLine({required this.message});
 
   final ChatMessage message;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final t = context.vehicle;
-    final failure = message.isFailure;
-    // A Material (not a decorated box) so the tool card's ListTile can paint.
-    return Material(
-      color: failure ? t.error.withValues(alpha: 0.10) : t.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-            color: failure ? t.error.withValues(alpha: 0.5) : t.outline),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (failure)
-                  Icon(Icons.info_outline, size: 20, color: t.error)
-                else
-                  const AssistantAvatar(size: 24),
-                const SizedBox(width: Spacing.sm),
-                if (message.source != null) SourceBadge(message.source!),
-                const Spacer(),
-                if (message.elapsedMs != null)
-                  Text('${message.elapsedMs} ms',
-                      style: theme.textTheme.bodySmall),
-              ],
-            ),
-            const SizedBox(height: Spacing.md),
-            SelectableText(message.text,
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      decoration:
+          BoxDecoration(border: Border(top: BorderSide(color: t.hairline))),
+      padding: const EdgeInsets.only(top: Spacing.md, bottom: Spacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(chatClock(message.time),
+              key: const ValueKey('line-time'),
+              style: numberFace(14, FontWeight.w500, color: t.textSecondary)),
+          const SizedBox(width: Spacing.md),
+          Expanded(
+            child: SelectableText(message.text,
                 style: theme.textTheme.bodyLarge!
-                    .copyWith(fontSize: 17, height: 1.45)),
-            if (message.tool != null)
-              ToolCard(tool: message.tool!, result: message.result),
-            if (message.modelCaption != null) ...[
-              const SizedBox(height: Spacing.sm),
-              Text(
-                message.modelCaption!,
-                key: const ValueKey('model-caption'),
-                style: theme.textTheme.bodySmall!
-                    .copyWith(color: t.textSecondary.withValues(alpha: 0.8)),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ],
-        ),
+                    .copyWith(color: t.textSecondary)),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Subtle chip saying where an answer came from.
+class _Answer extends StatelessWidget {
+  const _Answer({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final t = context.vehicle;
+    final failure = message.isFailure;
+    final note = switch (message.modelNote) {
+      ChatModelNote.template => l.assistantModelTemplate,
+      ChatModelNote.unsupported => l.assistantModelNone,
+      null => message.modelCaption,
+    };
+    final text = SelectableText(message.text,
+        style: theme.textTheme.bodyLarge!.copyWith(height: 1.45));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (message.source != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.xs),
+              child: Row(
+                children: [
+                  SourceBadge(message.source!),
+                  const Spacer(),
+                  if (message.elapsedMs != null)
+                    Text('${message.elapsedMs} ms',
+                        style: numberFace(13, FontWeight.w500,
+                            color: t.textSecondary)),
+                ],
+              ),
+            ),
+          if (failure)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(left: Spacing.md),
+              decoration: BoxDecoration(
+                  border:
+                      Border(left: BorderSide(color: t.critical, width: 4))),
+              child: text,
+            )
+          else
+            text,
+          if (message.tool != null)
+            DataCard(tool: message.tool!, result: message.result),
+          if (note != null) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              note,
+              key: const ValueKey('model-caption'),
+              style: theme.textTheme.bodySmall,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Where an answer came from: a small letter-spaced caption, coloured by
+/// state (verified = teal, could not answer = amber, error = red).
 class SourceBadge extends StatelessWidget {
   const SourceBadge(this.source, {super.key});
 
@@ -161,83 +154,107 @@ class SourceBadge extends StatelessWidget {
     final color = switch (source) {
       ChatSource.llm => t.textSecondary,
       ChatSource.template => t.live,
-      ChatSource.unsupported => t.stale,
-      ChatSource.error => t.error,
+      ChatSource.unsupported => t.advisory,
+      ChatSource.error => t.critical,
     };
-    return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: Spacing.sm + 2, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(Radii.chip),
-      ),
-      child: Text(
-        chatSourceLabel(source),
-        style: Theme.of(context)
-            .textTheme
-            .labelMedium!
-            .copyWith(color: color, letterSpacing: 0.2),
-      ),
+    return Text(
+      upperFor(context, chatSourceLabel(context.l10n, source)),
+      style: Theme.of(context).textTheme.labelSmall!.copyWith(color: color),
     );
   }
 }
 
-/// Quiet, collapsible "computed by <tool>" row (invariant 7): every number the
-/// rider sees is traceable to the vehicle-mcp tool that computed it. The
-/// arguments and the result are shown verbatim as flattened key/value rows in
-/// tabular figures.
-class ToolCard extends StatelessWidget {
-  const ToolCard({super.key, required this.tool, this.result});
+/// Data card of an answer (D-130 item 3, invariant 7): the labelled values of
+/// the tool result with their units, exactly as the vehicle-mcp tool computed
+/// them, and a "computed by <tool>" line that expands to the verbatim
+/// arguments and result rows.
+class DataCard extends StatelessWidget {
+  const DataCard({super.key, required this.tool, this.result});
 
   final ChatToolCall tool;
   final Object? result;
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final theme = Theme.of(context);
     final t = context.vehicle;
-    final args = flattenChatValue(tool.arguments);
-    final resultRows = flattenChatValue(result, key: 'result');
-    return Padding(
-      padding: const EdgeInsets.only(top: Spacing.sm),
-      child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: EdgeInsets.zero,
-          childrenPadding: const EdgeInsets.only(bottom: Spacing.sm),
-          dense: true,
-          minTileHeight: Spacing.touchTarget,
-          leading: Icon(Icons.functions, size: 18, color: t.textSecondary),
-          title: Text.rich(
-            TextSpan(
-              style: theme.textTheme.bodySmall,
-              children: [
-                const TextSpan(text: 'computed by '),
+    final labels = ChatFlattenLabels(
+      items: l.assistantItemCount,
+      more: l.assistantMoreItems,
+      truncated: l.assistantTruncated,
+    );
+    final args = flattenChatValue(tool.arguments, labels: labels);
+    final resultRows = flattenChatValue(result, key: 'result', labels: labels);
+    final data = chatData(resultRows);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: Spacing.md),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: t.hairline),
+          bottom: BorderSide(color: t.hairline),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (data.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Spacing.md),
+              child: Wrap(
+                spacing: Spacing.xl,
+                runSpacing: Spacing.lg,
+                children: [
+                  for (final d in data)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 220),
+                      child: Readout(
+                        label: d.label,
+                        value: d.value,
+                        unit: d.unit,
+                        size: ReadoutSize.small,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          Theme(
+            data: theme.copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: Spacing.sm),
+              dense: true,
+              minTileHeight: Spacing.touchTarget,
+              title: Text.rich(
                 TextSpan(
-                  text: tool.name,
-                  style: theme.textTheme.bodySmall!.copyWith(
-                    fontFamily: 'monospace',
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: theme.textTheme.bodySmall,
+                  children: [
+                    TextSpan(text: l.assistantComputedBy),
+                    TextSpan(
+                      text: tool.name,
+                      style:
+                          numberFace(14, FontWeight.w600, color: t.textPrimary),
+                    ),
+                  ],
                 ),
+              ),
+              children: [
+                if (args.isNotEmpty) ...[
+                  _RowsHeader(l.assistantArguments),
+                  for (final row in args)
+                    _ToolRow(label: row.key, value: row.value),
+                ],
+                _RowsHeader(l.assistantResult),
+                if (resultRows.isEmpty)
+                  _ToolRow(label: 'result', value: l.assistantResultEmpty)
+                else
+                  for (final row in resultRows)
+                    _ToolRow(label: row.key, value: row.value),
               ],
             ),
           ),
-          children: [
-            if (args.isNotEmpty) ...[
-              const _RowsHeader('Arguments'),
-              for (final row in args)
-                _ToolRow(label: row.key, value: row.value),
-            ],
-            const _RowsHeader('Result'),
-            if (resultRows.isEmpty)
-              const _ToolRow(label: 'result', value: '(empty)')
-            else
-              for (final row in resultRows)
-                _ToolRow(label: row.key, value: row.value),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -251,7 +268,7 @@ class _RowsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: Spacing.xs, bottom: 2),
-        child: Text(text.toUpperCase(),
+        child: Text(upperFor(context, text),
             style: Theme.of(context).textTheme.labelSmall),
       );
 }
@@ -278,13 +295,71 @@ class _ToolRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium!.copyWith(
-                fontWeight: FontWeight.w600,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: numberFace(15, FontWeight.w600,
+                  color: theme.colorScheme.onSurface),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Follow-up chips under the latest answer (`chips` of the response; absent
+/// means none). Tapping one asks it as the next question.
+class FollowUpChips extends StatelessWidget {
+  const FollowUpChips({super.key, required this.chips, required this.onTap});
+
+  final List<String> chips;
+  final ValueChanged<String> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.md),
+      child: Wrap(
+        spacing: Spacing.sm,
+        runSpacing: Spacing.sm,
+        children: [
+          for (final chip in chips)
+            ActionChip(
+              label: Text(chip),
+              onPressed: () => onTap(chip),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Honest step line while the host works: plain text, no animation dots.
+class AssistantStepLine extends StatelessWidget {
+  const AssistantStepLine({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.vehicle;
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+        child: Row(
+          children: [
+            Text(chatClock(DateTime.now()),
+                style: numberFace(14, FontWeight.w500, color: t.textSecondary)),
+            const SizedBox(width: Spacing.md),
+            Expanded(
+              child: Text(text,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium!
+                      .copyWith(color: t.accent)),
+            ),
+          ],
+        ),
       ),
     );
   }

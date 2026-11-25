@@ -1,0 +1,130 @@
+{
+  "assistantGreeting": "Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?",
+  "assistantExample1": "Son sürüşüm nasıldı?",
+  "assistantExample2": "Son sürüşün özeti",
+  "assistantExample3": "Kayıtlı arızalar var mı?",
+  "assistantHint": "Bir soru yaz",
+  "assistantHintListening": "Dinliyorum...",
+  "assistantSend": "Gönder",
+  "assistantClear": "Konuşmayı temizle",
+  "assistantRideChip": "Sürüş {id}",
+  "@assistantRideChip": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantStepReading": "Veriler okunuyor ...",
+  "assistantStepReadingRide": "{id} sürüşü okunuyor ...",
+  "@assistantStepReadingRide": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantSourceLlm": "Asistan",
+  "assistantSourceTemplate": "Veriden doğrulandı",
+  "assistantSourceUnsupported": "Yanıtlanamadı",
+  "assistantSourceError": "Hata",
+  "assistantModelTemplate": "Şablon yanıt (model yok)",
+  "assistantModelNone": "Yanıtlanmadı (model yok)",
+  "assistantModelChipLabel": "Asistan modeli: {text}",
+  "@assistantModelChipLabel": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantComputedBy": "hesaplayan: ",
+  "assistantArguments": "Parametreler",
+  "assistantResult": "Sonuç",
+  "assistantResultEmpty": "(boş)",
+  "assistantItemCount": "{count, plural, =1{1 öğe} other{{count} öğe}}",
+  "@assistantItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantMoreItems": "+{count} daha",
+  "@assistantMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantTruncated": "kısaltıldı",
+  "assistantFailSettings": "Sunucu ayarları okunamadı.",
+  "assistantFailNoHost": "Cihaz anahtarı olan bir sunucu ayarlanmamış. Ayarlar > Sunucular bölümünden ekle.",
+  "assistantFailUnauthorized": "Cihaz anahtarı \"{host}\" tarafından reddedildi. Anahtarı Ayarlar > Sunucular bölümünde kontrol et.",
+  "@assistantFailUnauthorized": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailInvalid": "Sunucu mesajı reddetti: {message}",
+  "@assistantFailInvalid": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailRateLimited": "İstek sınırına takıldın. Birazdan tekrar dene.",
+  "assistantFailRateLimitedIn": "İstek sınırına takıldın. {seconds} sn sonra tekrar dene.",
+  "@assistantFailRateLimitedIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantFailDisabled": "Asistan \"{host}\" üzerinde kapalı.",
+  "@assistantFailDisabled": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnreachable": "Sunucuya ulaşılamıyor: \"{host}\".",
+  "@assistantFailUnreachable": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailFailed": "İstek başarısız: {message}",
+  "@assistantFailFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnknown": "bilinmeyen hata",
+  "assistantTheHost": "sunucu",
+  "assistantVoiceInitTimeout": "Ses tanıma kullanılamıyor. Soruyu yazabilirsin.",
+  "assistantVoiceNoSpeech": "Seni duyamadım. Tekrar dener misin?",
+  "assistantVoiceUnavailable": "Ses tanıma şu an kullanılamıyor. Soruyu yazabilirsin.",
+  "assistantVoicePermission": "Mikrofon izni verilmedi ya da ses tanıma bu cihazda yok. İzni ayarlardan açabilir ya da soruyu yazabilirsin.",
+  "assistantVoiceLanguage": "Bu dilde ses tanıma bu cihazda yok. Soruyu yazabilirsin.",
+  "assistantVoiceNetwork": "Ses tanıma için internet bağlantısı gerekiyor.",
+  "assistantRouteIntercom": "İntercom bağlı",
+  "assistantRoutePhone": "Telefon mikrofonu",
+  "assistantMicStop": "Dinlemeyi bitir",
+  "assistantMicSpeaking": "Okumayı durdur ve konuş",
+  "assistantMicStart": "Sesle sor",
+  "assistantClose": "Kapat",
+  "assistantHoldToTalk": "Basılı tut ve konuş",
+  "assistantReleaseToSend": "Bırak ve gönder",
+  "assistantPreparing": "Mikrofon hazırlanıyor ..."
+}

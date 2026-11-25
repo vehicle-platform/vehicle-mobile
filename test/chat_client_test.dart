@@ -19,7 +19,7 @@ http.Response _json(int status, Object body,
 Map<String, Object?> _answer(
         {String source = 'llm', Object? tool, Object? result}) =>
     {
-      'answer': 'Son sürüşün 12,4 km idi.',
+      'answer': 'Your last ride was 12.4 km.',
       'source': source,
       'tool': tool,
       'result': result,
@@ -39,7 +39,7 @@ void main() {
     final result = await client.send(
       baseUrl: 'https://vehicle.example.com/',
       apiToken: 'secret-token',
-      message: 'Son sürüşüm nasıldı?',
+      message: 'How was my last ride?',
       sessionId: 'abc',
     );
     expect(result.isSuccess, isTrue);
@@ -47,7 +47,7 @@ void main() {
     expect(captured.url.toString(), 'https://vehicle.example.com/chat');
     expect(captured.headers['Authorization'], 'Bearer secret-token');
     expect(jsonDecode(captured.body), {
-      'message': 'Son sürüşüm nasıldı?',
+      'message': 'How was my last ride?',
       'session_id': 'abc',
       'locale': 'tr'
     });
@@ -79,7 +79,7 @@ void main() {
     final result =
         await client.send(baseUrl: 'https://s', apiToken: 't', message: 'x');
     final answer = result.answer!;
-    expect(answer.answer, 'Son sürüşün 12,4 km idi.');
+    expect(answer.answer, 'Your last ride was 12.4 km.');
     expect(answer.source, ChatSource.template);
     expect(answer.tool!.name, 'get_ride_summary');
     expect(answer.tool!.arguments, {'session_id': 'abc'});

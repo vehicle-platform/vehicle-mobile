@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
-/// 56 px microphone button of the composer. Listening shows a teal pulsing
-/// ring (a static ring when the system asks for reduced motion).
+String _micLabel(AppLocalizations l, VoiceState state) => switch (state) {
+      VoiceState.listening => l.assistantMicStop,
+      VoiceState.speaking => l.assistantMicSpeaking,
+      _ => l.assistantMicStart,
+    };
+
+/// 56 px microphone button of the composer (wide layouts). Listening shows a
+/// teal ring (pulsing, or static when the system asks for reduced motion).
 class MicButton extends StatefulWidget {
   const MicButton({super.key, required this.state, required this.onPressed});
 
@@ -55,12 +62,7 @@ class _MicButtonState extends State<MicButton>
     final t = context.vehicle;
     final busy = widget.state == VoiceState.preparing ||
         widget.state == VoiceState.finishing;
-    final speaking = widget.state == VoiceState.speaking;
-    final label = _listening
-        ? 'Dinlemeyi bitir'
-        : speaking
-            ? 'Okumayı durdur ve konuş'
-            : 'Sesle sor';
+    final label = _micLabel(context.l10n, widget.state);
     return Semantics(
       label: label,
       button: true,
@@ -79,11 +81,12 @@ class _MicButtonState extends State<MicButton>
                   width: 56 + 8 * _ring.value,
                   height: 56 + 8 * _ring.value,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius:
+                        BorderRadius.circular(Radii.card + 4 * _ring.value),
                     border: Border.all(
                         color: t.accent
                             .withValues(alpha: 0.35 + 0.55 * _ring.value),
-                        width: 3),
+                        width: 2),
                   ),
                 ),
               ),
@@ -92,10 +95,10 @@ class _MicButtonState extends State<MicButton>
               iconSize: 26,
               style: IconButton.styleFrom(
                 fixedSize: const Size(56, 56),
-                shape: const CircleBorder(),
-                backgroundColor: _listening
-                    ? t.accent.withValues(alpha: 0.18)
-                    : Colors.transparent,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Radii.card)),
+                backgroundColor:
+                    _listening ? t.surfaceRaised : Colors.transparent,
                 foregroundColor: _listening ? t.accent : t.textPrimary,
               ),
               icon: busy
@@ -113,38 +116,100 @@ class _MicButtonState extends State<MicButton>
   }
 }
 
-/// Small status chip above the composer: where the sound goes.
-class VoiceRouteChip extends StatelessWidget {
-  const VoiceRouteChip(
-      {super.key, required this.label, required this.connected});
+/// Large hold-to-talk control for gloves on the phone (D-130 item 3): full
+/// width and at least 72 px tall. Hold to talk, release to send; a short tap
+/// toggles listening (start, then tap again to send).
+class HoldToTalkButton extends StatelessWidget {
+  const HoldToTalkButton({
+    super.key,
+    required this.state,
+    required this.onStart,
+    required this.onRelease,
+    required this.onTap,
+  });
 
-  final String label;
-  final bool connected;
+  /// Minimum height (touch target for gloves).
+  static const double height = 72;
+
+  final VoiceState state;
+  final VoidCallback onStart;
+  final VoidCallback onRelease;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final t = context.vehicle;
+    final listening = state == VoiceState.listening;
+    final busy = state == VoiceState.preparing || state == VoiceState.finishing;
+    final label = listening
+        ? l.assistantReleaseToSend
+        : busy
+            ? l.assistantPreparing
+            : l.assistantHoldToTalk;
+    final color = listening ? t.accent : t.textPrimary;
+    return Semantics(
+      button: true,
+      label: _micLabel(l, state),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: busy ? null : onTap,
+        onLongPressStart: busy ? null : (_) => onStart(),
+        onLongPressEnd: busy ? null : (_) => onRelease(),
+        child: AnimatedContainer(
+          key: const ValueKey('hold-to-talk'),
+          duration: Motion.fast,
+          curve: Motion.curve,
+          width: double.infinity,
+          height: height,
+          decoration: BoxDecoration(
+            color: listening ? t.surfaceRaised : Colors.transparent,
+            borderRadius: BorderRadius.circular(Radii.card),
+            border: Border.all(
+                color: listening ? t.accent : t.hairline,
+                width: listening ? 2 : 1),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(listening ? Icons.mic : Icons.mic_none,
+                  size: 28, color: color),
+              const SizedBox(width: Spacing.md),
+              Text(upperFor(context, label),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge!
+                      .copyWith(color: color, letterSpacing: 1.2)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small status line above the composer: where the sound goes.
+class VoiceRouteChip extends StatelessWidget {
+  const VoiceRouteChip({super.key, required this.route});
+
+  final VoiceRoute route;
 
   @override
   Widget build(BuildContext context) {
     final t = context.vehicle;
+    final l = context.l10n;
+    final connected = route == VoiceRoute.intercom;
     final color = connected ? t.accent : t.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md, vertical: Spacing.xs + 1),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Radii.chip + 8),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(connected ? Icons.headset_mic_outlined : Icons.phone_android,
-              size: 16, color: color),
-          const SizedBox(width: Spacing.xs + 2),
-          Text(label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall!
-                  .copyWith(color: color)),
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(connected ? Icons.headset_mic_outlined : Icons.phone_android,
+            size: 16, color: color),
+        const SizedBox(width: Spacing.xs + 2),
+        Text(connected ? l.assistantRouteIntercom : l.assistantRoutePhone,
+            style:
+                Theme.of(context).textTheme.bodySmall!.copyWith(color: color)),
+      ],
     );
   }
 }

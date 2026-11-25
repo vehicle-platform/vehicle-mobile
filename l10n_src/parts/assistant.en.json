@@ -1,0 +1,130 @@
+{
+  "assistantGreeting": "Hello, I am the Ride Assistant. What would you like to know?",
+  "assistantExample1": "How was my last ride?",
+  "assistantExample2": "Summary of the last ride",
+  "assistantExample3": "Any recorded faults?",
+  "assistantHint": "Type a question",
+  "assistantHintListening": "Listening...",
+  "assistantSend": "Send",
+  "assistantClear": "Clear conversation",
+  "assistantRideChip": "Ride {id}",
+  "@assistantRideChip": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantStepReading": "Reading the data ...",
+  "assistantStepReadingRide": "Reading ride {id} ...",
+  "@assistantStepReadingRide": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantSourceLlm": "Assistant",
+  "assistantSourceTemplate": "Verified from data",
+  "assistantSourceUnsupported": "Could not answer",
+  "assistantSourceError": "Error",
+  "assistantModelTemplate": "Template answer (no model)",
+  "assistantModelNone": "Not answered (no model)",
+  "assistantModelChipLabel": "Assistant model: {text}",
+  "@assistantModelChipLabel": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantComputedBy": "computed by ",
+  "assistantArguments": "Arguments",
+  "assistantResult": "Result",
+  "assistantResultEmpty": "(empty)",
+  "assistantItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@assistantItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantMoreItems": "+{count} more",
+  "@assistantMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantTruncated": "truncated",
+  "assistantFailSettings": "Could not read the host settings.",
+  "assistantFailNoHost": "No host with a device token is configured. Add one in Settings > Hosts.",
+  "assistantFailUnauthorized": "The device token was rejected by \"{host}\". Check the token in Settings > Hosts.",
+  "@assistantFailUnauthorized": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailInvalid": "The server rejected the message: {message}",
+  "@assistantFailInvalid": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailRateLimited": "Rate limited. Try again shortly.",
+  "assistantFailRateLimitedIn": "Rate limited. Try again in {seconds} s.",
+  "@assistantFailRateLimitedIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantFailDisabled": "The assistant is disabled on \"{host}\".",
+  "@assistantFailDisabled": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnreachable": "Host unreachable: \"{host}\".",
+  "@assistantFailUnreachable": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailFailed": "Request failed: {message}",
+  "@assistantFailFailed": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantFailUnknown": "unknown error",
+  "assistantTheHost": "the host",
+  "assistantVoiceInitTimeout": "Speech recognition is not available. You can type the question.",
+  "assistantVoiceNoSpeech": "I did not hear you. Try again?",
+  "assistantVoiceUnavailable": "Speech recognition is not available right now. You can type the question.",
+  "assistantVoicePermission": "Microphone permission was not granted or this device has no speech recognition. You can allow it in the settings or type the question.",
+  "assistantVoiceLanguage": "Speech recognition for this language is not installed on this device. You can type the question.",
+  "assistantVoiceNetwork": "Speech recognition needs an internet connection.",
+  "assistantRouteIntercom": "Intercom connected",
+  "assistantRoutePhone": "Phone microphone",
+  "assistantMicStop": "Stop listening",
+  "assistantMicSpeaking": "Stop reading and speak",
+  "assistantMicStart": "Ask by voice",
+  "assistantClose": "Close",
+  "assistantHoldToTalk": "Hold to talk",
+  "assistantReleaseToSend": "Release to send",
+  "assistantPreparing": "Preparing the microphone ..."
+}

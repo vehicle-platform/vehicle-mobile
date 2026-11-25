@@ -12,3 +12,11 @@ extension L10nContext on BuildContext {
       Localizations.of<AppLocalizations>(this, AppLocalizations) ??
       lookupAppLocalizations(const Locale('en'));
 }
+
+/// Upper-cases [text] for display in the active locale: Turkish maps i to İ
+/// and ı to I (Dart's `toUpperCase` is locale-blind).
+String upperFor(BuildContext context, String text) {
+  final turkish = Localizations.maybeLocaleOf(context)?.languageCode == 'tr';
+  return (turkish ? text.replaceAll('i', 'İ').replaceAll('ı', 'I') : text)
+      .toUpperCase();
+}

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 
 enum _Filter { all, polled, candidates }
 
@@ -33,8 +35,9 @@ class _SignalsScreenState extends State<SignalsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The Ride sub-navigation already names this screen: no title here.
       appBar: AppBar(
-        title: const Text('Signals'),
+        toolbarHeight: 48,
         actions: const [HeaderActions()],
       ),
       body: ListenableBuilder(
@@ -53,7 +56,10 @@ class _SignalsScreenState extends State<SignalsScreen> {
           for (final group in snapshot.groups) {
             final rows = group.signals.where(_matches).toList(growable: false);
             if (rows.isEmpty) continue;
-            items.add(_GroupHeader(title: group.title, live: group.liveCount, total: group.signals.length));
+            items.add(_GroupHeader(
+                title: group.title,
+                live: group.liveCount,
+                total: group.signals.length));
             for (final v in rows) {
               items.add(Padding(
                 padding: const EdgeInsets.only(bottom: Spacing.sm),
@@ -62,7 +68,8 @@ class _SignalsScreenState extends State<SignalsScreen> {
             }
           }
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
             itemCount: items.length,
             itemBuilder: (context, i) => items[i],
           );
@@ -80,36 +87,29 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.vehicle;
+    final l = context.l10n;
     return SectionCard(
       child: Row(
         children: [
-          Expanded(child: _Stat(value: snapshot.liveCount, caption: 'live', color: t.live)),
-          Expanded(child: _Stat(value: snapshot.polledCount, caption: 'polled', color: t.textPrimary)),
-          Expanded(child: _Stat(value: snapshot.candidateCount, caption: 'candidates', color: t.notPolled)),
+          Expanded(
+              child: Readout(
+                  label: l.rideSigLive,
+                  value: '${snapshot.liveCount}',
+                  color: t.live,
+                  size: ReadoutSize.large)),
+          Expanded(
+              child: Readout(
+                  label: l.rideSigPolled,
+                  value: '${snapshot.polledCount}',
+                  size: ReadoutSize.large)),
+          Expanded(
+              child: Readout(
+                  label: l.rideSigCandidates,
+                  value: '${snapshot.candidateCount}',
+                  color: t.textSecondary,
+                  size: ReadoutSize.large)),
         ],
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.caption, required this.color});
-
-  final int value;
-  final String caption;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('$value', style: theme.textTheme.displaySmall!.copyWith(color: color)),
-        ),
-        Text(caption.toUpperCase(), style: theme.textTheme.labelSmall, textAlign: TextAlign.center),
-      ],
     );
   }
 }
@@ -126,10 +126,15 @@ class _FilterBar extends StatelessWidget {
       width: double.infinity,
       child: SegmentedButton<_Filter>(
         showSelectedIcon: false,
-        segments: const [
-          ButtonSegment(value: _Filter.all, label: Text('All')),
-          ButtonSegment(value: _Filter.polled, label: Text('Polled')),
-          ButtonSegment(value: _Filter.candidates, label: Text('Candidates')),
+        segments: [
+          ButtonSegment(
+              value: _Filter.all, label: Text(context.l10n.rideFilterAll)),
+          ButtonSegment(
+              value: _Filter.polled,
+              label: Text(context.l10n.rideFilterPolled)),
+          ButtonSegment(
+              value: _Filter.candidates,
+              label: Text(context.l10n.rideFilterCandidates)),
         ],
         selected: {value},
         onSelectionChanged: (s) => onChanged(s.first),
@@ -139,7 +144,8 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _GroupHeader extends StatelessWidget {
-  const _GroupHeader({required this.title, required this.live, required this.total});
+  const _GroupHeader(
+      {required this.title, required this.live, required this.total});
 
   final String title;
   final int live;
@@ -149,7 +155,9 @@ class _GroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: Spacing.md, bottom: Spacing.sm),
-      child: SectionLabel(title, trailing: Text('$live / $total live', style: Theme.of(context).textTheme.labelSmall)),
+      child: SectionLabel(title,
+          trailing: Text(context.l10n.rideGroupLive(live, total),
+              style: Theme.of(context).textTheme.labelSmall)),
     );
   }
 }
@@ -166,24 +174,31 @@ class _SignalRow extends StatelessWidget {
     final live = view.isLive;
     final valueColor = live ? t.textPrimary : stateColor(context, view.state);
     final signal = view.signal;
+    final l = context.l10n;
     final String detail;
     if (signal.isPolled) {
-      final poll = 'Poll every ${signal.pollPeriodMs} ms';
-      detail = view.ageMs == null ? poll : 'Age ${formatAge(view.ageMs)} · $poll';
+      final poll = l.ridePollEvery(signal.pollPeriodMs ?? 0);
+      detail = view.ageMs == null
+          ? poll
+          : l.rideAgeDetail(formatAge(view.ageMs), poll);
     } else if (view.state == SignalState.notPolled) {
-      detail = 'Not polled';
+      detail = l.rideNotPolled;
     } else {
       // A catalog candidate the node reports anyway (promoted in newer
       // firmware): there is no poll period in this app's catalog.
-      const reported = 'Reported by the node';
-      detail = view.ageMs == null ? reported : 'Age ${formatAge(view.ageMs)} · $reported';
+      final reported = l.rideReportedByNode;
+      detail = view.ageMs == null
+          ? reported
+          : l.rideAgeDetail(formatAge(view.ageMs), reported);
     }
     return Container(
-      padding: const EdgeInsets.all(Spacing.md),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.md, vertical: Spacing.md),
       decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(Radii.card),
-        border: Border.all(color: live ? t.live.withValues(alpha: 0.6) : t.outline),
+        border: Border(
+          left: BorderSide(color: live ? t.live : Colors.transparent, width: 2),
+          bottom: BorderSide(color: t.hairline),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,9 +225,13 @@ class _SignalRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(view.valueText, style: theme.textTheme.headlineMedium!.copyWith(color: valueColor)),
+                      Text(view.valueText,
+                          style: numberFace(28, FontWeight.w600,
+                              color: valueColor)),
                       const SizedBox(width: Spacing.xs),
-                      Text(view.unitText, style: theme.textTheme.titleSmall!.copyWith(color: t.accent)),
+                      Text(view.unitText,
+                          style: numberFace(16, FontWeight.w500,
+                              color: t.textSecondary)),
                     ],
                   ),
                 ),

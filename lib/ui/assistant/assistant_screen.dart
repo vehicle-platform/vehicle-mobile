@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/services.dart' show MaxLengthEnforcement;
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
@@ -19,12 +20,9 @@ import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 
-/// Example questions of the empty state (the rider talks Turkish to the bike).
-const List<String> assistantExampleQuestions = [
-  'Son sürüşüm nasıldı?',
-  'Son sürüşün özeti',
-  'Kayıtlı arızalar var mı?',
-];
+/// Example questions of the empty state, in the language of the UI.
+List<String> assistantExampleQuestions(AppLocalizations l) =>
+    [l.assistantExample1, l.assistantExample2, l.assistantExample3];
 
 /// A question handed to the assistant from outside (a notification's "ask"
 /// button): shown in the input, not sent. [seq] tells a repeat from a new one.
@@ -36,7 +34,7 @@ class AssistantPrefill {
   final String? sessionId;
 }
 
-/// Rider assistant "Sürüş Asistanı" (D-121): a text chat against `POST /chat` of the active
+/// Rider assistant (D-121): a logbook-style transcript against `POST /chat` of the active
 /// host. The server picks one read-only vehicle-mcp tool and phrases its
 /// result; this screen only shows the answer and the tool that computed the
 /// numbers. It never computes or rephrases a number and adds no advice. The
@@ -77,17 +75,13 @@ class AssistantScreen extends StatefulWidget {
   State<AssistantScreen> createState() => _AssistantScreenState();
 }
 
-class _AssistantScreenState extends State<AssistantScreen>
-    with SingleTickerProviderStateMixin {
+class _AssistantScreenState extends State<AssistantScreen> {
   late final ChatClient _client;
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final List<ChatMessage> _messages = [];
   String? _sessionId;
   bool _sending = false;
-
-  /// Pulse of the placeholder card while waiting (no typing dots).
-  late final AnimationController _pulse;
 
   late final VoiceController _voice;
   late final bool _ownsVoice;
@@ -97,8 +91,6 @@ class _AssistantScreenState extends State<AssistantScreen>
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1100));
     _client = widget.client ?? ChatClient();
     _sessionId = widget.sessionId;
     _ownsVoice = widget.voice == null;
@@ -106,7 +98,8 @@ class _AssistantScreenState extends State<AssistantScreen>
     _voice.onTranscript = _onTranscript;
     _voice.onEmptyTap = _repeatLast;
     _voice.addListener(_onVoiceChanged);
-    _announcer = CriticalAnnouncer(speak: _voice.speak);
+    _announcer = CriticalAnnouncer(
+        speak: _voice.speak, sentences: () => AnnouncerSentences.fromL10n(_l));
     _bus = widget.voiceBus ?? VoiceTriggerBus.instance;
     // Triggers that arrived before this screen existed are delivered after
     // the first frame (starting to listen sets state).
@@ -145,19 +138,21 @@ class _AssistantScreenState extends State<AssistantScreen>
       _voice.cancelListening();
       _voice.stopSpeaking();
     }
-    _pulse.dispose();
     _controller.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
-  /// Language of the UI, sent as the `/chat` locale (D-130 item 5).
+  /// Language of the UI, sent as the `/chat` locale (D-130 item 5), and its
+  /// strings for the failure texts built after an await.
   String _localeCode = 'en';
+  late AppLocalizations _l = lookupAppLocalizations(const Locale('en'));
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _localeCode = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+    _l = context.l10n;
   }
 
   Future<void> _send(String raw) async {
@@ -172,16 +167,14 @@ class _AssistantScreenState extends State<AssistantScreen>
       _messages.add(ChatMessage.user(text));
       _sending = true;
     });
-    _pulse.repeat(reverse: true);
     _scrollToEnd();
 
     ChatMessage reply;
     try {
       reply = await _ask(text);
     } catch (_) {
-      reply = const ChatMessage.failure('Could not read the host settings.');
+      reply = ChatMessage.failure(_l.assistantFailSettings);
     }
-    _pulse.stop();
     if (!mounted) return;
     setState(() {
       _messages.add(reply);
@@ -244,8 +237,7 @@ class _AssistantScreenState extends State<AssistantScreen>
   Future<ChatMessage> _ask(String text) async {
     var settings = await widget.settingsStore.load();
     if (!settings.isServerConfigured || (settings.apiToken ?? '').isEmpty) {
-      return const ChatMessage.failure(
-          'No host with a device token is configured. Add one in Settings > Hosts.');
+      return ChatMessage.failure(_l.assistantFailNoHost);
     }
     var result = await _send1(settings, text);
     if (result.outcome == ChatOutcome.unreachable) {
@@ -270,28 +262,27 @@ class _AssistantScreenState extends State<AssistantScreen>
       );
 
   ChatMessage _describe(ChatResult result, AppSettings settings) {
-    final host = settings.hostName ?? 'the host';
+    final host = settings.hostName ?? _l.assistantTheHost;
     switch (result.outcome) {
       case ChatOutcome.ok:
         return ChatMessage.fromAnswer(result.answer!);
       case ChatOutcome.unauthorized:
-        return ChatMessage.failure(
-            'The device token was rejected by "$host". Check the token in Settings > Hosts.');
+        return ChatMessage.failure(_l.assistantFailUnauthorized(host));
       case ChatOutcome.invalid:
         return ChatMessage.failure(
-            'The server rejected the message: ${result.message}');
+            _l.assistantFailInvalid(result.message ?? ''));
       case ChatOutcome.rateLimited:
         final wait = result.retryAfterSeconds;
         return ChatMessage.failure(wait == null
-            ? 'Rate limited. Try again shortly.'
-            : 'Rate limited. Try again in $wait s.');
+            ? _l.assistantFailRateLimited
+            : _l.assistantFailRateLimitedIn(wait));
       case ChatOutcome.disabled:
-        return ChatMessage.failure('The assistant is disabled on "$host".');
+        return ChatMessage.failure(_l.assistantFailDisabled(host));
       case ChatOutcome.unreachable:
-        return ChatMessage.failure('Host unreachable: "$host".');
+        return ChatMessage.failure(_l.assistantFailUnreachable(host));
       case ChatOutcome.failed:
         return ChatMessage.failure(
-            'Request failed: ${result.message ?? 'unknown error'}');
+            _l.assistantFailFailed(result.message ?? _l.assistantFailUnknown));
     }
   }
 
@@ -300,42 +291,36 @@ class _AssistantScreenState extends State<AssistantScreen>
       if (!_scroll.hasClients) return;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
+        duration: Motion.standard,
+        curve: Motion.curve,
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    final phone = Breakpoints.isCompact(MediaQuery.sizeOf(context).width);
+    final voiceRoute = _voice.route;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 64,
-        title: Row(
+        title: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const AssistantAvatar(size: 28),
-            const SizedBox(width: Spacing.sm),
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Sürüş Asistanı', overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  ActiveModelChip(
-                      settingsStore: widget.settingsStore,
-                      client: widget.providerClient),
-                ],
-              ),
-            ),
+            Text(l.assistantName, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            ActiveModelChip(
+                settingsStore: widget.settingsStore,
+                client: widget.providerClient),
           ],
         ),
         actions: [
           const HeaderActions(),
           if (_messages.isNotEmpty)
             IconButton(
-              tooltip: 'Clear conversation',
+              tooltip: l.assistantClear,
               icon: const Icon(Icons.delete_sweep_outlined),
               onPressed: _sending ? null : () => setState(_messages.clear),
             ),
@@ -356,7 +341,7 @@ class _AssistantScreenState extends State<AssistantScreen>
                       alignment: Alignment.centerLeft,
                       child: InputChip(
                         avatar: const Icon(Icons.route, size: 18),
-                        label: Text('Ride $_sessionId'),
+                        label: Text(l.assistantRideChip(_sessionId!)),
                         onDeleted: () => setState(() => _sessionId = null),
                       ),
                     ),
@@ -367,28 +352,36 @@ class _AssistantScreenState extends State<AssistantScreen>
                         : _messageList()),
                 if (_sending) const LinearProgressIndicator(minHeight: 2),
                 if (_voice.error != null) _voiceError(context),
-                if (_voice.routeLabel != null)
+                if (voiceRoute != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                         Spacing.lg, Spacing.xs, Spacing.lg, 0),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: VoiceRouteChip(
-                        label: _voice.routeLabel!,
-                        connected: _voice.routeLabel == intercomConnectedLabel,
-                      ),
+                      child: VoiceRouteChip(route: voiceRoute),
                     ),
                   ),
                 AssistantComposer(
                   controller: _controller,
                   sending: _sending,
                   onSend: _send,
-                  hintText:
-                      _voice.isListening ? 'Dinliyorum...' : 'Bir soru yaz',
-                  micButton: MicButton(
-                    state: _voice.state,
-                    onPressed: _sending ? null : _voice.toggleMic,
-                  ),
+                  hintText: _voice.isListening
+                      ? l.assistantHintListening
+                      : l.assistantHint,
+                  micButton: phone
+                      ? null
+                      : MicButton(
+                          state: _voice.state,
+                          onPressed: _sending ? null : _voice.toggleMic,
+                        ),
+                  holdToTalk: !phone
+                      ? null
+                      : HoldToTalkButton(
+                          state: _voice.state,
+                          onStart: _sending ? () {} : _voice.startListening,
+                          onRelease: () => _voice.stopListening(),
+                          onTap: _sending ? () {} : _voice.toggleMic,
+                        ),
                 ),
               ],
             ),
@@ -398,116 +391,112 @@ class _AssistantScreenState extends State<AssistantScreen>
     );
   }
 
+  String _voiceErrorText(AppLocalizations l, VoiceError error) =>
+      switch (error) {
+        VoiceError.initTimeout => l.assistantVoiceInitTimeout,
+        VoiceError.noSpeech => l.assistantVoiceNoSpeech,
+        VoiceError.unavailable => l.assistantVoiceUnavailable,
+        VoiceError.permission => l.assistantVoicePermission,
+        VoiceError.language => l.assistantVoiceLanguage,
+        VoiceError.network => l.assistantVoiceNetwork,
+      };
+
   Widget _voiceError(BuildContext context) {
     final t = context.vehicle;
+    final l = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.xs, Spacing.lg, 0),
-      child: Material(
-        color: t.error.withValues(alpha: 0.10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: t.error.withValues(alpha: 0.5)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: t.surface,
+          border: Border(left: BorderSide(color: t.critical, width: 4)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              Spacing.md, Spacing.xs, Spacing.xs, Spacing.xs),
-          child: Row(
+        padding: const EdgeInsets.fromLTRB(
+            Spacing.md, Spacing.xs, Spacing.xs, Spacing.xs),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(_voiceErrorText(l, _voice.error!),
+                  style: Theme.of(context).textTheme.bodyMedium),
+            ),
+            IconButton(
+              tooltip: l.assistantClose,
+              icon: const Icon(Icons.close),
+              style: IconButton.styleFrom(fixedSize: const Size(48, 48)),
+              onPressed: _voice.clearError,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _messageList() {
+    final l = context.l10n;
+    final last = _messages.last;
+    final showChips = !_sending &&
+        last.role == ChatRole.assistant &&
+        !last.isFailure &&
+        last.chips.isNotEmpty;
+    final step = _sessionId == null
+        ? l.assistantStepReading
+        : l.assistantStepReadingRide(_sessionId!);
+    return ListView.builder(
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(
+          Spacing.lg, Spacing.sm, Spacing.lg, Spacing.sm),
+      itemCount: _messages.length + (_sending ? 1 : 0) + (showChips ? 1 : 0),
+      itemBuilder: (_, i) {
+        if (i < _messages.length) return TranscriptEntry(message: _messages[i]);
+        if (_sending) return AssistantStepLine(text: step);
+        return FollowUpChips(chips: last.chips, onTap: _send);
+      },
+    );
+  }
+
+  Widget _emptyState(BuildContext context) {
+    final l = context.l10n;
+    final t = context.vehicle;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(Spacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(upperFor(context, l.assistantName),
+              style: Theme.of(context).textTheme.labelSmall),
+          const SizedBox(height: Spacing.sm),
+          Text(l.assistantGreeting,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium!
+                  .copyWith(color: t.textPrimary)),
+          const SizedBox(height: Spacing.lg),
+          Wrap(
+            spacing: Spacing.sm,
+            runSpacing: Spacing.sm,
             children: [
-              Icon(Icons.info_outline, size: 20, color: t.error),
-              const SizedBox(width: Spacing.sm),
-              Expanded(
-                child: Text(_voice.error!,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ),
-              IconButton(
-                tooltip: 'Kapat',
-                icon: const Icon(Icons.close),
-                style: IconButton.styleFrom(fixedSize: const Size(48, 48)),
-                onPressed: _voice.clearError,
-              ),
+              for (final q in assistantExampleQuestions(l))
+                ActionChip(label: Text(q), onPressed: () => _send(q)),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _messageList() => ListView.builder(
-        controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(
-            Spacing.lg, Spacing.sm, Spacing.lg, Spacing.sm),
-        itemCount: _messages.length + (_sending ? 1 : 0),
-        itemBuilder: (_, i) {
-          if (i == _messages.length) return PendingAnswerCard(pulse: _pulse);
-          return ChatBubble(message: _messages[i]);
-        },
-      );
-
-  Widget _emptyState(BuildContext context) => EmptyState(
-        icon: Icons.two_wheeler,
-        message: 'Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?',
-        chips: assistantExampleQuestions,
-        onChip: _send,
-      );
-}
-
-/// Placeholder card with a soft pulse while the host answers.
-class PendingAnswerCard extends StatelessWidget {
-  const PendingAnswerCard({super.key, required this.pulse});
-
-  final Animation<double> pulse;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.vehicle;
-    Widget bar(double factor) => FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: factor,
-          child: Container(
-            height: 12,
-            decoration: BoxDecoration(
-                color: t.surfaceRaised, borderRadius: BorderRadius.circular(6)),
-          ),
-        );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: Spacing.xs + 2),
-      child: Material(
-        color: t.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: t.outline),
-        ),
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 0.45, end: 1).animate(pulse),
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AssistantAvatar(size: 24),
-                const SizedBox(height: Spacing.md),
-                bar(0.9),
-                const SizedBox(height: Spacing.sm),
-                bar(0.6),
-              ],
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Rounded input bar pinned at the bottom with a large circular send button.
-/// [micButton] is the voice button slot (hold or tap to talk).
+/// Input bar pinned at the bottom: a hairline-framed field with a 56 px send
+/// button. [micButton] is the voice button slot of wide layouts; [holdToTalk]
+/// is the large full-width control under the field on a phone.
 class AssistantComposer extends StatelessWidget {
   const AssistantComposer({
     super.key,
     required this.controller,
     required this.sending,
     required this.onSend,
+    required this.hintText,
     this.micButton,
-    this.hintText = 'Bir soru yaz',
+    this.holdToTalk,
   });
 
   final TextEditingController controller;
@@ -517,62 +506,76 @@ class AssistantComposer extends StatelessWidget {
   /// The microphone button (see `MicButton`); omitted when voice is unavailable.
   final Widget? micButton;
 
+  /// The hold-to-talk control (see `HoldToTalkButton`), phone only.
+  final Widget? holdToTalk;
+
   final String hintText;
 
   @override
   Widget build(BuildContext context) {
     final t = context.vehicle;
+    final l = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           Spacing.lg, Spacing.sm, Spacing.lg, Spacing.md),
-      child: Material(
-        color: t.surfaceRaised,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(32),
-          side: BorderSide(color: t.outline),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              Spacing.lg, Spacing.xs, Spacing.xs, Spacing.xs),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  maxLength: chatMaxMessageLength,
-                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: onSend,
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    counterText: '',
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Material(
+            color: t.surfaceRaised,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(Radii.card),
+              side: BorderSide(color: t.hairline),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  Spacing.lg, Spacing.xs, Spacing.xs, Spacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      minLines: 1,
+                      maxLines: 4,
+                      maxLength: chatMaxMessageLength,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: onSend,
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        counterText: '',
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                      ),
+                    ),
                   ),
-                ),
+                  if (micButton != null) micButton!,
+                  const SizedBox(width: Spacing.xs),
+                  IconButton.filled(
+                    tooltip: l.assistantSend,
+                    iconSize: 26,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size(56, 56),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(Radii.card)),
+                      backgroundColor: t.accent,
+                      foregroundColor: t.onAccent,
+                    ),
+                    icon: const Icon(Icons.arrow_upward),
+                    onPressed: sending ? null : () => onSend(controller.text),
+                  ),
+                ],
               ),
-              if (micButton != null) micButton!,
-              const SizedBox(width: Spacing.xs),
-              IconButton.filled(
-                tooltip: 'Send',
-                iconSize: 26,
-                style: IconButton.styleFrom(
-                  fixedSize: const Size(56, 56),
-                  shape: const CircleBorder(),
-                  backgroundColor: t.accent,
-                  foregroundColor: t.onAccent,
-                ),
-                icon: const Icon(Icons.arrow_upward),
-                onPressed: sending ? null : () => onSend(controller.text),
-              ),
-            ],
+            ),
           ),
-        ),
+          if (holdToTalk != null) ...[
+            const SizedBox(height: Spacing.sm),
+            holdToTalk!,
+          ],
+        ],
       ),
     );
   }

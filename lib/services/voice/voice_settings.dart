@@ -8,7 +8,7 @@ bool defaultReadAnswers() =>
     (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS);
 
-/// "Cevapları sesli oku": read Sürüş Asistanı's answers aloud. Default on for phones,
+/// "Read answers aloud": read Ride Assistant's answers aloud. Default on for phones,
 /// off for web and desktop. Kept in shared_preferences (not a secret).
 class VoiceSettings {
   const VoiceSettings();

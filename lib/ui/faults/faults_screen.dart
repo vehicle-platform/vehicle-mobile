@@ -8,7 +8,6 @@ import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
-import 'package:vehicle_mobile/ui/widgets/common.dart';
 
 /// Fault catalogue of the vehicle from the active host (`GET /faults`). Texts
 /// are the server's (catalogue from vehicle-defs); the app adds no advice.
@@ -100,12 +99,12 @@ class _FaultsScreenState extends State<FaultsScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Faults'),
+        title: Text(context.l10n.garageFaultsTitle),
         actions: [
           const HeaderActions(),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: context.l10n.garageRefresh,
             onPressed: _loading ? null : _refresh,
           ),
         ],
@@ -115,16 +114,16 @@ class _FaultsScreenState extends State<FaultsScreen> {
   }
 
   Widget _body() {
+    final l = context.l10n;
     final settings = _settings;
     if (_loading && _entries == null) {
-      return const RideLoading('Loading faults...');
+      return RideLoading(l.garageFaultsLoading);
     }
     if (settings != null &&
         (!settings.isServerConfigured || (settings.apiToken ?? '').isEmpty)) {
-      return const RideMessage(
+      return RideMessage(
         icon: Icons.settings_ethernet,
-        message:
-            'No vehicle-server configured. Add a host with its device token in Settings.',
+        message: l.garageFaultsNoServer,
       );
     }
     if (_error != null) {
@@ -132,15 +131,14 @@ class _FaultsScreenState extends State<FaultsScreen> {
         icon: Icons.cloud_off,
         tone: Tone.error,
         message: _error!,
-        actionLabel: 'Retry',
+        actionLabel: l.garageFaultsRetry,
         onAction: _refresh,
       );
     }
     final entries = _entries ?? const [];
     if (entries.isEmpty) {
-      return const RideMessage(
-          icon: Icons.check_circle_outline,
-          message: 'The host lists no faults.');
+      return RideMessage(
+          icon: Icons.check_circle_outline, message: l.garageFaultsEmpty);
     }
     return RefreshIndicator(
       onRefresh: _refresh,
@@ -165,33 +163,62 @@ class _FaultTile extends StatelessWidget {
     return value is String && value.isNotEmpty ? value : null;
   }
 
+  /// Semantic colour from the entry's own fields: a stop advice or a
+  /// high/critical severity is red, a medium/warning one amber, otherwise
+  /// neutral. The app adds no classification of its own.
+  Color _accent(VehicleTokens t) {
+    final severity = _text('severity')?.toLowerCase();
+    if (entry['advise_stop'] == true ||
+        severity == 'critical' ||
+        severity == 'high') {
+      return t.critical;
+    }
+    if (severity == 'warning' || severity == 'medium') return t.advisory;
+    return t.noData;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final t = context.vehicle;
     final id = _text('id') ?? '?';
     final rider = _text('rider_text');
     final cause = _text('root_cause');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: Theme(
-          data: theme.copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            title: Text(id, style: theme.textTheme.titleSmall),
-            subtitle:
-                _text('subsystem') == null ? null : Text(_text('subsystem')!),
-            childrenPadding: const EdgeInsets.fromLTRB(
-                Spacing.lg, 0, Spacing.lg, Spacing.md),
-            expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (cause != null) Text(cause, style: theme.textTheme.bodyMedium),
-              if (rider != null) ...[
-                const SizedBox(height: Spacing.sm),
-                Text(rider, style: theme.textTheme.bodyMedium),
-              ],
-            ],
-          ),
+    final subsystem = _text('subsystem');
+    final accent = _accent(t);
+    return DecoratedBox(
+      decoration:
+          BoxDecoration(border: Border(bottom: BorderSide(color: t.hairline))),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 3, color: accent),
+            Expanded(
+              child: Theme(
+                data: theme.copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  title: Text(id,
+                      style: numberFace(20, FontWeight.w600, color: accent)),
+                  subtitle: subsystem == null
+                      ? null
+                      : Text(upperFor(context, subsystem),
+                          style: theme.textTheme.labelSmall),
+                  childrenPadding: const EdgeInsets.fromLTRB(
+                      Spacing.lg, 0, Spacing.lg, Spacing.md),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (cause != null)
+                      Text(cause, style: theme.textTheme.bodyMedium),
+                    if (rider != null) ...[
+                      const SizedBox(height: Spacing.sm),
+                      Text(rider, style: theme.textTheme.bodyMedium),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

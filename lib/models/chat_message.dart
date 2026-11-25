@@ -81,6 +81,7 @@ class ChatAnswer {
     this.result,
     this.elapsedMs,
     this.model,
+    this.chips = const [],
   });
 
   final String answer;
@@ -93,6 +94,10 @@ class ChatAnswer {
 
   /// Model that answered; null for a template answer or an older server.
   final AnsweringModel? model;
+
+  /// Follow-up questions offered by the server (`chips`, optional: absent on
+  /// older servers). Non-string entries are ignored.
+  final List<String> chips;
 
   /// Throws [FormatException] when the body is not a chat answer.
   factory ChatAnswer.fromJson(Object? json) {
@@ -111,23 +116,40 @@ class ChatAnswer {
       result: json['result'],
       elapsedMs: elapsed is num ? elapsed.toInt() : null,
       model: AnsweringModel.tryFromJson(json['model']),
+      chips: _parseChips(json['chips']),
     );
   }
 }
 
+/// Most follow-up chips shown under an answer.
+const int chatMaxChips = 6;
+
+List<String> _parseChips(Object? value) {
+  if (value is! List) return const [];
+  return [
+    for (final item in value)
+      if (item is String && item.trim().isNotEmpty) item.trim(),
+  ].take(chatMaxChips).toList(growable: false);
+}
+
+/// Note under an answer that no model phrased (template or unanswered).
+enum ChatModelNote { template, unsupported }
+
 /// One entry of the in-memory conversation. Never persisted: answers may
 /// contain ride data.
 class ChatMessage {
-  const ChatMessage.user(this.text)
+  ChatMessage.user(this.text, {DateTime? at})
       : role = ChatRole.user,
         source = null,
         tool = null,
         result = null,
         elapsedMs = null,
         model = null,
+        chips = const [],
+        time = at ?? DateTime.now(),
         isFailure = false;
 
-  ChatMessage.fromAnswer(ChatAnswer answer)
+  ChatMessage.fromAnswer(ChatAnswer answer, {DateTime? at})
       : role = ChatRole.assistant,
         text = answer.answer,
         source = answer.source,
@@ -135,16 +157,20 @@ class ChatMessage {
         result = answer.result,
         elapsedMs = answer.elapsedMs,
         model = answer.model,
+        chips = answer.chips,
+        time = at ?? DateTime.now(),
         isFailure = false;
 
   /// A client-side problem (rate limit, host unreachable, ...), not a server answer.
-  const ChatMessage.failure(this.text)
+  ChatMessage.failure(this.text, {DateTime? at})
       : role = ChatRole.assistant,
         source = null,
         tool = null,
         result = null,
         elapsedMs = null,
         model = null,
+        chips = const [],
+        time = at ?? DateTime.now(),
         isFailure = true;
 
   final ChatRole role;
@@ -154,21 +180,23 @@ class ChatMessage {
   final Object? result;
   final int? elapsedMs;
   final AnsweringModel? model;
+  final List<String> chips;
+  final DateTime time;
   final bool isFailure;
 
-  /// Muted line under an answer: the model that answered (`label · model`),
-  /// or a plain note when a template answered or nothing could. Null for the
-  /// rider's question, failure and error bubbles, and an LLM answer from an
-  /// older server that does not name its model.
-  String? get modelCaption {
-    if (role != ChatRole.assistant || isFailure || source == ChatSource.error) {
-      return null;
-    }
-    final answering = model;
-    if (answering != null) return answering.caption;
+  bool get _answered =>
+      role == ChatRole.assistant && !isFailure && source != ChatSource.error;
+
+  /// `label · model` of the model that answered; null for the rider's
+  /// question, failures, errors, template answers and older servers.
+  String? get modelCaption => _answered ? model?.caption : null;
+
+  /// Set when no model phrased the answer.
+  ChatModelNote? get modelNote {
+    if (!_answered || model != null) return null;
     return switch (source) {
-      ChatSource.template => 'Template answer (no model)',
-      ChatSource.unsupported => 'Not answered (no model)',
+      ChatSource.template => ChatModelNote.template,
+      ChatSource.unsupported => ChatModelNote.unsupported,
       _ => null,
     };
   }
@@ -187,7 +215,10 @@ class ChatRow {
 /// row with the item count and a "+N more" row. Values are rendered exactly as
 /// the server sent them: no rounding, no unit conversion.
 List<ChatRow> flattenChatValue(Object? value,
-    {String key = '', int maxListItems = 5, int maxRows = 60}) {
+    {String key = '',
+    int maxListItems = 5,
+    int maxRows = 60,
+    ChatFlattenLabels labels = const ChatFlattenLabels()}) {
   final rows = <ChatRow>[];
   void walk(String path, Object? v) {
     if (rows.length >= maxRows) return;
@@ -200,13 +231,12 @@ List<ChatRow> flattenChatValue(Object? value,
         walk(path.isEmpty ? '${e.key}' : '$path.${e.key}', e.value);
       }
     } else if (v is List) {
-      rows.add(
-          ChatRow(path, '${v.length} ${v.length == 1 ? 'item' : 'items'}'));
+      rows.add(ChatRow(path, labels.items(v.length)));
       for (var i = 0; i < v.length && i < maxListItems; i++) {
         walk('$path[$i]', v[i]);
       }
       if (v.length > maxListItems) {
-        rows.add(ChatRow('$path[...]', '+${v.length - maxListItems} more'));
+        rows.add(ChatRow('$path[...]', labels.more(v.length - maxListItems)));
       }
     } else {
       rows.add(ChatRow(path, v == null ? 'null' : '$v'));
@@ -214,6 +244,82 @@ List<ChatRow> flattenChatValue(Object? value,
   }
 
   walk(key, value);
-  if (rows.length >= maxRows) rows.add(const ChatRow('...', 'truncated'));
+  if (rows.length >= maxRows) rows.add(ChatRow('...', labels.truncated));
   return rows;
+}
+
+/// Wording of the synthetic rows of [flattenChatValue] (the UI passes its
+/// localized strings; the default is English).
+class ChatFlattenLabels {
+  const ChatFlattenLabels({
+    this.items = _items,
+    this.more = _more,
+    this.truncated = 'truncated',
+  });
+
+  final String Function(int count) items;
+  final String Function(int count) more;
+  final String truncated;
+
+  static String _items(int n) => '$n ${n == 1 ? 'item' : 'items'}';
+  static String _more(int n) => '+$n more';
+}
+
+/// One labelled value of a data card: the label and unit come from the key of
+/// the tool result (`distance_km` -> "Distance", "km"); the value is shown
+/// exactly as the server sent it (invariant 7: never rounded or converted).
+class ChatDatum {
+  const ChatDatum({required this.label, required this.value, this.unit});
+
+  final String label;
+  final String value;
+  final String? unit;
+}
+
+const Map<String, String> _unitSuffixes = {
+  'kmh': 'km/h',
+  'kph': 'km/h',
+  'km': 'km',
+  'rpm': 'rpm',
+  'pct': '%',
+  'percent': '%',
+  'kpa': 'kPa',
+  'min': 'min',
+  'ms': 'ms',
+  'c': '\u00b0C',
+  'v': 'V',
+  'a': 'A',
+  's': 's',
+  'm': 'm',
+  'g': 'g',
+};
+
+/// Turns the flattened [rows] of a tool result into data-card values: the
+/// leading `result.` is dropped, a trailing `_unit` suffix becomes the unit,
+/// list bookkeeping rows (`path`, `path[...]`) are skipped.
+List<ChatDatum> chatData(List<ChatRow> rows, {int max = 8}) {
+  final data = <ChatDatum>[];
+  for (final row in rows) {
+    if (data.length >= max) break;
+    if (row.key.contains('[...]') || row.key == '...') continue;
+    var key = row.key.startsWith('result.') ? row.key.substring(7) : row.key;
+    if (key == 'result' || key.isEmpty) continue;
+    String? unit;
+    final segments = key.split('.');
+    final last = segments.last;
+    final cut = last.lastIndexOf('_');
+    if (cut > 0) {
+      final suffix = last.substring(cut + 1).toLowerCase();
+      final mapped = _unitSuffixes[suffix];
+      if (mapped != null) {
+        unit = mapped;
+        segments[segments.length - 1] = last.substring(0, cut);
+      }
+    }
+    key = segments.join(' ').replaceAll('_', ' ').replaceAll('[', ' ').replaceAll(']', '').trim();
+    if (key.isEmpty) continue;
+    final label = key[0].toUpperCase() + key.substring(1);
+    data.add(ChatDatum(label: label, value: row.value, unit: unit));
+  }
+  return data;
 }

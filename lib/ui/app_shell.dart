@@ -110,7 +110,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _voice = widget.voice ?? VoiceController();
     _ownsCenter = widget.notifications == null;
     _center = widget.notifications ??
-        NotificationCenter(announcer: CriticalAnnouncer(speak: _voice.speak));
+        NotificationCenter(
+            announcer: CriticalAnnouncer(
+                speak: _voice.speak,
+                sentences: () => AnnouncerSentences.fromL10n(context.l10n)));
     _center.start();
     unawaited(_setUpSystemNotifications());
     _voiceBus = widget.voiceBus ?? VoiceTriggerBus.instance;
@@ -136,8 +139,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       Navigator.of(context).popUntil((route) => route.isFirst);
       _select(ShellTab.assistant);
     };
-    _riderInputSubscription = widget.phoneTabs?.riderInputActions?.listen(
-        (action) => _voiceBus.emit(triggerOfRiderInput(action)));
+    _riderInputSubscription = widget.phoneTabs?.riderInputActions
+        ?.listen((action) => _voiceBus.emit(triggerOfRiderInput(action)));
     unawaited(bindVoiceCommandIntent(_intercom, _voiceBus));
   }
 
@@ -367,7 +370,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final wide = Breakpoints.isWide(width);
     final railLayout = Breakpoints.usesRail(width);
 
-    final others = [for (final tab in _tabs) if (tab != ShellTab.assistant) tab];
+    final others = [
+      for (final tab in _tabs)
+        if (tab != ShellTab.assistant) tab
+    ];
     final mainStack = IndexedStack(
       index: _tab == ShellTab.assistant ? 0 : others.indexOf(_tab),
       children: [
@@ -384,9 +390,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       final assistantFull = _tab == ShellTab.assistant;
       final showPanel = wide && !assistantFull && _panelOpen;
       const panelWidth = 400.0;
-      final mainWidth = assistantFull ? 0.0 : (showPanel ? avail - panelWidth : avail);
+      final mainWidth =
+          assistantFull ? 0.0 : (showPanel ? avail - panelWidth : avail);
       _twoPane = wide && MasterDetail.fits(mainWidth);
-      final assistantWidth = assistantFull ? avail : (showPanel ? panelWidth : 0.0);
+      final assistantWidth =
+          assistantFull ? avail : (showPanel ? panelWidth : 0.0);
       return Stack(
         children: [
           Positioned(
@@ -435,8 +443,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       scaffold = Scaffold(
         body: content,
         bottomNavigationBar: DecoratedBox(
-          decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: t.hairline))),
+          decoration:
+              BoxDecoration(border: Border(top: BorderSide(color: t.hairline))),
           child: NavigationBar(
             selectedIndex: index,
             onDestinationSelected: (i) => _select(_tabs[i]),

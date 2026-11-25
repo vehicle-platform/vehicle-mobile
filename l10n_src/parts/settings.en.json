@@ -1,0 +1,243 @@
+{
+  "settingsCancel": "Cancel",
+  "settingsSave": "Save",
+  "settingsSaving": "Saving...",
+  "settingsDelete": "Delete",
+  "settingsAdd": "Add",
+  "settingsRetry": "Try again",
+  "settingsDismiss": "Cancel",
+  "settingsUnknownError": "unknown error",
+  "settingsSignalLive": "LIVE",
+  "settingsSignalStale": "STALE",
+  "settingsSignalNoData": "NO DATA",
+  "settingsSignalNotPolled": "NOT POLLED",
+  "settingsSignalSkipped": "SKIPPED",
+  "settingsAccount": "Account",
+  "settingsSignedInAs": "Signed in as {username}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsNoVehicles": "No vehicle is linked to this account.",
+  "settingsDeviceTokenConnected": "Connected with a device token",
+  "settingsNotSignedIn": "Not signed in",
+  "settingsAddVehicle": "Add vehicle",
+  "settingsSignOut": "Sign out",
+  "settingsSignIn": "Sign in",
+  "settingsVehicleId": "Vehicle ID",
+  "settingsClaimCode": "Claim code",
+  "settingsClaimInvalid": "The vehicle ID or code is not valid.",
+  "settingsRateLimited": "Too many attempts. Try again in a moment.",
+  "settingsRateLimitedWait": "Too many attempts. Try again in {seconds} s.",
+  "@settingsRateLimitedWait": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsUnreachable": "Could not reach the server.",
+  "settingsSessionEnded": "Session ended.",
+  "settingsClaimFailed": "Could not add the vehicle: {detail}",
+  "@settingsClaimFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHosts": "Hosts (vehicle-server)",
+  "settingsAddHost": "Add host",
+  "settingsEditHost": "Edit host",
+  "settingsDeleteHost": "Delete host",
+  "settingsHostsLoadFailed": "Could not read the saved hosts.",
+  "settingsNoHosts": "No host configured yet: recording and sharing sessions work fully without one. Add a host to enable upload, rides, faults and the assistant.",
+  "settingsHostsHint": "The first host that answers is used, so put the local one first. Drag to reorder.",
+  "settingsCheckHosts": "Check hosts again",
+  "settingsChecking": "Checking...",
+  "settingsDeleteHostTitle": "Delete host?",
+  "settingsDeleteHostBody": "Removes \"{name}\" and its device token from this device.",
+  "@settingsDeleteHostBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsHostActive": "active",
+  "settingsTokenSet": "token set",
+  "settingsNoToken": "no token",
+  "settingsCleartextShort": "http:// sends the token and ride data unencrypted. Use it only on a trusted local network.",
+  "settingsCleartextLong": "Warning: http:// sends the token and ride data unencrypted. Use it only on a trusted local network; use https:// for any server reachable from outside.",
+  "settingsHostName": "Name",
+  "settingsHostNameHint": "Bike (local Raspi)",
+  "settingsHostUrl": "Server base URL",
+  "settingsHostToken": "Device token",
+  "settingsEnterName": "Enter a name",
+  "settingsEnterUrl": "Enter the server URL",
+  "settingsUpload": "Upload",
+  "settingsWifiOnly": "Upload only on Wi-Fi",
+  "settingsWifiOnlyHint": "Session archives can be several MB; avoid mobile data by default.",
+  "settingsReadAnswers": "Read answers aloud",
+  "settingsReadAnswersHint": "{assistant} reads the answer text aloud. On by default on the phone, off on web and desktop.",
+  "@settingsReadAnswersHint": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelTitle": "Assistant model",
+  "settingsModelSubtitle": "Which model {assistant} uses to write its answers",
+  "@settingsModelSubtitle": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelLoading": "Loading...",
+  "settingsModelUnreadable": "Could not read it, tap to try again",
+  "settingsModelLocal": "Local model (default)",
+  "settingsModelConsentRequired": "Cloud providers need your consent. Give it and try again.",
+  "settingsModelCloudDisabled": "Cloud providers are turned off on this server. The local model stays available.",
+  "settingsModelProviderError": "The provider returned an error. Check the key and the connection.",
+  "settingsModelInvalid": "The server did not accept the input.",
+  "settingsModelInvalidDetail": "The server did not accept the input: {detail}",
+  "@settingsModelInvalidDetail": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelNotSupported": "This server version does not support model selection.",
+  "settingsModelFailed": "The action failed: {detail}",
+  "@settingsModelFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelIntro": "{assistant} uses the local model on the server by default. You can pick another provider with your own API key.",
+  "@settingsModelIntro": {
+    "placeholders": {
+      "assistant": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelProvider": "Provider",
+  "settingsModelConnection": "Connection",
+  "settingsModelBaseUrl": "Address (base URL)",
+  "settingsModelKeyHelpCustom": "Enter the endpoint address and your API key, then tap Save.",
+  "settingsModelKeyHelp": "Paste your {provider} API key below, then tap Save. The key is sent once and is never shown again.",
+  "@settingsModelKeyHelp": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelSavedKey": "Saved key ••••{hint}",
+  "@settingsModelSavedKey": {
+    "placeholders": {
+      "hint": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelDeleteKey": "Delete key",
+  "settingsModelNewKey": "New key (optional)",
+  "settingsModelApiKey": "API key",
+  "settingsModelSendPosition": "Also send position data",
+  "settingsModelSendPositionHint": "While off, no position data goes to the provider.",
+  "settingsModelInsecureTitle": "Secure connection required",
+  "settingsModelInsecureText": "The key can only be entered over a secure connection (HTTPS) or on the Pi with the command:\nvehicle-server user set-llm <user> --provider <id>",
+  "settingsModelTest": "Test the connection",
+  "settingsModelTesting": "Testing...",
+  "settingsModelTestOk": "The connection works ({ms} ms).",
+  "@settingsModelTestOk": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsModelTestFailed": "The connection failed: {detail}",
+  "@settingsModelTestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelKeyDeleted": "Key deleted.",
+  "settingsModelSaved": "Saved.",
+  "settingsModelDeleteKeyTitle": "Delete the key?",
+  "settingsModelDeleteKeyBody": "The saved key is deleted from the server. The assistant will not work with this provider.",
+  "settingsModelLabel": "Model",
+  "settingsModelListFailed": "The list could not be loaded, type the model name.",
+  "settingsModelListLater": "The model list appears after you save the key; for now you can type the name.",
+  "settingsModelUnavailable": "This provider is not available right now.",
+  "settingsModelCloud": "Cloud provider",
+  "settingsModelConsentTitle": "Continue with {provider}?",
+  "@settingsModelConsentTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelConsentText": "Your question and the ride data the server computed are sent to {provider}. The cost is billed to your own {provider} account.",
+  "@settingsModelConsentText": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelAccept": "I accept",
+  "settingsAuthBadCredentials": "Wrong username or password.",
+  "settingsAuthUsernameTaken": "That username is taken.",
+  "settingsAuthInvalid": "The details were not accepted: {detail}",
+  "@settingsAuthInvalid": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAuthInvalidFallback": "invalid input",
+  "settingsAuthNotSupported": "This server does not support account sign-in. Connect with a device token under Advanced.",
+  "settingsAuthRequestFailed": "The request failed: {detail}",
+  "@settingsAuthRequestFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLoginSignIn": "Sign in",
+  "settingsLoginRegister": "Create account",
+  "settingsLoginSubRegister": "Create your account with the vehicle ID and the ownership code.",
+  "settingsLoginSubSignIn": "Sign in to see your rides and notifications.",
+  "settingsLoginSavedHost": "Saved server",
+  "settingsLoginServer": "Server address",
+  "settingsLoginUsername": "Username",
+  "settingsLoginPassword": "Password",
+  "settingsLoginHaveAccount": "I already have an account",
+  "settingsLoginAdvanced": "Advanced: connect with a device token",
+  "settingsLoginConnect": "Connect",
+  "settingsLoginSkip": "Skip for now",
+  "settingsLoginEnterUrl": "Enter the server address.",
+  "settingsLoginInsecureUrl": "Insecure address: use https:// or a server on the local network.",
+  "settingsLoginNeedCredentials": "Username and password are required.",
+  "settingsLoginNeedVehicle": "Vehicle ID and claim code are required.",
+  "settingsLoginNeedToken": "Enter the device token.",
+  "settingsLoginSessionEnded": "Session ended. Please sign in again."
+}

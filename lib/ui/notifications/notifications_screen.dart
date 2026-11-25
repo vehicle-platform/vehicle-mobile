@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
-
 import 'package:vehicle_mobile/models/app_notification.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
+import 'package:vehicle_mobile/ui/widgets/alert_banner.dart';
 
 IconData notificationKindIcon(NotificationKind kind) => switch (kind) {
       NotificationKind.rideSummary => Icons.route_outlined,
@@ -15,20 +15,28 @@ IconData notificationKindIcon(NotificationKind kind) => switch (kind) {
       NotificationKind.outlook => Icons.trending_up,
     };
 
-/// Severity accent: critical red, warning amber, info teal.
+/// Severity colour (D-130 item 1): critical red, warning amber, info neutral.
 Color notificationSeverityColor(BuildContext context, NotificationSeverity s) {
   final t = context.vehicle;
   return switch (s) {
-    NotificationSeverity.critical => t.error,
-    NotificationSeverity.warning => t.stale,
-    NotificationSeverity.info => t.accent,
+    NotificationSeverity.critical => t.critical,
+    NotificationSeverity.warning => t.advisory,
+    NotificationSeverity.info => t.noData,
   };
 }
 
-String notificationSeverityLabel(NotificationSeverity s) => switch (s) {
-      NotificationSeverity.critical => 'Kritik',
-      NotificationSeverity.warning => 'Uyarı',
-      NotificationSeverity.info => 'Bilgi',
+/// D-129 class of a severity: critical is P1, warning P2, info has no banner.
+AlertClass? notificationAlertClass(NotificationSeverity s) => switch (s) {
+      NotificationSeverity.critical => AlertClass.p1,
+      NotificationSeverity.warning => AlertClass.p2,
+      NotificationSeverity.info => null,
+    };
+
+String notificationSeverityLabel(AppLocalizations l, NotificationSeverity s) =>
+    switch (s) {
+      NotificationSeverity.critical => l.garageSeverityCritical,
+      NotificationSeverity.warning => l.garageSeverityWarning,
+      NotificationSeverity.info => l.garageSeverityInfo,
     };
 
 String _two(int v) => v.toString().padLeft(2, '0');
@@ -36,16 +44,30 @@ String _two(int v) => v.toString().padLeft(2, '0');
 String notificationTime(DateTime? time) =>
     time == null ? '' : '${_two(time.hour)}:${_two(time.minute)}';
 
-/// "Bugün", "Dün" or dd.MM.yyyy.
-String notificationDayLabel(DateTime? day, {DateTime? now}) {
-  if (day == null) return 'Tarih yok';
+/// "Today", "Yesterday" or dd.MM.yyyy.
+String notificationDayLabel(AppLocalizations l, DateTime? day,
+    {DateTime? now}) {
+  if (day == null) return l.garageDayNoDate;
   final today = now ?? DateTime.now();
   final d = DateTime(day.year, day.month, day.day);
   final t = DateTime(today.year, today.month, today.day);
   final diff = t.difference(d).inDays;
-  if (diff == 0) return 'Bugün';
-  if (diff == 1) return 'Dün';
+  if (diff == 0) return l.garageDayToday;
+  if (diff == 1) return l.garageDayYesterday;
   return '${_two(day.day)}.${_two(day.month)}.${day.year}';
+}
+
+/// The newest unread critical (P1) or warning (P2) notification, which the
+/// inbox shows as an [AlertBanner]; null when there is none. Critical wins
+/// over a newer warning.
+AppNotification? bannerNotification(List<AppNotification> items) {
+  AppNotification? warning;
+  for (final n in items) {
+    if (n.read) continue;
+    if (n.severity == NotificationSeverity.critical) return n;
+    if (n.severity == NotificationSeverity.warning) warning ??= n;
+  }
+  return warning;
 }
 
 /// Inbox of the rider notifications (D-123), newest first, grouped by day.
@@ -65,43 +87,45 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final scope = NotificationScope.maybeOf(context);
     final center = scope?.notifier;
     final items = center?.items ?? const <AppNotification>[];
     final theme = Theme.of(context);
 
-    final rows = <Widget>[];
-    String? lastDay;
-    for (final n in items) {
-      final day = notificationDayLabel(n.created, now: now);
-      if (day != lastDay) {
-        rows.add(Padding(
-          padding: const EdgeInsets.only(top: Spacing.lg, bottom: Spacing.sm),
-          child: Text(day.toUpperCase(), style: theme.textTheme.labelSmall),
-        ));
-        lastDay = day;
+    void open(AppNotification n) {
+      center!.markRead(n.id);
+      final onOpen = this.onOpen;
+      if (onOpen != null) {
+        onOpen(n);
+        return;
       }
-      rows.add(_NotificationRow(
-        notification: n,
-        onTap: () {
-          center!.markRead(n.id);
-          final onOpen = this.onOpen;
-          if (onOpen != null) {
-            onOpen(n);
-            return;
-          }
-          Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => NotificationScope(
-              center: center,
-              onAsk: scope!.onAsk,
-              child: NotificationDetailScreen(notification: n),
-            ),
-          ));
-        },
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => NotificationScope(
+          center: center,
+          onAsk: scope!.onAsk,
+          child: NotificationDetailScreen(notification: n),
+        ),
       ));
     }
 
-    final body = RefreshIndicator(
+    final rows = <Widget>[];
+    String? lastDay;
+    for (final n in items) {
+      final day = notificationDayLabel(l, n.created, now: now);
+      if (day != lastDay) {
+        rows.add(Padding(
+          padding: const EdgeInsets.only(top: Spacing.lg, bottom: Spacing.sm),
+          child:
+              Text(upperFor(context, day), style: theme.textTheme.labelSmall),
+        ));
+        lastDay = day;
+      }
+      rows.add(_NotificationRow(notification: n, onTap: () => open(n)));
+    }
+
+    final banner = bannerNotification(items);
+    final list = RefreshIndicator(
       onRefresh: () => center?.refresh(full: true) ?? Future.value(),
       child: items.isEmpty
           ? LayoutBuilder(
@@ -109,10 +133,10 @@ class NotificationsScreen extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: SizedBox(
                   height: c.maxHeight,
-                  child: const EmptyState(
+                  child: EmptyState(
                     icon: Icons.notifications_none,
-                    message: 'Henüz bildirim yok',
-                    hint: 'Sürüş özetleri ve uyarılar burada görünür.',
+                    message: l.garageEmptyTitle,
+                    hint: l.garageEmptyHint,
                   ),
                 ),
               ),
@@ -126,10 +150,24 @@ class NotificationsScreen extends StatelessWidget {
               ),
             ),
     );
+    final body = Column(
+      children: [
+        if (banner != null)
+          AlertBanner(
+            key: const ValueKey('inbox-alert-banner'),
+            alertClass: notificationAlertClass(banner.severity)!,
+            message: banner.title,
+            onTap: () => open(banner),
+            trailing: const Padding(
+              padding: EdgeInsets.only(left: Spacing.sm),
+              child: Icon(Icons.chevron_right),
+            ),
+          ),
+        Expanded(child: list),
+      ],
+    );
     final markAll = IconButton(
-      tooltip: embedded
-          ? context.l10n.garageMarkAllRead
-          : 'Tümünü okundu say',
+      tooltip: l.garageMarkAllRead,
       icon: const Icon(Icons.done_all),
       onPressed: (center == null || center.unreadCount == 0)
           ? null
@@ -145,7 +183,7 @@ class NotificationsScreen extends StatelessWidget {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bildirimler'),
+        title: Text(l.garageNotificationsTitle),
         actions: [markAll],
       ),
       body: body,
@@ -153,6 +191,8 @@ class NotificationsScreen extends StatelessWidget {
   }
 }
 
+/// One inbox row: a hairline-separated line with a severity stripe; unread
+/// rows are bold with a dot, the time is set in the number face.
 class _NotificationRow extends StatelessWidget {
   const _NotificationRow({required this.notification, required this.onTap});
 
@@ -163,80 +203,79 @@ class _NotificationRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final t = context.vehicle;
+    final l = context.l10n;
     final accent = notificationSeverityColor(context, notification.severity);
     final n = notification;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: Material(
-        color: t.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Radii.card),
-          side: BorderSide(color: t.outline),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 4, color: accent),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(Spacing.md),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(notificationKindIcon(n.kind),
-                            size: IconSizes.regular, color: accent),
-                        const SizedBox(width: Spacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                n.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall!.copyWith(
-                                    fontWeight: n.read
-                                        ? FontWeight.w500
-                                        : FontWeight.w700),
-                              ),
-                              if (n.body.isNotEmpty) ...[
-                                const SizedBox(height: Spacing.xs),
-                                Text(n.body,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: Spacing.sm),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+    return DecoratedBox(
+      decoration:
+          BoxDecoration(border: Border(bottom: BorderSide(color: t.hairline))),
+      child: InkWell(
+        onTap: onTap,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 3, color: accent),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.md, vertical: Spacing.md),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(notificationKindIcon(n.kind),
+                          size: IconSizes.regular, color: accent),
+                      const SizedBox(width: Spacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(notificationTime(n.created),
-                                style: theme.textTheme.bodySmall),
-                            if (!n.read) ...[
-                              const SizedBox(height: Spacing.sm),
-                              Container(
+                            Text(
+                              n.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall!.copyWith(
+                                  fontWeight: n.read
+                                      ? FontWeight.w500
+                                      : FontWeight.w700),
+                            ),
+                            if (n.body.isNotEmpty) ...[
+                              const SizedBox(height: Spacing.xs),
+                              Text(n.body,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.sm),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(notificationTime(n.created),
+                              style: numberFace(15, FontWeight.w500,
+                                  color: t.textSecondary)),
+                          if (!n.read) ...[
+                            const SizedBox(height: Spacing.sm),
+                            Semantics(
+                              label: l.garageUnread,
+                              child: Container(
                                 key: const ValueKey('unread-dot'),
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
                                     color: accent, shape: BoxShape.circle),
                               ),
-                            ],
+                            ),
                           ],
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -248,9 +287,9 @@ class _NotificationRow extends StatelessWidget {
 /// 500).
 const int _maxQuestion = 500;
 
-/// Question the "Sürüş Asistanı'na sor" button prefills.
-String notificationQuestion(AppNotification n) {
-  final text = '"${n.title}" bildirimi hakkında ne söyleyebilirsin?';
+/// Question the "ask the assistant" button prefills, in the UI language.
+String notificationQuestion(AppLocalizations l, AppNotification n) {
+  final text = l.garageAskQuestion(n.title);
   return text.length <= _maxQuestion
       ? text
       : '${text.substring(0, _maxQuestion - 1)}…';
@@ -263,12 +302,14 @@ class NotificationDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final theme = Theme.of(context);
+    final t = context.vehicle;
     final accent = notificationSeverityColor(context, notification.severity);
     final n = notification;
     final onAsk = NotificationScope.maybeOf(context)?.onAsk;
     return Scaffold(
-      appBar: AppBar(title: const Text('Bildirim')),
+      appBar: AppBar(title: Text(l.garageNotificationTitle)),
       body: ContentColumn(
         maxWidth: ContentWidth.assistant,
         child: ListView(
@@ -280,17 +321,18 @@ class NotificationDetailScreen extends StatelessWidget {
                 Icon(notificationKindIcon(n.kind),
                     size: IconSizes.regular, color: accent),
                 const SizedBox(width: Spacing.sm),
-                Text(notificationSeverityLabel(n.severity),
-                    style:
-                        theme.textTheme.labelMedium!.copyWith(color: accent)),
+                Text(
+                    upperFor(context, notificationSeverityLabel(l, n.severity)),
+                    style: theme.textTheme.labelSmall!.copyWith(color: accent)),
                 const Spacer(),
                 Text(
-                    '${notificationDayLabel(n.created)} ${notificationTime(n.created)}'
+                    '${notificationDayLabel(l, n.created)} ${notificationTime(n.created)}'
                         .trim(),
-                    style: theme.textTheme.bodySmall),
+                    style: numberFace(15, FontWeight.w500,
+                        color: t.textSecondary)),
               ],
             ),
-            const SizedBox(height: Spacing.md),
+            Divider(height: Spacing.xl, color: t.hairline),
             Text(n.title, style: theme.textTheme.titleLarge),
             if (n.body.isNotEmpty) ...[
               const SizedBox(height: Spacing.md),
@@ -300,7 +342,7 @@ class NotificationDetailScreen extends StatelessWidget {
             if (n.sessionId != null) ...[
               OutlinedButton.icon(
                 icon: const Icon(Icons.route_outlined),
-                label: const Text('Sürüşü aç'),
+                label: Text(l.garageOpenRide),
                 onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                         builder: (_) =>
@@ -310,9 +352,9 @@ class NotificationDetailScreen extends StatelessWidget {
             ],
             if (onAsk != null)
               FilledButton.icon(
-                icon: const Icon(Icons.chat_bubble_outline),
-                label: const Text("Sürüş Asistanı'na sor"),
-                onPressed: () => onAsk(notificationQuestion(n), n.sessionId),
+                icon: const Icon(Icons.graphic_eq),
+                label: Text(l.garageAskAssistant(l.assistantName)),
+                onPressed: () => onAsk(notificationQuestion(l, n), n.sessionId),
               ),
           ],
         ),

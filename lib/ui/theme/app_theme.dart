@@ -11,7 +11,8 @@ export 'package:vehicle_mobile/ui/theme/typography.dart';
 /// The app theme: high contrast, Material 3; dark by default, [Brightness.light]
 /// for the system light mode.
 ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
-  final t = brightness == Brightness.dark ? VehicleTokens.dark : VehicleTokens.light;
+  final t =
+      brightness == Brightness.dark ? VehicleTokens.dark : VehicleTokens.light;
   final scheme = ColorScheme(
     brightness: brightness,
     primary: t.accent,
@@ -32,7 +33,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
     surfaceContainerHighest: t.surfaceRaised,
   );
   final textTheme = buildTextTheme(t);
-  final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.chip));
+  final shape =
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.chip));
   const minButton = Size(64, Spacing.touchTarget);
 
   return ThemeData(
@@ -54,13 +56,13 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       foregroundColor: t.textPrimary,
     ),
     cardTheme: CardThemeData(
-      color: t.surface,
+      color: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Radii.card),
-        side: BorderSide(color: t.outline),
+        side: BorderSide(color: t.hairline),
       ),
     ),
     dividerTheme: DividerThemeData(color: t.outline, thickness: 1, space: 1),
@@ -145,7 +147,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       fillColor: t.surfaceRaised,
       labelStyle: textTheme.bodyMedium!.copyWith(color: t.textSecondary),
       hintStyle: textTheme.bodyMedium!.copyWith(color: t.noData),
-      contentPadding: const EdgeInsets.symmetric(horizontal: Spacing.lg, vertical: Spacing.md),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: Spacing.lg, vertical: Spacing.md),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(Radii.chip),
         borderSide: BorderSide(color: t.outline),
@@ -160,8 +163,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       ),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? t.onAccent : t.textSecondary),
+      thumbColor: WidgetStateProperty.resolveWith((s) =>
+          s.contains(WidgetState.selected) ? t.onAccent : t.textSecondary),
       trackColor: WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.selected) ? t.accent : t.surfaceRaised),
       trackOutlineColor: WidgetStateProperty.resolveWith(
@@ -201,7 +204,8 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       surfaceTintColor: Colors.transparent,
       titleTextStyle: textTheme.titleLarge,
       contentTextStyle: textTheme.bodyMedium,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Radii.card)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.card)),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
       color: t.accent,

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/health_windows.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
@@ -9,6 +10,7 @@ import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
@@ -67,6 +69,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       setState(() => _loading = false);
       return;
     }
+    final notFoundText = context.l10n.logbookNoSummary;
     final result = await _client.getSummary(
       baseUrl: settings.serverBaseUrl!,
       apiToken: settings.apiToken ?? '',
@@ -81,7 +84,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         _notFound = false;
       } else if (result.outcome == RideOutcome.notFound) {
         _summary = null;
-        _error = result.message ?? 'No stored ride summary for this session.';
+        _error = result.message ?? notFoundText;
         _notFound = true;
       } else {
         _summary = null;
@@ -136,21 +139,21 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ride summary'),
+        title: Text(context.l10n.logbookRideSummaryTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.forum_outlined),
-            tooltip: 'Ask the assistant',
+            tooltip: context.l10n.logbookAskAssistant,
             onPressed: _openAssistant,
           ),
           IconButton(
             icon: const Icon(Icons.fact_check_outlined),
-            tooltip: 'Bring-up check',
+            tooltip: context.l10n.logbookBringupTitle,
             onPressed: _openBringup,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: context.l10n.logbookRefresh,
             onPressed: _loading ? null : _load,
           ),
         ],
@@ -162,13 +165,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   Widget _body() {
     final settings = _settings;
     if (settings == null || (_loading && _summary == null && _error == null)) {
-      return const RideLoading('Loading ride summary...');
+      return RideLoading(context.l10n.logbookLoadingSummary);
     }
     if (!settings.isServerConfigured) {
-      return const RideMessage(
+      return RideMessage(
         icon: Icons.settings_ethernet,
-        message:
-            'No vehicle-server configured. Set the server URL and API token in Settings.',
+        message: context.l10n.logbookNoServer,
       );
     }
     if (_error != null) {
@@ -181,14 +183,16 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               icon: _notFound ? Icons.search_off : Icons.cloud_off,
               tone: _notFound ? Tone.neutral : Tone.error,
               message: _error!,
-              actionLabel: 'Retry',
+              actionLabel: context.l10n.logbookRetry,
               onAction: _load,
             ),
           ),
         ],
       );
     }
-    if (_summary == null) return const RideLoading('Loading ride summary...');
+    if (_summary == null) {
+      return RideLoading(context.l10n.logbookLoadingSummary);
+    }
     return _content(settings, _summary!);
   }
 
@@ -219,32 +223,31 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
           InfoBanner(
             icon: Icons.warning_amber_rounded,
             tone: Tone.warn,
-            text: 'Decoded with other defs bin edges: ${mismatch.join(', ')}.',
+            text: context.l10n.logbookDefsMismatch(mismatch.join(', ')),
           ),
         _header(summary),
         if (summary.signals.isEmpty)
-          const SectionCard(
-              child: Text('No stored signals in this ride summary.'))
+          SectionCard(child: Text(context.l10n.logbookNoSignals))
         else ...[
           if (scalars.isNotEmpty) ...[
-            const SectionLabel('Signals'),
+            SectionLabel(context.l10n.logbookSignals),
             _scalarList(scalars),
           ],
           if (perGear.isNotEmpty) ...[
-            const SectionLabel('Per-gear signals'),
+            SectionLabel(context.l10n.logbookPerGear),
             for (final signal in perGear) _perGearSection(signal),
           ],
           if (binned.isNotEmpty) ...[
-            const SectionLabel('Binned signals'),
+            SectionLabel(context.l10n.logbookBinned),
             for (final signal in binned) _binnedSection(signal),
           ],
           if (unavailable.isNotEmpty) ...[
-            const SectionLabel('Coverage'),
+            SectionLabel(context.l10n.logbookCoverage),
             _unavailableList(unavailable),
           ],
         ],
         const SizedBox(height: Spacing.lg),
-        const SectionLabel('Health windows'),
+        SectionLabel(context.l10n.logbookHealthWindows),
         HealthWindowsSection(
           result: _healthWindows,
           loading: _healthWindowsLoading,
@@ -256,19 +259,23 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Widget _header(RideSummary summary) {
     final theme = Theme.of(context);
-    return SectionCard(
+    final l = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(summary.sessionId, style: theme.textTheme.titleSmall),
+          Text(summary.sessionId,
+              style: numberFace(24, FontWeight.w600,
+                  color: context.vehicle.textPrimary)),
           const SizedBox(height: Spacing.xs),
           Wrap(
             spacing: Spacing.lg,
             runSpacing: Spacing.xs,
             children: [
-              Text('ride ${summary.rideDefinition ?? '–'}',
+              Text(l.logbookRideDefinition(summary.rideDefinition ?? '–'),
                   style: theme.textTheme.bodySmall),
-              Text('defs ${summary.defsVersion ?? '–'}',
+              Text(l.logbookDefsVersion(summary.defsVersion ?? '–'),
                   style: theme.textTheme.bodySmall),
             ],
           ),
@@ -279,42 +286,31 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
 
   Widget _scalarList(List<ScalarSummary> scalars) {
     final theme = Theme.of(context);
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.lg),
+      child: Wrap(
+        spacing: Spacing.xl,
+        runSpacing: Spacing.lg,
         children: [
-          for (var index = 0; index < scalars.length; index++) ...[
-            if (index > 0)
-              Divider(height: Spacing.lg, color: context.vehicle.outline),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: Spacing.md,
-                    runSpacing: Spacing.xs,
-                    children: [
-                      Text(scalars[index].name,
-                          style: theme.textTheme.bodyMedium),
-                      Text(
-                        '${formatRideRangeValue(scalars[index].value, scalars[index].range)} ${scalars[index].unit}',
-                        style: theme.textTheme.titleSmall,
-                      ),
-                    ],
+          for (final scalar in scalars)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Readout(
+                  label: scalar.name,
+                  value: formatRideRangeValue(scalar.value, scalar.range),
+                  unit: scalar.unit,
+                  size: ReadoutSize.medium,
+                ),
+                if (scalar.flag != null)
+                  Text(
+                    scalar.flag!,
+                    style: theme.textTheme.bodySmall!
+                        .copyWith(color: context.vehicle.advisory),
                   ),
-                  if (scalars[index].flag != null)
-                    Text(
-                      scalars[index].flag!,
-                      style: theme.textTheme.bodySmall!
-                          .copyWith(color: context.vehicle.warning),
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
         ],
       ),
     );
@@ -341,17 +337,18 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             ),
             const SizedBox(height: Spacing.sm),
             if (gears.isEmpty)
-              Text('No stored gears.', style: theme.textTheme.bodySmall)
+              Text(context.l10n.logbookNoGears,
+                  style: theme.textTheme.bodySmall)
             else
               for (var index = 0; index < gears.length; index++) ...[
                 if (index > 0)
-                  Divider(height: Spacing.lg, color: context.vehicle.outline),
+                  Divider(height: Spacing.lg, color: context.vehicle.hairline),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
                       width: 64,
-                      child: Text('Gear ${gears[index].gear}',
+                      child: Text(context.l10n.logbookGear(gears[index].gear),
                           style: theme.textTheme.bodyMedium),
                     ),
                     Expanded(
@@ -363,13 +360,14 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         children: [
                           Text(
                             '${formatRideRangeValue(gears[index].value, signal.range)} ${signal.unit}',
-                            style: theme.textTheme.titleSmall,
+                            style: numberFace(18, FontWeight.w600,
+                                color: context.vehicle.textPrimary),
                           ),
                           if (gears[index].flag != null)
                             Text(
                               gears[index].flag!,
                               style: theme.textTheme.bodySmall!
-                                  .copyWith(color: context.vehicle.warning),
+                                  .copyWith(color: context.vehicle.advisory),
                             ),
                         ],
                       ),
@@ -407,12 +405,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
             else if (signal.axes.length == 2)
               _HeatGrid(signal: signal)
             else
-              Text(
-                  '${signal.axes.length}-axis summaries are not shown on the phone yet.',
+              Text(context.l10n.logbookAxisUnsupported(signal.axes.length),
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
-              'total ${formatDurationS(signal.totalS)} · outside ${formatDurationS(signal.outsideS)}',
+              context.l10n.logbookTotalOutside(formatDurationS(signal.totalS),
+                  formatDurationS(signal.outsideS)),
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -453,8 +451,6 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         height: heights[index],
                         decoration: BoxDecoration(
                           color: context.vehicle.accent,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(2)),
                         ),
                       ),
                     ),
@@ -485,7 +481,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     return SectionCard(
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        title: Text('Not available (${unavailable.length})'),
+        title: Text(context.l10n.logbookNotAvailable(unavailable.length)),
         childrenPadding:
             const EdgeInsets.fromLTRB(Spacing.lg, 0, Spacing.lg, Spacing.lg),
         children: [
@@ -504,8 +500,9 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     final details = <String>[
       if (signal.reason != null && signal.reason!.isNotEmpty) signal.reason!,
       if (signal.pendingInputs.isNotEmpty)
-        'pending: ${signal.pendingInputs.join(', ')}',
-      if (signal.missing.isNotEmpty) 'missing: ${signal.missing.join(', ')}',
+        context.l10n.logbookPendingInputs(signal.pendingInputs.join(', ')),
+      if (signal.missing.isNotEmpty)
+        context.l10n.logbookMissingInputs(signal.missing.join(', ')),
       if (signal.message != null && signal.message!.isNotEmpty) signal.message!,
     ];
     return Column(
@@ -578,7 +575,7 @@ class _HeatGridState extends State<_HeatGrid> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('columns: ${columns.input} [${columns.unit}]',
+        Text(context.l10n.logbookColumnsAxis(columns.input, columns.unit),
             style: theme.textTheme.bodySmall),
         const SizedBox(height: Spacing.xs),
         LayoutBuilder(
@@ -633,7 +630,7 @@ class _HeatGridState extends State<_HeatGrid> {
           },
         ),
         const SizedBox(height: Spacing.xs),
-        Text('rows: ${rows.input} [${rows.unit}]',
+        Text(context.l10n.logbookRowsAxis(rows.input, rows.unit),
             style: theme.textTheme.bodySmall),
         if (selected != null || _selectedRow != null)
           Padding(
@@ -682,7 +679,7 @@ class _HeatGridState extends State<_HeatGrid> {
             border: Border.all(
               color: isSelected
                   ? context.vehicle.textPrimary
-                  : context.vehicle.outline,
+                  : context.vehicle.hairline,
               width: isSelected ? 2 : 1,
             ),
           ),

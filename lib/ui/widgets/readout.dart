@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 
 /// One instrument readout (D-130 item 1): a small letter-spaced upper-case
@@ -42,7 +43,7 @@ class Readout extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: crossAxisAlignment,
           children: [
-            Text(label.toUpperCase(),
+            Text(upperFor(context, label),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall),
@@ -52,11 +53,17 @@ class Readout extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                AnimatedDefaultTextStyle(
-                  style: valueStyle,
-                  duration: Motion.standard,
-                  curve: Motion.curve,
-                  child: Text(value),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: AnimatedDefaultTextStyle(
+                      style: valueStyle,
+                      duration: Motion.standard,
+                      curve: Motion.curve,
+                      child: Text(value),
+                    ),
+                  ),
                 ),
                 if (unit != null) ...[
                   const SizedBox(width: Spacing.xs),

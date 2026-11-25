@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/telemetry_data.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
@@ -18,15 +19,17 @@ class DiagnosticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // The Ride sub-navigation already names this screen: no title here.
       appBar: AppBar(
-        title: const Text('Diagnostics'),
+        toolbarHeight: 48,
         actions: const [HeaderActions()],
       ),
       body: ListenableBuilder(
         listenable: store,
         builder: (context, _) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
+            padding: const EdgeInsets.fromLTRB(
+                Spacing.lg, Spacing.sm, Spacing.lg, Spacing.xl),
             children: [
               _linkSection(context),
               const SizedBox(height: Spacing.lg),
@@ -44,13 +47,14 @@ class DiagnosticsScreen extends StatelessWidget {
 
   String _num(int? v) => v == null ? '--' : '$v';
 
-  Widget _flagRow(BuildContext context, String label, bool? value, {required bool badWhenTrue}) {
+  Widget _flagRow(BuildContext context, String label, bool? value,
+      {required bool badWhenTrue}) {
     final t = context.vehicle;
     if (value == null) return KeyValueRow(label: label, value: '--');
     final bad = value == badWhenTrue;
     return KeyValueRow(
       label: label,
-      value: value ? 'yes' : 'no',
+      value: value ? context.l10n.rideYes : context.l10n.rideNo,
       valueColor: bad ? t.error : t.live,
     );
   }
@@ -59,24 +63,42 @@ class DiagnosticsScreen extends StatelessWidget {
     final data = store.data;
     final since = store.sinceLastPacket;
     final t = context.vehicle;
+    final l = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Link'),
+        SectionLabel(l.rideDiagLink),
         SectionCard(
           child: Column(
             children: [
               KeyValueRow(
-                label: 'BLE',
-                value: store.connected ? 'connected' : 'disconnected',
+                label: l.rideDiagBle,
+                value: store.connected
+                    ? l.rideConnected.toLowerCase()
+                    : l.rideDisconnected.toLowerCase(),
                 valueColor: store.connected ? t.live : t.noData,
               ),
-              KeyValueRow(label: 'Device', value: store.deviceName ?? '--'),
-              KeyValueRow(label: 'ATT MTU', value: store.mtu == null ? '--' : '${store.mtu}'),
-              const KeyValueRow(label: 'Requested MTU', value: '${BleGatt.requestedMtu}'),
-              KeyValueRow(label: 'Packet version', value: store.hasPacket ? '${data.packetVersion}' : '--'),
-              KeyValueRow(label: 'Last packet', value: since == null ? '--' : '${formatAge(since.inMilliseconds)} ago'),
-              KeyValueRow(label: 'Device time', value: data.deviceTimeMs == null ? '--' : '${data.deviceTimeMs} ms'),
+              KeyValueRow(
+                  label: l.rideDiagDevice, value: store.deviceName ?? '--'),
+              KeyValueRow(
+                  label: l.rideDiagAttMtu,
+                  value: store.mtu == null ? '--' : '${store.mtu}'),
+              KeyValueRow(
+                  label: l.rideDiagRequestedMtu,
+                  value: '${BleGatt.requestedMtu}'),
+              KeyValueRow(
+                  label: l.rideDiagPacketVersion,
+                  value: store.hasPacket ? '${data.packetVersion}' : '--'),
+              KeyValueRow(
+                  label: l.rideDiagLastPacket,
+                  value: since == null
+                      ? '--'
+                      : l.rideDiagAgoSuffix(formatAge(since.inMilliseconds))),
+              KeyValueRow(
+                  label: l.rideDiagDeviceTime,
+                  value: data.deviceTimeMs == null
+                      ? '--'
+                      : '${data.deviceTimeMs} ms'),
             ],
           ),
         ),
@@ -85,29 +107,35 @@ class DiagnosticsScreen extends StatelessWidget {
   }
 
   Widget _packetSection(BuildContext context) {
+    final l = context.l10n;
     final received = TelemetryData.receivedCount;
     final lost = TelemetryData.lostCount;
     final total = received + lost;
-    final loss = total == 0 ? '--' : '${(lost * 100 / total).toStringAsFixed(1)} %';
+    final loss =
+        total == 0 ? '--' : '${(lost * 100 / total).toStringAsFixed(1)} %';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Packets'),
+        SectionLabel(l.rideDiagPackets),
         SectionCard(
           child: Column(
             children: [
-              KeyValueRow(label: 'Received', value: '$received'),
-              KeyValueRow(label: 'Lost (sequence gaps)', value: '$lost'),
-              KeyValueRow(label: 'Loss', value: loss),
+              KeyValueRow(label: l.rideDiagReceived, value: '$received'),
+              KeyValueRow(label: l.rideDiagLostGaps, value: '$lost'),
+              KeyValueRow(label: l.rideDiagLoss, value: loss),
               KeyValueRow(
-                label: 'Rejected (version)',
+                label: l.rideDiagRejectedVersion,
                 value: '${TelemetryData.versionRejectedCount}',
-                valueColor: TelemetryData.versionRejectedCount > 0 ? context.vehicle.error : null,
+                valueColor: TelemetryData.versionRejectedCount > 0
+                    ? context.vehicle.error
+                    : null,
               ),
               KeyValueRow(
-                label: 'Rejected (size)',
+                label: l.rideDiagRejectedSize,
                 value: '${TelemetryData.sizeRejectedCount}',
-                valueColor: TelemetryData.sizeRejectedCount > 0 ? context.vehicle.error : null,
+                valueColor: TelemetryData.sizeRejectedCount > 0
+                    ? context.vehicle.error
+                    : null,
               ),
             ],
           ),
@@ -118,29 +146,44 @@ class DiagnosticsScreen extends StatelessWidget {
 
   Widget _canSection(BuildContext context) {
     final data = store.data;
-    final can = canStateStatus(data.canBusState);
+    final l = context.l10n;
+    final can = canStateStatus(data.canBusState, l);
     final hasCan = data.canBusState != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Vehicle CAN bus'),
+        SectionLabel(l.rideDiagCanBus),
         SectionCard(
           child: Column(
             children: [
-              KeyValueRow(label: 'Bus state', value: can.text, valueColor: toneColor(context, can.tone)),
-              KeyValueRow(label: 'TX errors', value: _num(data.canTxErrorCount)),
-              KeyValueRow(label: 'RX errors', value: _num(data.canRxErrorCount)),
-              KeyValueRow(label: 'Bus-off events', value: _num(data.canBusOffCount)),
-              KeyValueRow(label: 'Unanswered DIDs', value: _num(data.unansweredDidCount)),
-              _flagRow(context, 'Poller enabled', data.pollerEnabled, badWhenTrue: false),
-              _flagRow(context, 'Foreign tester latched', data.latchedForeignTester, badWhenTrue: true),
-              _flagRow(context, 'Bus-off latched', data.latchedBusOff, badWhenTrue: true),
-              _flagRow(context, 'Synthetic data', data.syntheticData, badWhenTrue: true),
+              KeyValueRow(
+                  label: l.rideDiagBusState,
+                  value: can.text,
+                  valueColor: toneColor(context, can.tone)),
+              KeyValueRow(
+                  label: l.rideDiagTxErrors, value: _num(data.canTxErrorCount)),
+              KeyValueRow(
+                  label: l.rideDiagRxErrors, value: _num(data.canRxErrorCount)),
+              KeyValueRow(
+                  label: l.rideDiagBusOffEvents,
+                  value: _num(data.canBusOffCount)),
+              KeyValueRow(
+                  label: l.rideDiagUnansweredDids,
+                  value: _num(data.unansweredDidCount)),
+              _flagRow(context, l.rideDiagPollerEnabled, data.pollerEnabled,
+                  badWhenTrue: false),
+              _flagRow(
+                  context, l.rideDiagForeignLatched, data.latchedForeignTester,
+                  badWhenTrue: true),
+              _flagRow(context, l.rideDiagBusOffLatched, data.latchedBusOff,
+                  badWhenTrue: true),
+              _flagRow(context, l.rideDiagSynthetic, data.syntheticData,
+                  badWhenTrue: true),
               if (!hasCan)
                 Padding(
                   padding: const EdgeInsets.only(top: Spacing.sm),
                   child: Text(
-                    'CAN health needs a version ${TelemetryVersion.v3} or newer packet.',
+                    l.rideDiagCanNeeds('${TelemetryVersion.v3}'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -152,49 +195,59 @@ class DiagnosticsScreen extends StatelessWidget {
   }
 
   Widget _testerSection(BuildContext context) {
+    final l = context.l10n;
     final data = store.data;
     final hasTester = data.stepGapMaxMs != null;
     final count = data.rttCount;
     final sum = data.rttSumMs;
-    final avg = (count != null && count > 0 && sum != null) ? '${(sum / count).toStringAsFixed(1)} ms' : '--';
+    final avg = (count != null && count > 0 && sum != null)
+        ? '${(sum / count).toStringAsFixed(1)} ms'
+        : '--';
 
     String didText = '--';
     final did = data.rttDid;
     if (did != null) {
       final match = vehicleSignalCatalog.where((s) => s.did == did);
-      didText = match.isEmpty ? didHex(did) : '${match.first.label} (${didHex(did)})';
+      didText =
+          match.isEmpty ? didHex(did) : '${match.first.label} (${didHex(did)})';
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionLabel('Tester (diagnostic poller)'),
+        SectionLabel(l.rideDiagTester),
         SectionCard(
           child: Column(
             children: [
-              KeyValueRow(label: 'Step gap, max', value: formatMs(data.stepGapMaxMs)),
               KeyValueRow(
-                label: 'Step gap, over limit',
+                  label: l.rideDiagStepGapMax,
+                  value: formatMs(data.stepGapMaxMs)),
+              KeyValueRow(
+                label: l.rideDiagStepGapOver,
                 value: _num(data.stepGapOverCount),
-                valueColor: (data.stepGapOverCount ?? 0) > 0 ? context.vehicle.stale : null,
+                valueColor: (data.stepGapOverCount ?? 0) > 0
+                    ? context.vehicle.stale
+                    : null,
               ),
               const Divider(),
               const SizedBox(height: Spacing.xs),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Round trip, rotating DID', style: Theme.of(context).textTheme.labelSmall),
+                child: Text(upperFor(context, l.rideDiagRoundTrip),
+                    style: Theme.of(context).textTheme.labelSmall),
               ),
-              KeyValueRow(label: 'DID', value: didText),
-              KeyValueRow(label: 'Min', value: formatMs(data.rttMinMs)),
-              KeyValueRow(label: 'Max', value: formatMs(data.rttMaxMs)),
-              KeyValueRow(label: 'Mean', value: avg),
-              KeyValueRow(label: 'Samples', value: _num(data.rttCount)),
-              KeyValueRow(label: 'NRC 0x78 (pending)', value: _num(data.rttNrc78Count)),
+              KeyValueRow(label: l.rideDiagDid, value: didText),
+              KeyValueRow(label: l.rideDiagMin, value: formatMs(data.rttMinMs)),
+              KeyValueRow(label: l.rideDiagMax, value: formatMs(data.rttMaxMs)),
+              KeyValueRow(label: l.rideDiagMean, value: avg),
+              KeyValueRow(label: l.rideDiagSamples, value: _num(data.rttCount)),
+              KeyValueRow(
+                  label: l.rideDiagNrc78, value: _num(data.rttNrc78Count)),
               if (!hasTester)
                 Padding(
                   padding: const EdgeInsets.only(top: Spacing.sm),
                   child: Text(
-                    'Tester stats need a version ${TelemetryVersion.v4} packet.',
+                    l.rideDiagTesterNeeds('${TelemetryVersion.v4}'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

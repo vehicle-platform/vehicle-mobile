@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/assistant_provider.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
@@ -85,22 +86,22 @@ class _ActiveModelChipState extends State<ActiveModelChip> {
     final t = context.vehicle;
     return Semantics(
       button: true,
-      label: 'Assistant model: $text',
+      label: context.l10n.assistantModelChipLabel(text),
       child: InkWell(
         key: const ValueKey('active-model-chip'),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(Radii.chip),
         onTap: _open,
         child: Container(
           padding:
               const EdgeInsets.symmetric(horizontal: Spacing.sm, vertical: 2),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: t.accent.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(Radii.chip),
+            border: Border.all(color: t.hairline),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.tune, size: 12, color: t.accent),
+              Icon(Icons.tune, size: 12, color: t.textSecondary),
               const SizedBox(width: Spacing.xs),
               Flexible(
                 child: Text(text,
