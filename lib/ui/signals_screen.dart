@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
@@ -32,7 +33,10 @@ class _SignalsScreenState extends State<SignalsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Signals')),
+      appBar: AppBar(
+        title: const Text('Signals'),
+        actions: const [NotificationBell()],
+      ),
       body: ListenableBuilder(
         listenable: widget.store,
         builder: (context, _) {

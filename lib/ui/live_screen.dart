@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
 import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
@@ -80,7 +81,7 @@ class _LiveScreenState extends State<LiveScreen> {
             onPressed: widget.onOpenRecord,
             icon: Icon(Icons.fiber_manual_record, color: context.vehicle.record),
           ),
-          const SizedBox(width: Spacing.xs),
+          const NotificationBell(),
         ],
       ),
       body: ListenableBuilder(
