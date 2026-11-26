@@ -12,6 +12,7 @@ import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
 import 'package:vehicle_mobile/services/voice/voice_settings.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
+import 'package:vehicle_mobile/ui/settings/alert_types_section.dart';
 import 'package:vehicle_mobile/ui/settings/assistant_model_screen.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -283,6 +284,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _hostsSection(context),
                     const SizedBox(height: Spacing.lg),
                     _languageSection(context),
+                    const SizedBox(height: Spacing.lg),
+                    const AlertTypesSection(),
                     const SizedBox(height: Spacing.lg),
                     SectionLabel(l.settingsUpload),
                     SectionCard(

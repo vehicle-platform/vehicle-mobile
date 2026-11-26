@@ -60,9 +60,9 @@ void main() {
     l = lookupAppLocalizations(const Locale('tr'));
     await announcer.announce(const AdviseStopEvent());
     await announcer
-        .announce(const HighSeverityFaultEvent(id: 'F-2', title: 'Sıcaklık'));
+        .announce(const HighSeverityFaultEvent(id: 'F-2', title: 'Overheat'));
     expect(spoken[0], 'Stop in a safe place and have the engine checked.');
     expect(spoken[1], 'Güvenli bir yerde dur ve motoru kontrol ettir.');
-    expect(spoken[2], startsWith('Yüksek öncelikli uyarı: Sıcaklık.'));
+    expect(spoken[2], startsWith('Yüksek öncelikli uyarı: Overheat.'));
   });
 }
