@@ -752,6 +752,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String get logbookFirstMark => 'ilk';
 
   @override
+  String get rideMarkButton => 'Olay işaretle';
+
+  @override
+  String get rideMarkPickerTitle => 'Ne oldu?';
+
+  @override
+  String get rideMarkPickerHint => 'Birkaç saniye içinde otomatik kapanır';
+
+  @override
+  String get rideMarkKindMisfire => 'Tekleme';
+
+  @override
+  String get rideMarkKindNoise => 'Ses';
+
+  @override
+  String get rideMarkKindVibration => 'Titreşim';
+
+  @override
+  String get rideMarkKindWarningLight => 'Uyarı lambası';
+
+  @override
+  String get rideMarkKindRoughRoad => 'Bozuk yol';
+
+  @override
+  String get rideMarkKindTraffic => 'Trafik';
+
+  @override
+  String get rideMarkKindOther => 'Diğer';
+
+  @override
+  String rideMarkSaved(String kind) {
+    return 'İşaretlendi: $kind';
+  }
+
+  @override
+  String rideMarkQueuedOffline(int count, String kind) {
+    return 'Çevrimdışı kaydedildi ($count sırada): $kind';
+  }
+
+  @override
+  String get logbookMarksSection => 'Sürüş işaretleri';
+
+  @override
+  String get logbookMarksEmpty => 'Bu sürüş sırasında kaydedilmiş işaret yok.';
+
+  @override
+  String get logbookMarksLoadFailed => 'Sürüş işaretleri yüklenemedi.';
+
+  @override
+  String get logbookMarkDeleteTooltip => 'İşareti sil';
+
+  @override
+  String logbookMarkDeleteFailed(String detail) {
+    return 'İşaret silinemedi: $detail';
+  }
+
+  @override
   String get quantityRideDistance => 'Mesafe';
 
   @override

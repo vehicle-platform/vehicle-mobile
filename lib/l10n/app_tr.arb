@@ -490,6 +490,47 @@
   "logbookYes": "evet",
   "logbookNo": "hayır",
   "logbookFirstMark": "ilk",
+  "rideMarkButton": "Olay işaretle",
+  "rideMarkPickerTitle": "Ne oldu?",
+  "rideMarkPickerHint": "Birkaç saniye içinde otomatik kapanır",
+  "rideMarkKindMisfire": "Tekleme",
+  "rideMarkKindNoise": "Ses",
+  "rideMarkKindVibration": "Titreşim",
+  "rideMarkKindWarningLight": "Uyarı lambası",
+  "rideMarkKindRoughRoad": "Bozuk yol",
+  "rideMarkKindTraffic": "Trafik",
+  "rideMarkKindOther": "Diğer",
+  "rideMarkSaved": "İşaretlendi: {kind}",
+  "@rideMarkSaved": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "rideMarkQueuedOffline": "Çevrimdışı kaydedildi ({count} sırada): {kind}",
+  "@rideMarkQueuedOffline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookMarksSection": "Sürüş işaretleri",
+  "logbookMarksEmpty": "Bu sürüş sırasında kaydedilmiş işaret yok.",
+  "logbookMarksLoadFailed": "Sürüş işaretleri yüklenemedi.",
+  "logbookMarkDeleteTooltip": "İşareti sil",
+  "logbookMarkDeleteFailed": "İşaret silinemedi: {detail}",
+  "@logbookMarkDeleteFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
   "quantityRideDistance": "Mesafe",
   "quantityRideTime": "Sürüş süresi",
   "quantityRideStopCount": "Duruş",

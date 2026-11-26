@@ -490,6 +490,47 @@
   "logbookYes": "yes",
   "logbookNo": "no",
   "logbookFirstMark": "first",
+  "rideMarkButton": "Mark event",
+  "rideMarkPickerTitle": "What happened?",
+  "rideMarkPickerHint": "Closes automatically in a few seconds",
+  "rideMarkKindMisfire": "Misfire",
+  "rideMarkKindNoise": "Noise",
+  "rideMarkKindVibration": "Vibration",
+  "rideMarkKindWarningLight": "Warning light",
+  "rideMarkKindRoughRoad": "Rough road",
+  "rideMarkKindTraffic": "Traffic",
+  "rideMarkKindOther": "Other",
+  "rideMarkSaved": "Marked: {kind}",
+  "@rideMarkSaved": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "rideMarkQueuedOffline": "Saved offline ({count} queued): {kind}",
+  "@rideMarkQueuedOffline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "logbookMarksSection": "Ride marks",
+  "logbookMarksEmpty": "No event marks recorded during this ride.",
+  "logbookMarksLoadFailed": "Could not load ride marks.",
+  "logbookMarkDeleteTooltip": "Delete mark",
+  "logbookMarkDeleteFailed": "Could not delete mark: {detail}",
+  "@logbookMarkDeleteFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
   "quantityRideDistance": "Distance",
   "quantityRideTime": "Ride time",
   "quantityRideStopCount": "Stops",
