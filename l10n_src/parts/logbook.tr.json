@@ -12,8 +12,8 @@
   "logbookNoServer": "Vehicle-server ayarlanmamış. Sunucu adresini ve API anahtarını Ayarlar'dan gir.",
   "logbookCleartextWarning": "Uyarı: http:// API anahtarını ve sürüş verisini şifresiz gönderir. Yalnızca güvenilir yerel ağda kullan; dışarıdan erişilen sunucular için https:// kullan.",
   "logbookAllRides": "Tüm sürüşler",
-  "logbookRangeUtc": "{from} – {to} (UTC günleri)",
-  "@logbookRangeUtc": {
+  "logbookRange": "{from} – {to}",
+  "@logbookRange": {
     "placeholders": {
       "from": {
         "type": "String"

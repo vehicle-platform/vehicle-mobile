@@ -6,9 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:vehicle_mobile/l10n/app_localizations.dart';
 import 'package:vehicle_mobile/services/notifications/local_notifier.dart';
+import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
+import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/ui/app_shell.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+
+import 'support/fake_voice.dart';
 
 Future<void> _pump(WidgetTester tester, double width, {Locale? locale}) async {
   tester.view.physicalSize = Size(width, 900);
@@ -110,5 +114,38 @@ void main() {
             of: find.byType(NavigationBar), matching: find.text('Asistan')),
         findsOneWidget);
     expect(find.text('Garaj'), findsOneWidget);
+  });
+
+  testWidgets('the shell gives the voice the speech language of the app',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final voice = VoiceController(
+      recognizer: FakeRecognizer(),
+      output: FakeOutput(),
+      intercom: IntercomAudio(supported: false),
+    );
+    Future<void> pumpWith(Locale locale) => tester.pumpWidget(MaterialApp(
+          theme: buildAppTheme(),
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: AppShell(
+              voice: voice,
+              localNotifier: const NoopLocalNotifier(),
+              backgroundPull: false),
+        ));
+    await pumpWith(const Locale('en'));
+    await tester.pumpAndSettle();
+    expect(voice.localeTag, 'en-US');
+    await pumpWith(const Locale('tr'));
+    await tester.pumpAndSettle();
+    expect(voice.localeTag, 'tr-TR');
   });
 }

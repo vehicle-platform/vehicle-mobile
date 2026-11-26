@@ -91,6 +91,10 @@ class VoiceController extends ChangeNotifier {
   /// How long to wait for the final transcript after the rider stopped.
   final Duration finalWait;
 
+  /// Speech language (BCP-47) of recognition and voice; the shell keeps it in
+  /// step with the app language (`voiceTagFor`). Read at each listen/speak.
+  String localeTag = 'en-US';
+
   /// Receives the final transcript (the screen sends it to `/chat`).
   void Function(String text)? onTranscript;
 
@@ -233,7 +237,7 @@ class VoiceController extends ChangeNotifier {
       return;
     }
     try {
-      await _recognizer.listen(onResult: _onResult);
+      await _recognizer.listen(onResult: _onResult, localeTag: localeTag);
     } catch (_) {
       if (session == _session) _fail(VoiceError.unavailable);
       return;
@@ -380,7 +384,7 @@ class VoiceController extends ChangeNotifier {
       return false;
     }
     try {
-      await _output.speak(text, viaIntercom: routed);
+      await _output.speak(text, viaIntercom: routed, localeTag: localeTag);
     } catch (_) {
       // Speech failing is never fatal: the answer stays on screen.
     }

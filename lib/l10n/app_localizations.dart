@@ -590,6 +590,18 @@ abstract class AppLocalizations {
   /// **'Preparing the microphone ...'**
   String get assistantPreparing;
 
+  /// No description provided for @formatToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get formatToday;
+
+  /// No description provided for @formatYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get formatYesterday;
+
   /// No description provided for @garageNotificationsTitle.
   ///
   /// In en, this message translates to:
@@ -631,18 +643,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Info'**
   String get garageSeverityInfo;
-
-  /// No description provided for @garageDayToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Today'**
-  String get garageDayToday;
-
-  /// No description provided for @garageDayYesterday.
-  ///
-  /// In en, this message translates to:
-  /// **'Yesterday'**
-  String get garageDayYesterday;
 
   /// No description provided for @garageDayNoDate.
   ///
@@ -806,11 +806,11 @@ abstract class AppLocalizations {
   /// **'All rides'**
   String get logbookAllRides;
 
-  /// No description provided for @logbookRangeUtc.
+  /// No description provided for @logbookRange.
   ///
   /// In en, this message translates to:
-  /// **'{from} – {to} (UTC days)'**
-  String logbookRangeUtc(String from, String to);
+  /// **'{from} – {to}'**
+  String logbookRange(String from, String to);
 
   /// No description provided for @logbookNoRidesInRange.
   ///

@@ -1,5 +1,6 @@
 import 'package:vehicle_mobile/l10n/app_localizations.dart';
-import 'package:vehicle_mobile/ui/rides/ride_format.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
+
 
 /// Rider-meaningful quantities (D-130 follow-up): the ones the Logbook list and
 /// the assistant data cards show first, in this order. Everything else is an
@@ -68,34 +69,6 @@ String quantityText(AppLocalizations l, String name, {String? serverLabel}) {
   }
   return readableName(name);
 }
-
-/// Unit text for display: `degC` -> `°C`; dimensionless units show nothing.
-String? displayUnit(String? unit) {
-  if (unit == null) return null;
-  return switch (unit) {
-    '' || 'count' || 'flag' || 'ratio' => null,
-    'degC' => '°C',
-    'degC/min' => '°C/min',
-    _ => unit,
-  };
-}
-
-/// Display text of a value (presentation only; the raw JSON stays behind the
-/// "computed by" expander). Seconds become a duration, counts integers, the
-/// rest at most one decimal, or [decimals] when given.
-String formatQuantity(num? value, String? unit, {int? decimals}) {
-  if (value == null || !value.isFinite) return '–';
-  if (unit == 's') return formatDurationS(value);
-  if (unit == 'count' || unit == 'flag') return value.round().toString();
-  final fixed = value.toStringAsFixed(decimals ?? 1);
-  return decimals == null && fixed.endsWith('.0')
-      ? fixed.substring(0, fixed.length - 2)
-      : fixed;
-}
-
-/// Unit shown next to [formatQuantity]: none for durations (already in the
-/// text).
-String? quantityUnit(String? unit) => unit == 's' ? null : displayUnit(unit);
 
 /// One value of a data card.
 class ChatDatum {
@@ -177,12 +150,13 @@ List<ChatDatum> chatData(Object? result, AppLocalizations l, {int max = 6}) {
     for (final e in indexed)
       if (!hasRider || isRiderQuantity(e.$2.name)) e.$2,
   ].take(max);
+  final fmt = RiderFormat(l);
   return [
     for (final i in picked)
       ChatDatum(
         label: quantityText(l, i.name, serverLabel: i.label),
-        value: formatQuantity(i.value, i.unit),
-        unit: quantityUnit(i.unit),
+        value: fmt.value(i.value, i.unit),
+        unit: fmt.unit(i.unit),
       ),
   ];
 }

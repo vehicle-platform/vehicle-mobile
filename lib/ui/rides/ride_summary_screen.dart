@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/health_windows.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
@@ -14,6 +15,7 @@ import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
+import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 
@@ -298,9 +300,9 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Readout(
-                  label: scalar.name,
-                  value: formatRideRangeValue(scalar.value, scalar.range),
-                  unit: scalar.unit,
+                  label: quantityText(context.l10n, scalar.name),
+                  value: RiderFormat.of(context).value(scalar.value, scalar.unit),
+                  unit: RiderFormat.of(context).unit(scalar.unit),
                   size: ReadoutSize.medium,
                 ),
                 if (scalar.flag != null)
@@ -359,7 +361,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         runSpacing: Spacing.xs,
                         children: [
                           Text(
-                            '${formatRideRangeValue(gears[index].value, signal.range)} ${signal.unit}',
+                            RiderFormat.of(context).withUnit(gears[index].value, signal.unit),
                             style: numberFace(18, FontWeight.w600,
                                 color: context.vehicle.textPrimary),
                           ),
@@ -409,8 +411,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
-              context.l10n.logbookTotalOutside(formatDurationS(signal.totalS),
-                  formatDurationS(signal.outsideS)),
+              context.l10n.logbookTotalOutside(RiderFormat.of(context).duration(signal.totalS),
+                  RiderFormat.of(context).duration(signal.outsideS)),
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -446,7 +448,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                     child: Tooltip(
                       message:
                           '${_edgeText(axis.edges[index], edgeRange)} ${axis.unit}: '
-                          '${formatRideRangeValue(values[index], signal.range)}',
+                          '${RiderFormat.of(context).value(values[index], signal.unit)}',
                       child: Container(
                         height: heights[index],
                         decoration: BoxDecoration(
@@ -661,7 +663,7 @@ class _HeatGridState extends State<_HeatGrid> {
     return Tooltip(
       message: '${_edgeText(rows.edges[row], rowRange)} / '
           '${_edgeText(columns.edges[column], columnRange)}: '
-          '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}'
+          '${RiderFormat.of(context).withUnit(cell?.value, signal.unit)}'
           '${cell?.flag != null ? ' · ${cell!.flag}' : ''}',
       child: InkWell(
         key: ValueKey('heat-cell-${signal.name}-$row-$column'),
@@ -693,7 +695,7 @@ class _HeatGridState extends State<_HeatGrid> {
     final row = _selectedRow!;
     final column = _selectedColumn!;
     final value =
-        '${formatRideRangeValue(cell?.value, signal.range)} ${signal.unit}';
+        RiderFormat.of(context).withUnit(cell?.value, signal.unit);
     final flag = cell?.flag;
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);

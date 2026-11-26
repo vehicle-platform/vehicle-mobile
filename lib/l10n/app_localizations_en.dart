@@ -295,6 +295,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantPreparing => 'Preparing the microphone ...';
 
   @override
+  String get formatToday => 'Today';
+
+  @override
+  String get formatYesterday => 'Yesterday';
+
+  @override
   String get garageNotificationsTitle => 'Notifications';
 
   @override
@@ -316,12 +322,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get garageSeverityInfo => 'Info';
-
-  @override
-  String get garageDayToday => 'Today';
-
-  @override
-  String get garageDayYesterday => 'Yesterday';
 
   @override
   String get garageDayNoDate => 'No date';
@@ -415,8 +415,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logbookAllRides => 'All rides';
 
   @override
-  String logbookRangeUtc(String from, String to) {
-    return '$from – $to (UTC days)';
+  String logbookRange(String from, String to) {
+    return '$from – $to';
   }
 
   @override

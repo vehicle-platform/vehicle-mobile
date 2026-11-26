@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vehicle_mobile/l10n/app_localizations.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/ui/widgets/readout.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -101,6 +102,12 @@ Future<void> _drain(WidgetTester tester) async {
   }
 }
 
+/// The row title of a ride created at [iso] (local time of the machine).
+String _when(String iso) =>
+    RiderFormat(lookupAppLocalizations(const Locale('en')),
+            now: () => DateTime(2030))
+        .dateTime(DateTime.parse(iso));
+
 /// A [Readout] with this value and unit (the value and unit are separate texts).
 Finder _readout(String value, String unit) => find.byWidgetPredicate(
     (w) => w is Readout && w.value == value && w.unit == unit);
@@ -167,7 +174,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(requests, 2);
-    expect(find.text('2026-01-16 09:00 UTC'), findsOneWidget);
+    expect(find.text(_when('2026-01-16T09:00:00Z')), findsOneWidget);
     expect(find.text('HTTP 500'), findsNothing);
   });
 
@@ -209,8 +216,8 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    final newer = tester.getTopLeft(find.text('2026-01-16 09:00 UTC')).dy;
-    final older = tester.getTopLeft(find.text('2026-01-15 09:00 UTC')).dy;
+    final newer = tester.getTopLeft(find.text(_when('2026-01-16T09:00:00Z'))).dy;
+    final older = tester.getTopLeft(find.text(_when('2026-01-15T09:00:00Z'))).dy;
     expect(newer, lessThan(older));
     // Rider quantities first, with human labels; no engineering signals.
     expect(find.text('DISTANCE'), findsNWidgets(2));
@@ -219,7 +226,7 @@ void main() {
     expect(find.text('20 min 15 s'), findsNWidgets(2));
     expect(_readout('82.500', 'km/h'), findsNothing);
     expect(find.byType(FilterChip), findsNothing);
-    expect(find.text('2026-01-16 09:00 UTC'), findsOneWidget);
+    expect(find.text(_when('2026-01-16T09:00:00Z')), findsOneWidget);
     expect(find.textContaining('20260116-090000-bbbb'), findsNothing);
   });
 
@@ -264,10 +271,10 @@ void main() {
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
 
-    expect(_readout('12.000', 'deg'), findsOneWidget);
+    expect(_readout('12.0', 'deg'), findsOneWidget);
     expect(_readout('\u2013', 'deg'), findsOneWidget);
     expect(find.text('missing'), findsOneWidget);
-    expect(_readout('7000.0', 'rpm'), findsOneWidget);
+    expect(_readout('7,000', 'rpm'), findsOneWidget);
   });
 
   testWidgets('lays out on a 360 px phone at 2x text scale', (tester) async {
@@ -320,7 +327,8 @@ void main() {
 
     expect(requested.last.queryParameters['from'], '2026-01-01');
     expect(requested.last.queryParameters['to'], '2026-01-05');
-    expect(find.text('2026-01-01 – 2026-01-05 (UTC days)'), findsOneWidget);
+    expect(find.textContaining('1 Jan'), findsOneWidget);
+    expect(find.textContaining('UTC'), findsNothing);
 
     await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
@@ -357,7 +365,7 @@ void main() {
           speed: 10, rpm: 1000),
     ])));
     await _drain(tester);
-    expect(find.text('2026-01-10 09:00 UTC'), findsOneWidget);
+    expect(find.text(_when('2026-01-10T09:00:00Z')), findsOneWidget);
 
     await tester.tap(find.text('Date range'));
     await _drain(tester);
@@ -371,14 +379,14 @@ void main() {
       _row('20260116-090000-new', '2026-01-16T09:00:00Z', speed: 20, rpm: 2000),
     ])));
     await _drain(tester);
-    expect(find.text('2026-01-16 09:00 UTC'), findsOneWidget);
+    expect(find.text(_when('2026-01-16T09:00:00Z')), findsOneWidget);
 
     completers[1].complete(_ok(_ridesJson(rows: [
       _row('20260115-090000-old', '2026-01-15T09:00:00Z', speed: 30, rpm: 3000),
     ])));
     await _drain(tester);
-    expect(find.text('2026-01-16 09:00 UTC'), findsOneWidget);
-    expect(find.text('2026-01-15 09:00 UTC'), findsNothing);
+    expect(find.text(_when('2026-01-16T09:00:00Z')), findsOneWidget);
+    expect(find.text(_when('2026-01-15T09:00:00Z')), findsNothing);
   });
 
   testWidgets('tapping a row opens its ride summary', (tester) async {
@@ -417,7 +425,7 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('2026-01-16 09:00 UTC'));
+    await tester.tap(find.text(_when('2026-01-16T09:00:00Z')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -513,7 +521,7 @@ void main() {
     )));
     await _drain(tester);
 
-    await tester.tap(find.text('2026-01-16 09:00 UTC'));
+    await tester.tap(find.text(_when('2026-01-16T09:00:00Z')));
     await tester.pump();
     expect(opened, ['20260116-090000-bbbb']);
     // No route was pushed.

@@ -12,6 +12,7 @@ import 'package:vehicle_mobile/services/chat_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/voice/critical_announcer.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
+import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/assistant/model_chip.dart';
@@ -153,6 +154,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     super.didChangeDependencies();
     _localeCode = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
     _l = context.l10n;
+    _voice.localeTag = voiceTagFor(_localeCode);
   }
 
   Future<void> _send(String raw) async {
