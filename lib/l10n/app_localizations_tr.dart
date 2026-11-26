@@ -106,6 +106,33 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageTurkish => 'Türkçe';
 
   @override
+  String alertsAnnounce(String text) {
+    return 'Uyarı. $text';
+  }
+
+  @override
+  String get alertsSettingsTitle => 'Sürüş uyarıları';
+
+  @override
+  String get alertsSettingsHint =>
+      'Türler ilk uyarıdan sonra burada görünür. Kritik uyarı her zaman bannerını gösterir; sessize almak yalnızca sesi kapatır. Uyarı tamamen susturulabilir (gelen kutusunda kalır).';
+
+  @override
+  String get alertsSettingsEmpty => 'Henüz uyarı türü yok.';
+
+  @override
+  String get alertsMuteVoice => 'Ses';
+
+  @override
+  String get alertsMuteShow => 'Göster';
+
+  @override
+  String get alertsClassCritical => 'Kritik';
+
+  @override
+  String get alertsClassWarning => 'Uyarı';
+
+  @override
   String get assistantGreeting =>
       'Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?';
 

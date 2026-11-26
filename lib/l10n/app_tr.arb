@@ -48,6 +48,21 @@
   "settingsLanguageHint": "Asistanın cevap dili de budur.",
   "languageEnglish": "English",
   "languageTurkish": "Türkçe",
+  "alertsAnnounce": "Uyarı. {text}",
+  "@alertsAnnounce": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsSettingsTitle": "Sürüş uyarıları",
+  "alertsSettingsHint": "Türler ilk uyarıdan sonra burada görünür. Kritik uyarı her zaman bannerını gösterir; sessize almak yalnızca sesi kapatır. Uyarı tamamen susturulabilir (gelen kutusunda kalır).",
+  "alertsSettingsEmpty": "Henüz uyarı türü yok.",
+  "alertsMuteVoice": "Ses",
+  "alertsMuteShow": "Göster",
+  "alertsClassCritical": "Kritik",
+  "alertsClassWarning": "Uyarı",
   "assistantGreeting": "Merhaba, ben Sürüş Asistanı. Ne öğrenmek istersin?",
   "assistantExample1": "Son sürüşüm nasıldı?",
   "assistantExample2": "Son sürüşün özeti",

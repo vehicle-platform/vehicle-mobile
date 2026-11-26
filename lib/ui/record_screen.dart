@@ -17,6 +17,7 @@ import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/services/session_recorder.dart';
 import 'package:vehicle_mobile/services/session_store.dart';
 import 'package:vehicle_mobile/services/session_upload.dart';
+import 'package:vehicle_mobile/services/recording_activity.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_history_screen.dart';
@@ -167,6 +168,7 @@ class _RecordScreenState extends State<RecordScreen> {
     _tickTimer?.cancel();
     widget.settingsChanged?.removeListener(_loadSettings);
     _recorder.removeListener(_onRecorderChanged);
+    RecordingActivity.active.value = false;
     if (_recorder.isRecording) {
       // Best-effort: don't leave a dangling recording if the user backs out.
       unawaited(_recorder.stop());
@@ -186,6 +188,7 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   void _onRecorderChanged() {
+    RecordingActivity.active.value = _recorder.isRecording;
     if (mounted) setState(() {});
   }
 

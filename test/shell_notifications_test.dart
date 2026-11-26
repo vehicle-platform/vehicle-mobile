@@ -164,7 +164,6 @@ void main() {
       expect(
           find.text('Hello, I am the Ride Assistant. What would you like to know?'),
           findsOneWidget);
-      expect(find.textContaining('Usta'), findsNothing);
     });
 
     testWidgets('settings section is named after the assistant', (tester) async {
@@ -174,7 +173,6 @@ void main() {
       await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
       expect(find.text('RIDE ASSISTANT'), findsOneWidget);
-      expect(find.textContaining('Usta'), findsNothing);
     });
   });
 

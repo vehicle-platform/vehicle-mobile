@@ -125,11 +125,11 @@ void main() {
 
   testWidgets('answers are not read when the setting is off', (tester) async {
     final rig =
-        await _pump(tester, reply: () => _answer('Cevap'), readAnswers: false);
+        await _pump(tester, reply: () => _answer('Answer'), readAnswers: false);
     await tester.enterText(find.byType(TextField), 'merhaba');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
-    expect(find.text('Cevap'), findsOneWidget);
+    expect(find.text('Answer'), findsOneWidget);
     expect(rig.tts.spoken, isEmpty);
   });
 
@@ -160,7 +160,7 @@ void main() {
   testWidgets('sending a new question stops the answer that is being spoken',
       (tester) async {
     final rig = await _pump(tester,
-        reply: () => _answer('Uzun bir cevap'), instantSpeech: false);
+        reply: () => _answer('A long answer'), instantSpeech: false);
     await tester.enterText(find.byType(TextField), 'bir');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
@@ -172,7 +172,7 @@ void main() {
     await _settle(tester);
     expect(rig.tts.stopCalls, greaterThan(0));
     // The second answer is being spoken; the first one was cut off.
-    expect(rig.tts.spoken, ['Uzun bir cevap', 'Uzun bir cevap']);
+    expect(rig.tts.spoken, ['A long answer', 'A long answer']);
     rig.tts.finish();
     await _settle(tester);
   });
@@ -180,7 +180,7 @@ void main() {
   testWidgets('tapping the mic while speaking stops the speech and listens',
       (tester) async {
     final rig = await _pump(tester,
-        reply: () => _answer('Cevap'), instantSpeech: false);
+        reply: () => _answer('Answer'), instantSpeech: false);
     await tester.enterText(find.byType(TextField), 'x');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
@@ -208,7 +208,7 @@ void main() {
       (tester) async {
     final asked = <String>[];
     final rig = await _pump(tester,
-        reply: () => _answer('Cevap bir'), readAnswers: false, asked: asked);
+        reply: () => _answer('Answer one'), readAnswers: false, asked: asked);
     await tester.enterText(find.byType(TextField), 'first');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);
@@ -239,7 +239,7 @@ void main() {
     rig.bus.emit(VoiceTrigger.stopAfterTap);
     await _settle(tester);
     expect(asked, hasLength(2));
-    expect(rig.tts.spoken, ['Cevap bir']);
+    expect(rig.tts.spoken, ['Answer one']);
 
     // A tap that did hear something sends it and does not repeat.
     rig.tts.spoken.clear();
@@ -265,7 +265,7 @@ void main() {
   testWidgets('a press while speaking stops the speech and listens',
       (tester) async {
     final rig = await _pump(tester,
-        reply: () => _answer('Cevap'), instantSpeech: false);
+        reply: () => _answer('Answer'), instantSpeech: false);
     await tester.enterText(find.byType(TextField), 'x');
     await tester.tap(find.byIcon(Icons.arrow_upward));
     await _settle(tester);

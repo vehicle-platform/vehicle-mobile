@@ -107,6 +107,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageTurkish => 'Türkçe';
 
   @override
+  String alertsAnnounce(String text) {
+    return 'Warning. $text';
+  }
+
+  @override
+  String get alertsSettingsTitle => 'Ride alerts';
+
+  @override
+  String get alertsSettingsHint =>
+      'Types appear here after their first alert. A critical alert always shows its banner; muting it only silences the voice. A warning can be muted completely (it stays in the inbox).';
+
+  @override
+  String get alertsSettingsEmpty => 'No alert types yet.';
+
+  @override
+  String get alertsMuteVoice => 'Voice';
+
+  @override
+  String get alertsMuteShow => 'Show';
+
+  @override
+  String get alertsClassCritical => 'Critical';
+
+  @override
+  String get alertsClassWarning => 'Warning';
+
+  @override
   String get assistantGreeting =>
       'Hello, I am the Ride Assistant. What would you like to know?';
 

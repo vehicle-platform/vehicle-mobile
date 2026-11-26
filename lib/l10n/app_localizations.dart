@@ -284,6 +284,54 @@ abstract class AppLocalizations {
   /// **'Türkçe'**
   String get languageTurkish;
 
+  /// No description provided for @alertsAnnounce.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning. {text}'**
+  String alertsAnnounce(String text);
+
+  /// No description provided for @alertsSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride alerts'**
+  String get alertsSettingsTitle;
+
+  /// No description provided for @alertsSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Types appear here after their first alert. A critical alert always shows its banner; muting it only silences the voice. A warning can be muted completely (it stays in the inbox).'**
+  String get alertsSettingsHint;
+
+  /// No description provided for @alertsSettingsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No alert types yet.'**
+  String get alertsSettingsEmpty;
+
+  /// No description provided for @alertsMuteVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get alertsMuteVoice;
+
+  /// No description provided for @alertsMuteShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get alertsMuteShow;
+
+  /// No description provided for @alertsClassCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get alertsClassCritical;
+
+  /// No description provided for @alertsClassWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get alertsClassWarning;
+
   /// No description provided for @assistantGreeting.
   ///
   /// In en, this message translates to:

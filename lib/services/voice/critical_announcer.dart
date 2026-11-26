@@ -23,10 +23,22 @@ class HighSeverityFaultEvent extends CriticalEvent {
   final String title;
 }
 
+/// A live in-ride alert that asked to be spoken (D-129, `speak: true`), once
+/// per [key]; [text] is the rule's fixed text from defs.
+class LiveAlertEvent extends CriticalEvent {
+  const LiveAlertEvent({required this.key, required this.text});
+
+  final String key;
+  final String text;
+}
+
 /// The fixed sentences of one language. The UI passes the active locale's
 /// sentences in (a provider, so a language change applies at once).
 class AnnouncerSentences {
-  const AnnouncerSentences({required this.adviseStop, required this.fault});
+  const AnnouncerSentences(
+      {required this.adviseStop,
+      required this.fault,
+      this.alert = CriticalAnnouncer.alertSentence});
 
   /// English wording, the default when no provider is given.
   static const AnnouncerSentences english = AnnouncerSentences(
@@ -37,12 +49,16 @@ class AnnouncerSentences {
   factory AnnouncerSentences.fromL10n(AppLocalizations l) => AnnouncerSentences(
         adviseStop: l.garageAnnounceAdviseStop,
         fault: l.garageAnnounceFault,
+        alert: l.alertsAnnounce,
       );
 
   final String adviseStop;
 
   /// Template of a live high-severity entry; the argument is the server's text.
   final String Function(String title) fault;
+
+  /// Template of a spoken live alert; the argument is the rule's text.
+  final String Function(String text) alert;
 }
 
 /// Speaks fixed templates offline. [speak] is the voice output (it completes
@@ -58,6 +74,9 @@ class CriticalAnnouncer {
   /// own text.
   static String faultSentence(String title) =>
       'High-priority warning: $title. $adviseStopSentence';
+
+  /// English template of a spoken live alert.
+  static String alertSentence(String text) => 'Warning. $text';
 
   final Future<void> Function(String sentence) speak;
 
@@ -77,6 +96,10 @@ class CriticalAnnouncer {
       case HighSeverityFaultEvent(:final id, :final title):
         if (!_announcedFaults.add(id)) return false;
         await speak(_s.fault(title));
+        return true;
+      case LiveAlertEvent(:final key, :final text):
+        if (!_announcedFaults.add('alert:$key')) return false;
+        await speak(_s.alert(text));
         return true;
     }
   }

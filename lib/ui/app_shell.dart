@@ -1,10 +1,17 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/app_notification.dart';
+import 'package:vehicle_mobile/models/live_alert.dart';
+import 'package:vehicle_mobile/services/alerts/alert_controller.dart';
+import 'package:vehicle_mobile/services/recording_activity.dart';
+import 'package:vehicle_mobile/ui/notifications/notifications_screen.dart';
+import 'package:vehicle_mobile/ui/widgets/alert_banner.dart';
 import 'package:vehicle_mobile/models/rider_input.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/notifications/local_notifier.dart';
@@ -49,6 +56,7 @@ class AppShell extends StatefulWidget {
     this.localNotifier,
     this.backgroundPull = true,
     this.settingsStore = const AppSettingsStore(),
+    this.alerts,
   });
 
   /// Phone-only destinations; null on web and desktop, which hides them.
@@ -74,6 +82,10 @@ class AppShell extends StatefulWidget {
 
   /// Host and session source of the server screens (tests inject one).
   final AppSettingsStore settingsStore;
+
+  /// The live alert stream (D-129); created here when null (tests inject one
+  /// with a fake stream).
+  final AlertController? alerts;
 
   /// Registers the Android periodic pull; tests switch it off.
   final bool backgroundPull;
@@ -102,6 +114,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _assistantMounted = false;
   String? _selectedRide;
   AppNotification? _selectedNotification;
+  late final AlertController _alerts;
+  late final bool _ownsAlerts;
+  late final CriticalAnnouncer _alertAnnouncer;
+  bool _appPaused = false;
 
   @override
   void initState() {
@@ -116,6 +132,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 speak: _voice.speak,
                 sentences: () => AnnouncerSentences.fromL10n(context.l10n)));
     _center.start();
+    _alertAnnouncer = CriticalAnnouncer(
+        speak: _voice.speak,
+        sentences: () => AnnouncerSentences.fromL10n(context.l10n));
+    _ownsAlerts = widget.alerts == null;
+    _alerts = widget.alerts ??
+        AlertController(
+          settingsStore: widget.settingsStore,
+          onReconnect: _center.refresh,
+          onSpeak: (a) => _alertAnnouncer.announce(LiveAlertEvent(
+              key: '${a.id ?? a.ts?.toIso8601String() ?? ''}|${a.ruleId}',
+              text: a.text)),
+        );
+    RecordingActivity.active.addListener(_syncAlertStream);
+    _alerts.start();
     unawaited(_setUpSystemNotifications());
     _voiceBus = widget.voiceBus ?? VoiceTriggerBus.instance;
     _intercom = widget.intercom ?? IntercomAudio.instance;
@@ -177,11 +207,66 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _center.resumed();
+    _appPaused = state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached;
+    _syncAlertStream();
+  }
+
+  /// The alert stream runs while the app is in the foreground and, on Android,
+  /// while a recording is running (D-129 item 4).
+  void _syncAlertStream() {
+    final keep = RecordingActivity.active.value &&
+        defaultTargetPlatform == TargetPlatform.android;
+    if (_appPaused && !keep) {
+      _alerts.stop();
+    } else {
+      _alerts.start();
+    }
+  }
+
+  /// A tap on the banner: the Garage inbox detail of the stored entry.
+  Future<void> _openAlert(LiveAlert alert) async {
+    AppNotification? find() {
+      for (final n in _center.items) {
+        if (n.id == alert.id) return n;
+      }
+      return null;
+    }
+
+    var n = alert.id == null ? null : find();
+    if (n == null && alert.id != null) {
+      await _center.refresh();
+      n = find();
+    }
+    if (!mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    _select(ShellTab.garage);
+    if (n == null) return;
+    _center.markRead(n.id);
+    if (_twoPane) {
+      setState(() => _selectedNotification = n);
+    } else {
+      final shown = n;
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => NotificationScope(
+          center: _center,
+          onAsk: _askAssistant,
+          child: NotificationDetailScreen(notification: shown),
+        ),
+      ));
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    RecordingActivity.active.removeListener(_syncAlertStream);
+    if (_ownsAlerts) {
+      _alerts.dispose();
+    } else {
+      _alerts.stop();
+    }
     _center.stop();
     if (_ownsCenter) _center.dispose();
     if (_ownsVoice) _voice.dispose();
@@ -493,7 +578,24 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onAsk: _askAssistant,
         child: CallbackShortcuts(
           bindings: shortcuts,
-          child: Focus(autofocus: true, child: scaffold),
+          child: Focus(
+            autofocus: true,
+            child: Stack(
+              children: [
+                Positioned.fill(child: scaffold),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ListenableBuilder(
+                    listenable: _alerts,
+                    builder: (context, _) => _AlertOverlay(
+                        alert: _alerts.banner, onTap: _openAlert),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -541,6 +643,48 @@ class _RailAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The active alert as a full-width banner on top of every shell screen
+/// (D-130 item 4): class colour stripe, one sentence and the value that fired
+/// it. It shows for its display time or until the alert clears.
+class _AlertOverlay extends StatelessWidget {
+  const _AlertOverlay({required this.alert, required this.onTap});
+
+  final LiveAlert? alert;
+  final void Function(LiveAlert alert) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = alert;
+    return AnimatedSize(
+      duration: Motion.standard,
+      curve: Motion.curve,
+      alignment: Alignment.topCenter,
+      child: a == null
+          ? const SizedBox(width: double.infinity)
+          : ColoredBox(
+              color: context.vehicle.surfaceRaised,
+              child: Padding(
+                padding:
+                    EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+                child: Builder(builder: (context) {
+                  final fmt = RiderFormat.of(context);
+                  return AlertBanner(
+                    key: ValueKey('alert-banner-${a.key}'),
+                    alertClass: a.alertClass == LiveAlertClass.p1
+                        ? AlertClass.p1
+                        : AlertClass.p2,
+                    message: a.text,
+                    value: a.value == null ? null : fmt.value(a.value, a.unit),
+                    unit: fmt.unit(a.unit),
+                    onTap: () => onTap(a),
+                  );
+                }),
+              ),
+            ),
     );
   }
 }

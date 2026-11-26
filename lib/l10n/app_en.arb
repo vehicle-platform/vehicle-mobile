@@ -48,6 +48,21 @@
   "settingsLanguageHint": "Also the language of the assistant's answers.",
   "languageEnglish": "English",
   "languageTurkish": "Türkçe",
+  "alertsAnnounce": "Warning. {text}",
+  "@alertsAnnounce": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "alertsSettingsTitle": "Ride alerts",
+  "alertsSettingsHint": "Types appear here after their first alert. A critical alert always shows its banner; muting it only silences the voice. A warning can be muted completely (it stays in the inbox).",
+  "alertsSettingsEmpty": "No alert types yet.",
+  "alertsMuteVoice": "Voice",
+  "alertsMuteShow": "Show",
+  "alertsClassCritical": "Critical",
+  "alertsClassWarning": "Warning",
   "assistantGreeting": "Hello, I am the Ride Assistant. What would you like to know?",
   "assistantExample1": "How was my last ride?",
   "assistantExample2": "Summary of the last ride",

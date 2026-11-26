@@ -53,9 +53,9 @@ void main() {
     // and the next voice use it.
     c.localeTag = voiceTagFor('tr');
     await c.toggleMic();
-    stt.finalResult('son sürüş');
+    stt.finalResult('recorded faults');
     await Future<void>.delayed(Duration.zero);
-    await c.speak('Cevap');
+    await c.speak('Answer');
     expect(stt.listenLocales, ['en-US', 'tr-TR']);
     expect(tts.localeTags, ['en-US', 'tr-TR']);
   });
@@ -139,21 +139,21 @@ void main() {
       () async {
     final tts = FakeOutput()..instant = true;
     final c = _controller(FakeRecognizer(), tts);
-    expect(await c.speak('Cevap'), isTrue);
-    expect(tts.spoken, ['Cevap']);
+    expect(await c.speak('Answer'), isTrue);
+    expect(tts.spoken, ['Answer']);
     SharedPreferences.setMockInitialValues(
         {VoiceSettings.keyReadAnswers: false});
-    expect(await c.speak('Sessiz'), isFalse);
-    expect(tts.spoken, ['Cevap']);
-    expect(await c.speak('Tekrar', force: true), isTrue);
-    expect(tts.spoken, ['Cevap', 'Tekrar']);
+    expect(await c.speak('Silent'), isFalse);
+    expect(tts.spoken, ['Answer']);
+    expect(await c.speak('Again', force: true), isTrue);
+    expect(tts.spoken, ['Answer', 'Again']);
   });
 
   test('stopSpeaking silences the answer; the interrupted speak reports false',
       () async {
     final tts = FakeOutput();
     final c = _controller(FakeRecognizer(), tts);
-    final spoke = c.speak('Uzun cevap');
+    final spoke = c.speak('Long answer');
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
     expect(c.state, VoiceState.speaking);
@@ -168,7 +168,7 @@ void main() {
     final tts = FakeOutput();
     final stt = FakeRecognizer();
     final c = _controller(stt, tts);
-    final spoke = c.speak('Cevap');
+    final spoke = c.speak('Answer');
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
     await c.toggleMic();
@@ -225,7 +225,7 @@ void main() {
       final intercom = FakeIntercom();
       final tts = FakeOutput()..instant = true;
       final c = _controller(FakeRecognizer(), tts, intercom: intercom.audio);
-      await c.speak('Cevap');
+      await c.speak('Answer');
       expect(tts.viaIntercom, [true]);
       expect(intercom.calls, containsAllInOrder(['acquire', 'release']));
     });
@@ -236,7 +236,7 @@ void main() {
       final c = _controller(FakeRecognizer(), tts, intercom: intercom.audio);
       await c.refreshIntercom();
       expect(c.route, VoiceRoute.phone);
-      await c.speak('Cevap');
+      await c.speak('Answer');
       expect(tts.viaIntercom, [false]);
       expect(intercom.calls, isNot(contains('release')));
     });
