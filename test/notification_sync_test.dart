@@ -72,6 +72,22 @@ void main() {
     expect(server.sinceIds, [0, 2]);
   });
 
+  test('the pull asks for the texts in the UI locale', () async {
+    final seen = <String?>[];
+    final sync = NotificationSync(
+      settingsStore: store,
+      client: NotificationsClient(httpClient: MockClient((req) async {
+        seen.add(req.url.queryParameters['locale']);
+        return http.Response(
+            jsonEncode({'notifications': [], 'latest_id': 0}), 200);
+      })),
+    );
+    await sync.pull(locale: () => 'tr');
+    await sync.pull(locale: () => 'fr');
+    await sync.pull();
+    expect(seen, ['tr', 'en', null]);
+  });
+
   test('nothing new means nothing fresh (dedupe)', () async {
     server.all.add(note(1));
     final sync = _sync(server, store);

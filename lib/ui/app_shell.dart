@@ -118,6 +118,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late final bool _ownsAlerts;
   late final CriticalAnnouncer _alertAnnouncer;
   bool _appPaused = false;
+  String _localeCode = 'en';
 
   @override
   void initState() {
@@ -128,6 +129,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _ownsCenter = widget.notifications == null;
     _center = widget.notifications ??
         NotificationCenter(
+            locale: () => _localeCode,
             announcer: CriticalAnnouncer(
                 speak: _voice.speak,
                 sentences: () => AnnouncerSentences.fromL10n(context.l10n)));
@@ -199,9 +201,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Speech recognition and the voice follow the app language.
-    _voice.localeTag =
-        voiceTagFor(Localizations.maybeLocaleOf(context)?.languageCode ?? 'en');
+    // Speech recognition, the voice and the stored notification texts follow
+    // the app language.
+    _localeCode = Localizations.maybeLocaleOf(context)?.languageCode ?? 'en';
+    _voice.localeTag = voiceTagFor(_localeCode);
   }
 
   @override
@@ -580,20 +583,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           bindings: shortcuts,
           child: Focus(
             autofocus: true,
-            child: Stack(
-              children: [
-                Positioned.fill(child: scaffold),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: ListenableBuilder(
-                    listenable: _alerts,
-                    builder: (context, _) => _AlertOverlay(
-                        alert: _alerts.banner, onTap: _openAlert),
-                  ),
-                ),
-              ],
+            child: ListenableBuilder(
+              listenable: _alerts,
+              builder: (context, _) {
+                final banner = _alerts.banner;
+                return Column(
+                  children: [
+                    _AlertBannerSlot(alert: banner, onTap: _openAlert),
+                    Expanded(
+                      child: MediaQuery.removePadding(
+                        context: context,
+                        removeTop: banner != null,
+                        child: scaffold,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -650,8 +656,8 @@ class _RailAction extends StatelessWidget {
 /// The active alert as a full-width banner on top of every shell screen
 /// (D-130 item 4): class colour stripe, one sentence and the value that fired
 /// it. It shows for its display time or until the alert clears.
-class _AlertOverlay extends StatelessWidget {
-  const _AlertOverlay({required this.alert, required this.onTap});
+class _AlertBannerSlot extends StatelessWidget {
+  const _AlertBannerSlot({required this.alert, required this.onTap});
 
   final LiveAlert? alert;
   final void Function(LiveAlert alert) onTap;

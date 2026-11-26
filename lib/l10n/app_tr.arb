@@ -191,6 +191,32 @@
   "assistantHoldToTalk": "Basılı tut ve konuş",
   "assistantReleaseToSend": "Bırak ve gönder",
   "assistantPreparing": "Mikrofon hazırlanıyor ...",
+  "assistantChatsTitle": "Sohbetler",
+  "assistantNewChat": "Yeni sohbet",
+  "assistantSearchChats": "Sohbetlerde ara",
+  "assistantNoChats": "Henüz kayıtlı sohbet yok.",
+  "assistantNoSearchHits": "Eşleşen mesaj bulunamadı.",
+  "assistantRenameChat": "Sohbeti yeniden adlandır",
+  "assistantRenameHint": "Sohbet başlığı",
+  "assistantDeleteChat": "Sohbeti sil",
+  "assistantDeleteChatTitle": "Sohbet silinsin mi?",
+  "assistantDeleteChatBody": "\"{title}\" ve mesajları sunucudan silinir.",
+  "@assistantDeleteChatBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantTemporaryChat": "Geçici sohbet",
+  "assistantTemporaryOn": "Geçici sohbet açık — mesajlar kaydedilmez.",
+  "assistantTemporaryOff": "Sohbeti kaydet",
+  "assistantLoadChatFailed": "Sohbet yüklenemedi.",
+  "assistantRenameFailed": "Sohbet yeniden adlandırılamadı.",
+  "assistantDeleteFailed": "Sohbet silinemedi.",
+  "assistantSearchFailed": "Arama başarısız oldu. Tekrar dene.",
+  "assistantChatsLoadFailed": "Sohbetlerin yüklenemedi.",
+  "assistantChatsRetry": "Tekrar dene",
   "formatToday": "Bugün",
   "formatYesterday": "Dün",
   "garageNotificationsTitle": "Bildirimler",
@@ -1125,5 +1151,26 @@
   "settingsLoginNeedCredentials": "Kullanıcı adı ve parola gerekli.",
   "settingsLoginNeedVehicle": "Araç kimliği ve talep kodu gerekli.",
   "settingsLoginNeedToken": "Cihaz token'ını gir.",
-  "settingsLoginSessionEnded": "Oturum sona erdi. Lütfen yeniden giriş yap."
+  "settingsLoginSessionEnded": "Oturum sona erdi. Lütfen yeniden giriş yap.",
+  "settingsMemoryTitle": "Asistan hafızası",
+  "settingsMemorySubtitle": "Kayıtlı bilgiler ve sohbet dışa aktarımı",
+  "settingsMemoryEmpty": "Henüz kayıtlı bilgi yok. Asistana motorun hakkında hatırlamasını istediğin bir şeyi yazabilirsin.",
+  "settingsMemoryEditTitle": "Bilgiyi düzenle",
+  "settingsMemoryValueLabel": "Değer",
+  "settingsMemoryDeleteAll": "Tüm bilgileri sil",
+  "settingsMemoryDeleteAllTitle": "Tüm kayıtlı bilgiler silinsin mi?",
+  "settingsMemoryDeleteAllBody": "Asistanın hafızasındaki tüm kayıtlı bilgiler sunucudan silinir.",
+  "settingsMemoryDeletedAll": "Tüm kayıtlı bilgiler silindi.",
+  "settingsMemoryExport": "Sohbetlerimi dışa aktar",
+  "settingsMemoryExportSubtitle": "Tüm sohbetleri ve hafıza bilgilerini JSON olarak indir veya paylaş.",
+  "settingsMemoryExportDone": "Sohbet dışa aktarımı hazır.",
+  "settingsMemoryExportFailed": "Sohbetler dışa aktarılamadı: {detail}",
+  "@settingsMemoryExportFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMemoryLoadFailed": "Asistan hafızası yüklenemedi."
 }

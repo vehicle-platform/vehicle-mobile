@@ -82,6 +82,7 @@ class ChatAnswer {
     this.elapsedMs,
     this.model,
     this.chips = const [],
+    this.conversationId,
   });
 
   final String answer;
@@ -99,6 +100,10 @@ class ChatAnswer {
   /// older servers). Non-string entries are ignored.
   final List<String> chips;
 
+  /// Stored conversation id returned by the server (D-128); null for temporary
+  /// chats or older servers.
+  final String? conversationId;
+
   /// Throws [FormatException] when the body is not a chat answer.
   factory ChatAnswer.fromJson(Object? json) {
     if (json is! Map) {
@@ -109,6 +114,7 @@ class ChatAnswer {
       throw const FormatException('chat answer has no "answer" text');
     }
     final elapsed = json['elapsed_ms'];
+    final convId = json['conversation_id'];
     return ChatAnswer(
       answer: answer,
       source: ChatSource.parse(json['source']) ?? ChatSource.error,
@@ -117,6 +123,7 @@ class ChatAnswer {
       elapsedMs: elapsed is num ? elapsed.toInt() : null,
       model: AnsweringModel.tryFromJson(json['model']),
       chips: _parseChips(json['chips']),
+      conversationId: convId is String && convId.isNotEmpty ? convId : null,
     );
   }
 }
@@ -172,6 +179,20 @@ class ChatMessage {
         chips = const [],
         time = at ?? DateTime.now(),
         isFailure = true;
+
+  /// One stored message from `GET /conversations/{id}` (D-128).
+  ChatMessage.stored({
+    required this.role,
+    required this.text,
+    this.source,
+    this.tool,
+    this.result,
+    this.elapsedMs,
+    this.model,
+    DateTime? at,
+  })  : chips = const [],
+        time = at ?? DateTime.now(),
+        isFailure = false;
 
   final ChatRole role;
   final String text;

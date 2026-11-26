@@ -322,6 +322,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantPreparing => 'Preparing the microphone ...';
 
   @override
+  String get assistantChatsTitle => 'Conversations';
+
+  @override
+  String get assistantNewChat => 'New chat';
+
+  @override
+  String get assistantSearchChats => 'Search conversations';
+
+  @override
+  String get assistantNoChats => 'No saved conversations yet.';
+
+  @override
+  String get assistantNoSearchHits => 'No matching messages found.';
+
+  @override
+  String get assistantRenameChat => 'Rename conversation';
+
+  @override
+  String get assistantRenameHint => 'Conversation title';
+
+  @override
+  String get assistantDeleteChat => 'Delete conversation';
+
+  @override
+  String get assistantDeleteChatTitle => 'Delete conversation?';
+
+  @override
+  String assistantDeleteChatBody(String title) {
+    return 'Deletes \"$title\" and its messages from the server.';
+  }
+
+  @override
+  String get assistantTemporaryChat => 'Temporary chat';
+
+  @override
+  String get assistantTemporaryOn =>
+      'Temporary chat is on — messages are not saved.';
+
+  @override
+  String get assistantTemporaryOff => 'Save conversation';
+
+  @override
+  String get assistantLoadChatFailed => 'Could not load the conversation.';
+
+  @override
+  String get assistantRenameFailed => 'Could not rename the conversation.';
+
+  @override
+  String get assistantDeleteFailed => 'Could not delete the conversation.';
+
+  @override
+  String get assistantSearchFailed => 'Search failed. Try again.';
+
+  @override
+  String get assistantChatsLoadFailed => 'Could not load your conversations.';
+
+  @override
+  String get assistantChatsRetry => 'Try again';
+
+  @override
   String get formatToday => 'Today';
 
   @override
@@ -1754,4 +1814,51 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsLoginSessionEnded =>
       'Session ended. Please sign in again.';
+
+  @override
+  String get settingsMemoryTitle => 'Assistant memory';
+
+  @override
+  String get settingsMemorySubtitle => 'Saved facts and chat export';
+
+  @override
+  String get settingsMemoryEmpty =>
+      'No saved facts yet. Ask the assistant to remember something about your bike.';
+
+  @override
+  String get settingsMemoryEditTitle => 'Edit fact';
+
+  @override
+  String get settingsMemoryValueLabel => 'Value';
+
+  @override
+  String get settingsMemoryDeleteAll => 'Delete all facts';
+
+  @override
+  String get settingsMemoryDeleteAllTitle => 'Delete all saved facts?';
+
+  @override
+  String get settingsMemoryDeleteAllBody =>
+      'Removes every saved fact from the assistant\'s memory on the server.';
+
+  @override
+  String get settingsMemoryDeletedAll => 'All saved facts deleted.';
+
+  @override
+  String get settingsMemoryExport => 'Export my chats';
+
+  @override
+  String get settingsMemoryExportSubtitle =>
+      'Download or share all conversations and memory facts as JSON.';
+
+  @override
+  String get settingsMemoryExportDone => 'Chat export ready.';
+
+  @override
+  String settingsMemoryExportFailed(String detail) {
+    return 'Could not export chats: $detail';
+  }
+
+  @override
+  String get settingsMemoryLoadFailed => 'Could not load assistant memory.';
 }

@@ -1,13 +1,7 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 import 'package:vehicle_mobile/models/assistant_provider.dart';
-import 'package:vehicle_mobile/services/auth_events.dart';
-import 'package:vehicle_mobile/services/http_client_factory.dart';
-import 'package:vehicle_mobile/services/http_message.dart';
-import 'package:vehicle_mobile/services/token_guard.dart';
+import 'package:vehicle_mobile/services/authed_json_client.dart';
 
 const Duration providerConnectTimeout = Duration(seconds: 10);
 
@@ -17,7 +11,7 @@ const Duration providerTotalTimeout = Duration(seconds: 30);
 enum ProviderOutcome {
   ok,
 
-  /// 401: the session ended (also reported on [AuthEvents]).
+  /// 401: the session ended (also reported on `AuthEvents`).
   unauthorized,
 
   /// 400: saving a cloud provider needs the user's consent.
@@ -63,12 +57,12 @@ class ProviderResult<T> {
 class AssistantProviderClient {
   AssistantProviderClient(
       {http.Client? httpClient, Duration totalTimeout = providerTotalTimeout})
-      : _http = httpClient ??
-            createHttpClient(connectTimeout: providerConnectTimeout),
-        _timeout = totalTimeout;
+      : _api = AuthedJsonClient(
+            httpClient: httpClient,
+            connectTimeout: providerConnectTimeout,
+            totalTimeout: totalTimeout);
 
-  final http.Client _http;
-  final Duration _timeout;
+  final AuthedJsonClient _api;
 
   Future<ProviderResult<List<AssistantProvider>>> providers(
           {required String baseUrl, required String token}) =>
@@ -132,74 +126,31 @@ class AssistantProviderClient {
     Map<String, Object?>? body,
     required T? Function(Object? json) parse,
   }) async {
-    final refusal = tokenSendRefusal(baseUrl);
-    if (refusal != null) {
-      return ProviderResult(ProviderOutcome.failed, message: refusal);
+    final r = await _api.call<T>(method, baseUrl, token, path,
+        body: body, parse: parse);
+    if (r.ok) {
+      return ProviderResult(ProviderOutcome.ok,
+          value: r.value, statusCode: r.statusCode);
     }
-    final base = baseUrl.trim();
-    final uri = Uri.parse(
-        '${base.endsWith('/') ? base.substring(0, base.length - 1) : base}$path');
-    final headers = {
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-      if (body != null) 'Content-Type': 'application/json',
+    final status = r.statusCode;
+    if (status == null) {
+      return ProviderResult(
+          r.unreachable ? ProviderOutcome.unreachable : ProviderOutcome.failed,
+          message: r.message);
+    }
+    ProviderResult<T> failure(ProviderOutcome o) =>
+        ProviderResult(o, statusCode: status, message: r.message);
+    return switch (status) {
+      400 => failure(ProviderOutcome.consentRequired),
+      401 => failure(ProviderOutcome.unauthorized),
+      403 => failure(ProviderOutcome.insecureTransport),
+      404 => const ProviderResult(ProviderOutcome.notSupported,
+          statusCode: 404),
+      422 => failure(ProviderOutcome.invalid),
+      502 => failure(ProviderOutcome.providerError),
+      503 => failure(ProviderOutcome.cloudDisabled),
+      _ => ProviderResult(ProviderOutcome.failed,
+          statusCode: status, message: r.message ?? 'HTTP $status'),
     };
-    try {
-      final Future<http.Response> request = switch (method) {
-        'GET' => _http.get(uri, headers: headers),
-        'PUT' => _http.put(uri, headers: headers, body: jsonEncode(body)),
-        _ => _http.post(uri, headers: headers),
-      };
-      final response = await request.timeout(_timeout);
-      final status = response.statusCode;
-      if (status == 200) {
-        try {
-          final value = parse(jsonDecode(utf8.decode(response.bodyBytes)));
-          if (value == null) {
-            return const ProviderResult(ProviderOutcome.failed,
-                statusCode: 200, message: 'malformed response');
-          }
-          return ProviderResult(ProviderOutcome.ok,
-              value: value, statusCode: 200);
-        } on FormatException catch (error) {
-          return ProviderResult(ProviderOutcome.failed,
-              statusCode: 200, message: error.message);
-        }
-      }
-      // Never echo the request body (it may hold the key); only the detail.
-      final message = extractHttpMessage(response);
-      ProviderResult<T> r(ProviderOutcome o) =>
-          ProviderResult(o, statusCode: status, message: message);
-      switch (status) {
-        case 400:
-          return r(ProviderOutcome.consentRequired);
-        case 401:
-          AuthEvents.reportUnauthorized();
-          return r(ProviderOutcome.unauthorized);
-        case 403:
-          return r(ProviderOutcome.insecureTransport);
-        case 404:
-          return const ProviderResult(ProviderOutcome.notSupported,
-              statusCode: 404);
-        case 422:
-          return r(ProviderOutcome.invalid);
-        case 502:
-          return r(ProviderOutcome.providerError);
-        case 503:
-          return r(ProviderOutcome.cloudDisabled);
-        default:
-          return ProviderResult(ProviderOutcome.failed,
-              statusCode: status, message: message ?? 'HTTP $status');
-      }
-    } on TimeoutException {
-      return const ProviderResult(ProviderOutcome.unreachable,
-          message: 'timed out');
-    } catch (error) {
-      if (isNetworkError(error)) {
-        return ProviderResult(ProviderOutcome.unreachable, message: '$error');
-      }
-      return const ProviderResult(ProviderOutcome.failed,
-          message: 'request failed');
-    }
   }
 }
