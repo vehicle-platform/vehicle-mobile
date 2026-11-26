@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'package:vehicle_mobile/models/chat_message.dart';
+import 'package:vehicle_mobile/services/notifications_client.dart';
 import 'package:vehicle_mobile/services/auth_events.dart';
 import 'package:vehicle_mobile/services/http_client_factory.dart';
 import 'package:vehicle_mobile/services/http_message.dart';
@@ -73,7 +74,7 @@ class ChatClient {
     required String apiToken,
     required String message,
     String? sessionId,
-    String locale = 'tr',
+    String locale = 'en',
     String? conversationId,
     bool temporary = false,
   }) async {
@@ -87,7 +88,7 @@ class ChatClient {
     final payload = <String, Object?>{
       'message': message,
       'session_id': sessionId,
-      'locale': locale,
+      'locale': notificationsLocaleParam(locale),
       if (conversationId != null && !temporary)
         'conversation_id': conversationId,
       if (temporary) 'temporary': true,

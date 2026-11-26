@@ -110,6 +110,7 @@ void main() {
     AlertController make({
       Duration p1 = const Duration(seconds: 30),
       Duration p2 = const Duration(seconds: 12),
+      String? Function()? locale,
     }) {
       reconnects = 0;
       return AlertController(
@@ -117,6 +118,7 @@ void main() {
         opener: server.open,
         onReconnect: () async => reconnects++,
         onSpeak: (a) async => spoken.add(a.text),
+        locale: locale,
         backoff: (_) => const Duration(milliseconds: 5),
         p1Display: p1,
         p2Display: p2,
@@ -135,7 +137,7 @@ void main() {
       c.start();
       await _settle();
       expect(server.urls.single.toString(),
-          'https://vehicle.example.test/alerts/stream');
+          'https://vehicle.example.test/alerts/stream?locale=en');
       expect(server.headers.single['Authorization'], 'Bearer tok');
       expect(c.connected, isTrue);
       expect(reconnects, 1);
@@ -150,6 +152,21 @@ void main() {
       server.send(_event('clear', _alert(event: 'clear', reason: 'recovered')));
       await _settle();
       expect(c.banner, isNull);
+    });
+
+    test('requests the UI locale, unsupported codes fall back to en, and a '
+        'change applies on the next reconnect', () async {
+      var code = 'tr';
+      final c = make(locale: () => code);
+      addTearDown(c.dispose);
+      c.start();
+      await _settle();
+      expect(server.urls.last.queryParameters['locale'], 'tr');
+      code = 'de';
+      await server.streams.last.close();
+      await _settle();
+      expect(server.urls.length, greaterThan(1));
+      expect(server.urls.last.queryParameters['locale'], 'en');
     });
 
     test('P1 wins over P2; the banner hides after its display time', () async {

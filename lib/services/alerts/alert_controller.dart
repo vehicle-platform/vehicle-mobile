@@ -9,6 +9,7 @@ import 'package:vehicle_mobile/services/alerts/alert_http.dart';
 import 'package:vehicle_mobile/services/alerts/alert_opener.dart';
 import 'package:vehicle_mobile/services/alerts/alert_prefs.dart';
 import 'package:vehicle_mobile/services/alerts/sse.dart';
+import 'package:vehicle_mobile/services/notifications_client.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/auth_events.dart';
 
@@ -34,6 +35,7 @@ class AlertController extends ChangeNotifier {
     this.prefs = const AlertPrefs(),
     this.onReconnect,
     this.onSpeak,
+    this.locale,
     Duration Function(int attempt)? backoff,
     this.p1Display = p1BannerMaxDisplay,
     this.p2Display = p2BannerMaxDisplay,
@@ -53,6 +55,10 @@ class AlertController extends ChangeNotifier {
 
   /// Called for an alert that asks to be spoken and is not muted.
   final Future<void> Function(LiveAlert alert)? onSpeak;
+
+  /// UI language code, read at every (re)connect so a language change in the
+  /// settings applies to the next connection; null or unsupported asks `en`.
+  final String? Function()? locale;
 
   final Map<String, LiveAlert> _visible = {};
   final Map<String, Timer> _timers = {};
@@ -118,7 +124,10 @@ class AlertController extends ChangeNotifier {
       }
       final base = settings.serverBaseUrl!.trim();
       final url = Uri.parse(
-          '${base.endsWith('/') ? base.substring(0, base.length - 1) : base}/alerts/stream');
+          '${base.endsWith('/') ? base.substring(0, base.length - 1) : base}/alerts/stream')
+          .replace(queryParameters: {
+        'locale': notificationsLocaleParam(locale?.call() ?? 'en'),
+      });
       try {
         final bytes = await _opener(url, {
           'Authorization': 'Bearer $token',
