@@ -6,15 +6,18 @@ import 'package:flutter/services.dart' show MaxLengthEnforcement;
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/models/chat_message.dart';
+import 'package:vehicle_mobile/models/conversation.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/assistant_provider_client.dart';
 import 'package:vehicle_mobile/services/chat_client.dart';
+import 'package:vehicle_mobile/services/conversations_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/voice/critical_announcer.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
 import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
+import 'package:vehicle_mobile/ui/assistant/conversation_list.dart';
 import 'package:vehicle_mobile/ui/assistant/model_chip.dart';
 import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
@@ -35,17 +38,16 @@ class AssistantPrefill {
   final String? sessionId;
 }
 
-/// Rider assistant (D-121): a logbook-style transcript against `POST /chat` of the active
-/// host. The server picks one read-only vehicle-mcp tool and phrases its
-/// result; this screen only shows the answer and the tool that computed the
-/// numbers. It never computes or rephrases a number and adds no advice. The
-/// conversation lives in memory only: answers may contain ride data.
+/// Rider assistant (D-121, D-128): a logbook-style transcript against
+/// `POST /chat` of the active host, with server-stored conversations,
+/// search, temporary-chat mode and follow-up chips.
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({
     super.key,
     this.settingsStore = const AppSettingsStore(),
     this.client,
     this.providerClient,
+    this.conversationsClient,
     this.sessionId,
     this.voice,
     this.voiceBus,
@@ -57,6 +59,9 @@ class AssistantScreen extends StatefulWidget {
 
   /// Client of the header model chip (D-127); tests inject a fake.
   final AssistantProviderClient? providerClient;
+
+  /// Client of `/conversations*` (D-128); tests inject a fake.
+  final ConversationsClient? conversationsClient;
 
   /// Voice front end (microphone, reading answers aloud, intercom routing);
   /// tests inject one with fake STT/TTS. Created and owned here when null.
@@ -78,11 +83,20 @@ class AssistantScreen extends StatefulWidget {
 
 class _AssistantScreenState extends State<AssistantScreen> {
   late final ChatClient _client;
+  late final ConversationsClient _conversationsClient;
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final List<ChatMessage> _messages = [];
   String? _sessionId;
+  String? _conversationId;
+  bool _temporary = false;
   bool _sending = false;
+
+  List<ConversationSummary> _conversations = const [];
+  bool _conversationsLoading = false;
+  bool _conversationsAvailable = false;
+  List<ConversationSearchHit>? _searchHits;
+  bool _searching = false;
 
   late final VoiceController _voice;
   late final bool _ownsVoice;
@@ -93,6 +107,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
   void initState() {
     super.initState();
     _client = widget.client ?? ChatClient();
+    _conversationsClient = widget.conversationsClient ?? ConversationsClient();
     _sessionId = widget.sessionId;
     _ownsVoice = widget.voice == null;
     _voice = widget.voice ?? VoiceController();
@@ -102,14 +117,13 @@ class _AssistantScreenState extends State<AssistantScreen> {
     _announcer = CriticalAnnouncer(
         speak: _voice.speak, sentences: () => AnnouncerSentences.fromL10n(_l));
     _bus = widget.voiceBus ?? VoiceTriggerBus.instance;
-    // Triggers that arrived before this screen existed are delivered after
-    // the first frame (starting to listen sets state).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _bus.attach(_onTrigger);
     });
     _voice.refreshIntercom();
     widget.prefill?.addListener(_onPrefill);
     _onPrefill();
+    unawaited(_loadConversations());
   }
 
   int _prefillSeen = 0;
@@ -157,10 +171,184 @@ class _AssistantScreenState extends State<AssistantScreen> {
     _voice.localeTag = voiceTagFor(_localeCode);
   }
 
+  Future<(String, String)?> _target() async {
+    try {
+      final s = await widget.settingsStore.load();
+      final token = s.apiToken ?? '';
+      if (!s.isServerConfigured || token.isEmpty) return null;
+      return (s.serverBaseUrl!, token);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadConversations() async {
+    final target = await _target();
+    if (target == null || !mounted) return;
+    setState(() => _conversationsLoading = true);
+    final res = await _conversationsClient.list(
+        baseUrl: target.$1, token: target.$2);
+    if (!mounted) return;
+    if (res.isSuccess && res.value != null) {
+      setState(() {
+        _conversations = res.value!.conversations;
+        _conversationsAvailable = true;
+        _conversationsLoading = false;
+      });
+    } else {
+      setState(() {
+        _conversationsLoading = false;
+        if (res.outcome == ConvOutcome.forbidden ||
+            res.outcome == ConvOutcome.notFound ||
+            res.outcome == ConvOutcome.notSupported) {
+          _conversationsAvailable = false;
+        }
+      });
+    }
+  }
+
+  Future<void> _selectConversation(String id, {bool closeSheet = false}) async {
+    if (closeSheet && mounted) Navigator.of(context).pop();
+    final target = await _target();
+    if (target == null || !mounted) return;
+    final res = await _conversationsClient.get(
+        baseUrl: target.$1, token: target.$2, id: id);
+    if (!mounted) return;
+    if (res.isSuccess && res.value != null) {
+      setState(() {
+        _conversationId = res.value!.conversation.id;
+        _temporary = false;
+        _searchHits = null;
+        _messages
+          ..clear()
+          ..addAll(res.value!.messages);
+      });
+      _scrollToEnd();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_l.assistantLoadChatFailed)),
+      );
+    }
+  }
+
+  void _startNewChat({bool closeSheet = false}) {
+    if (closeSheet && mounted) Navigator.of(context).pop();
+    setState(() {
+      _conversationId = null;
+      _messages.clear();
+      _searchHits = null;
+    });
+  }
+
+  void _toggleTemporary() {
+    setState(() {
+      _temporary = !_temporary;
+      if (_temporary) {
+        _conversationId = null;
+        _messages.clear();
+      }
+    });
+  }
+
+  Future<void> _renameConversation(
+      ConversationSummary conv, String newTitle) async {
+    final target = await _target();
+    if (target == null || !mounted) return;
+    final res = await _conversationsClient.rename(
+      baseUrl: target.$1,
+      token: target.$2,
+      id: conv.id,
+      title: newTitle,
+    );
+    if (!mounted || !res.isSuccess || res.value == null) return;
+    setState(() {
+      _conversations = [
+        for (final item in _conversations)
+          item.id == conv.id ? res.value! : item,
+      ];
+    });
+  }
+
+  Future<void> _deleteConversation(ConversationSummary conv) async {
+    final target = await _target();
+    if (target == null || !mounted) return;
+    final res = await _conversationsClient.deleteOne(
+      baseUrl: target.$1,
+      token: target.$2,
+      id: conv.id,
+    );
+    if (!mounted || !res.isSuccess) return;
+    setState(() {
+      _conversations =
+          _conversations.where((c) => c.id != conv.id).toList(growable: false);
+      if (_conversationId == conv.id) {
+        _conversationId = null;
+        _messages.clear();
+      }
+    });
+  }
+
+  Future<void> _searchConversations(String raw) async {
+    final q = raw.trim();
+    if (q.isEmpty) {
+      setState(() {
+        _searchHits = null;
+        _searching = false;
+      });
+      return;
+    }
+    final target = await _target();
+    if (target == null || !mounted) return;
+    setState(() => _searching = true);
+    final res = await _conversationsClient.search(
+      baseUrl: target.$1,
+      token: target.$2,
+      query: q,
+    );
+    if (!mounted) return;
+    setState(() {
+      _searching = false;
+      _searchHits = res.isSuccess ? (res.value ?? const []) : const [];
+    });
+  }
+
+  Future<void> _openConversationsSheet() async {
+    unawaited(_loadConversations());
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => SizedBox(
+          height: MediaQuery.sizeOf(ctx).height * 0.75,
+          child: ConversationListPane(
+            conversations: _conversations,
+            activeId: _conversationId,
+            loading: _conversationsLoading,
+            searchHits: _searchHits,
+            searching: _searching,
+            onSelect: (id) => _selectConversation(id, closeSheet: true),
+            onNewChat: () => _startNewChat(closeSheet: true),
+            onRename: (c, t) async {
+              await _renameConversation(c, t);
+              if (ctx.mounted) setSheetState(() {});
+            },
+            onDelete: (c) async {
+              await _deleteConversation(c);
+              if (ctx.mounted) setSheetState(() {});
+            },
+            onSearch: (q) async {
+              await _searchConversations(q);
+              if (ctx.mounted) setSheetState(() {});
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _send(String raw) async {
     final text = raw.trim();
     if (text.isEmpty || _sending) return;
-    // A new question silences the previous answer (and any listening).
     await _voice.cancelListening();
     await _voice.stopSpeaking();
     if (!mounted) return;
@@ -172,17 +360,26 @@ class _AssistantScreenState extends State<AssistantScreen> {
     _scrollToEnd();
 
     ChatMessage reply;
+    String? returnedConvId;
     try {
-      reply = await _ask(text);
+      final result = await _ask(text);
+      reply = result.$1;
+      returnedConvId = result.$2;
     } catch (_) {
       reply = ChatMessage.failure(_l.assistantFailSettings);
     }
     if (!mounted) return;
+    final createdNew =
+        !_temporary && returnedConvId != null && _conversationId == null;
     setState(() {
       _messages.add(reply);
       _sending = false;
+      if (!_temporary && returnedConvId != null) {
+        _conversationId = returnedConvId;
+      }
     });
     _scrollToEnd();
+    if (createdNew) unawaited(_loadConversations());
     if (!reply.isFailure) unawaited(_speakReply(reply));
   }
 
@@ -236,15 +433,13 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
   }
 
-  Future<ChatMessage> _ask(String text) async {
+  Future<(ChatMessage, String?)> _ask(String text) async {
     var settings = await widget.settingsStore.load();
     if (!settings.isServerConfigured || (settings.apiToken ?? '').isEmpty) {
-      return ChatMessage.failure(_l.assistantFailNoHost);
+      return (ChatMessage.failure(_l.assistantFailNoHost), null);
     }
     var result = await _send1(settings, text);
     if (result.outcome == ChatOutcome.unreachable) {
-      // The cached host may have gone away (left home Wi-Fi): probe the list
-      // again and retry once on another host.
       HostResolver.invalidate();
       final fresh = await widget.settingsStore.load(reprobe: true);
       if (fresh.isServerConfigured && fresh.hostId != settings.hostId) {
@@ -252,7 +447,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
         result = await _send1(settings, text);
       }
     }
-    return _describe(result, settings);
+    return (_describe(result, settings), result.answer?.conversationId);
   }
 
   Future<ChatResult> _send1(AppSettings settings, String text) => _client.send(
@@ -261,6 +456,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
         message: text,
         sessionId: _sessionId,
         locale: _localeCode,
+        conversationId: _temporary ? null : _conversationId,
+        temporary: _temporary,
       );
 
   ChatMessage _describe(ChatResult result, AppSettings settings) {
@@ -302,39 +499,39 @@ class _AssistantScreenState extends State<AssistantScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final t = context.vehicle;
     final phone = Breakpoints.isCompact(MediaQuery.sizeOf(context).width);
     final voiceRoute = _voice.route;
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l.assistantName, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            ActiveModelChip(
-                settingsStore: widget.settingsStore,
-                client: widget.providerClient),
-          ],
-        ),
-        actions: [
-          const HeaderActions(),
-          if (_messages.isNotEmpty)
-            IconButton(
-              tooltip: l.assistantClear,
-              icon: const Icon(Icons.delete_sweep_outlined),
-              onPressed: _sending ? null : () => setState(_messages.clear),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        // One centred column: full width on a phone, at most 720 px on a wide window.
-        child: Center(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showSidebar =
+            _conversationsAvailable && constraints.maxWidth >= Breakpoints.wide;
+        final chatBody = Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: ContentWidth.assistant),
             child: Column(
               children: [
+                if (_temporary)
+                  Container(
+                    key: const ValueKey('temporary-chat-banner'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: Spacing.lg, vertical: Spacing.sm),
+                    decoration: BoxDecoration(
+                      color: t.surfaceRaised,
+                      border: Border(
+                        left: BorderSide(color: t.accent, width: 3),
+                        bottom: BorderSide(color: t.hairline),
+                      ),
+                    ),
+                    child: Text(
+                      l.assistantTemporaryOn,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: t.textSecondary),
+                    ),
+                  ),
                 if (_sessionId != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -388,8 +585,77 @@ class _AssistantScreenState extends State<AssistantScreen> {
               ],
             ),
           ),
-        ),
-      ),
+        );
+
+        return Scaffold(
+          appBar: AppBar(
+            toolbarHeight: 64,
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l.assistantName, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                ActiveModelChip(
+                    settingsStore: widget.settingsStore,
+                    client: widget.providerClient),
+              ],
+            ),
+            actions: [
+              if (_conversationsAvailable && !showSidebar)
+                IconButton(
+                  key: const ValueKey('open-conversations-button'),
+                  tooltip: l.assistantChatsTitle,
+                  icon: const Icon(Icons.history),
+                  onPressed: _openConversationsSheet,
+                ),
+              IconButton(
+                key: const ValueKey('temporary-chat-toggle'),
+                tooltip: _temporary
+                    ? l.assistantTemporaryOff
+                    : l.assistantTemporaryChat,
+                icon: Icon(
+                  _temporary ? Icons.visibility_off : Icons.visibility_off_outlined,
+                  color: _temporary ? t.accent : null,
+                ),
+                onPressed: _sending ? null : _toggleTemporary,
+              ),
+              const HeaderActions(),
+              if (_messages.isNotEmpty)
+                IconButton(
+                  tooltip: l.assistantClear,
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  onPressed: _sending ? null : () => _startNewChat(),
+                ),
+            ],
+          ),
+          body: SafeArea(
+            child: showSidebar
+                ? Row(
+                    children: [
+                      SizedBox(
+                        width: 280,
+                        child: ConversationListPane(
+                          conversations: _conversations,
+                          activeId: _conversationId,
+                          loading: _conversationsLoading,
+                          searchHits: _searchHits,
+                          searching: _searching,
+                          onSelect: _selectConversation,
+                          onNewChat: _startNewChat,
+                          onRename: _renameConversation,
+                          onDelete: _deleteConversation,
+                          onSearch: _searchConversations,
+                        ),
+                      ),
+                      VerticalDivider(width: 1, thickness: 1, color: t.hairline),
+                      Expanded(child: chatBody),
+                    ],
+                  )
+                : chatBody,
+          ),
+        );
+      },
     );
   }
 

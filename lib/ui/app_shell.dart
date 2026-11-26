@@ -580,20 +580,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           bindings: shortcuts,
           child: Focus(
             autofocus: true,
-            child: Stack(
-              children: [
-                Positioned.fill(child: scaffold),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: ListenableBuilder(
-                    listenable: _alerts,
-                    builder: (context, _) => _AlertOverlay(
-                        alert: _alerts.banner, onTap: _openAlert),
-                  ),
-                ),
-              ],
+            child: ListenableBuilder(
+              listenable: _alerts,
+              builder: (context, _) {
+                final banner = _alerts.banner;
+                return Column(
+                  children: [
+                    _AlertOverlay(alert: banner, onTap: _openAlert),
+                    Expanded(
+                      child: MediaQuery.removePadding(
+                        context: context,
+                        removeTop: banner != null,
+                        child: scaffold,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),

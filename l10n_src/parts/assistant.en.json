@@ -126,5 +126,26 @@
   "assistantClose": "Close",
   "assistantHoldToTalk": "Hold to talk",
   "assistantReleaseToSend": "Release to send",
-  "assistantPreparing": "Preparing the microphone ..."
+  "assistantPreparing": "Preparing the microphone ...",
+  "assistantChatsTitle": "Conversations",
+  "assistantNewChat": "New chat",
+  "assistantSearchChats": "Search conversations",
+  "assistantNoChats": "No saved conversations yet.",
+  "assistantNoSearchHits": "No matching messages found.",
+  "assistantRenameChat": "Rename conversation",
+  "assistantRenameHint": "Conversation title",
+  "assistantDeleteChat": "Delete conversation",
+  "assistantDeleteChatTitle": "Delete conversation?",
+  "assistantDeleteChatBody": "Deletes \"{title}\" and its messages from the server.",
+  "@assistantDeleteChatBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantTemporaryChat": "Temporary chat",
+  "assistantTemporaryOn": "Temporary chat is on — messages are not saved.",
+  "assistantTemporaryOff": "Save conversation",
+  "assistantLoadChatFailed": "Could not load the conversation."
 }

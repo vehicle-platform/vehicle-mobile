@@ -74,6 +74,8 @@ class ChatClient {
     required String message,
     String? sessionId,
     String locale = 'tr',
+    String? conversationId,
+    bool temporary = false,
   }) async {
     final refusal = tokenSendRefusal(baseUrl);
     if (refusal != null) {
@@ -82,6 +84,14 @@ class ChatClient {
     final base = baseUrl.trim();
     final uri = Uri.parse(
         '${base.endsWith('/') ? base.substring(0, base.length - 1) : base}/chat');
+    final payload = <String, Object?>{
+      'message': message,
+      'session_id': sessionId,
+      'locale': locale,
+      if (conversationId != null && !temporary)
+        'conversation_id': conversationId,
+      if (temporary) 'temporary': true,
+    };
     try {
       final response = await _httpClient
           .post(
@@ -91,11 +101,7 @@ class ChatClient {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: jsonEncode({
-              'message': message,
-              'session_id': sessionId,
-              'locale': locale
-            }),
+            body: jsonEncode(payload),
           )
           .timeout(_totalTimeout);
       switch (response.statusCode) {

@@ -322,6 +322,51 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assistantPreparing => 'Mikrofon hazırlanıyor ...';
 
   @override
+  String get assistantChatsTitle => 'Sohbetler';
+
+  @override
+  String get assistantNewChat => 'Yeni sohbet';
+
+  @override
+  String get assistantSearchChats => 'Sohbetlerde ara';
+
+  @override
+  String get assistantNoChats => 'Henüz kayıtlı sohbet yok.';
+
+  @override
+  String get assistantNoSearchHits => 'Eşleşen mesaj bulunamadı.';
+
+  @override
+  String get assistantRenameChat => 'Sohbeti yeniden adlandır';
+
+  @override
+  String get assistantRenameHint => 'Sohbet başlığı';
+
+  @override
+  String get assistantDeleteChat => 'Sohbeti sil';
+
+  @override
+  String get assistantDeleteChatTitle => 'Sohbet silinsin mi?';
+
+  @override
+  String assistantDeleteChatBody(String title) {
+    return '\"$title\" ve mesajları sunucudan silinir.';
+  }
+
+  @override
+  String get assistantTemporaryChat => 'Geçici sohbet';
+
+  @override
+  String get assistantTemporaryOn =>
+      'Geçici sohbet açık — mesajlar kaydedilmez.';
+
+  @override
+  String get assistantTemporaryOff => 'Sohbeti kaydet';
+
+  @override
+  String get assistantLoadChatFailed => 'Sohbet yüklenemedi.';
+
+  @override
   String get formatToday => 'Bugün';
 
   @override
@@ -1750,4 +1795,53 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get settingsLoginSessionEnded =>
       'Oturum sona erdi. Lütfen yeniden giriş yap.';
+
+  @override
+  String get settingsMemoryTitle => 'Asistan hafızası';
+
+  @override
+  String get settingsMemorySubtitle =>
+      'Kayıtlı bilgiler ve sohbet dışa aktarımı';
+
+  @override
+  String get settingsMemoryEmpty =>
+      'Henüz kayıtlı bilgi yok. Asistana motorun hakkında hatırlamasını istediğin bir şeyi yazabilirsin.';
+
+  @override
+  String get settingsMemoryEditTitle => 'Bilgiyi düzenle';
+
+  @override
+  String get settingsMemoryValueLabel => 'Değer';
+
+  @override
+  String get settingsMemoryDeleteAll => 'Tüm bilgileri sil';
+
+  @override
+  String get settingsMemoryDeleteAllTitle =>
+      'Tüm kayıtlı bilgiler silinsin mi?';
+
+  @override
+  String get settingsMemoryDeleteAllBody =>
+      'Asistanın hafızasındaki tüm kayıtlı bilgiler sunucudan silinir.';
+
+  @override
+  String get settingsMemoryDeletedAll => 'Tüm kayıtlı bilgiler silindi.';
+
+  @override
+  String get settingsMemoryExport => 'Sohbetlerimi dışa aktar';
+
+  @override
+  String get settingsMemoryExportSubtitle =>
+      'Tüm sohbetleri ve hafıza bilgilerini JSON olarak indir veya paylaş.';
+
+  @override
+  String get settingsMemoryExportDone => 'Sohbet dışa aktarımı hazır.';
+
+  @override
+  String settingsMemoryExportFailed(String detail) {
+    return 'Sohbetler dışa aktarılamadı: $detail';
+  }
+
+  @override
+  String get settingsMemoryLoadFailed => 'Asistan hafızası yüklenemedi.';
 }

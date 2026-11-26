@@ -191,6 +191,27 @@
   "assistantHoldToTalk": "Hold to talk",
   "assistantReleaseToSend": "Release to send",
   "assistantPreparing": "Preparing the microphone ...",
+  "assistantChatsTitle": "Conversations",
+  "assistantNewChat": "New chat",
+  "assistantSearchChats": "Search conversations",
+  "assistantNoChats": "No saved conversations yet.",
+  "assistantNoSearchHits": "No matching messages found.",
+  "assistantRenameChat": "Rename conversation",
+  "assistantRenameHint": "Conversation title",
+  "assistantDeleteChat": "Delete conversation",
+  "assistantDeleteChatTitle": "Delete conversation?",
+  "assistantDeleteChatBody": "Deletes \"{title}\" and its messages from the server.",
+  "@assistantDeleteChatBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantTemporaryChat": "Temporary chat",
+  "assistantTemporaryOn": "Temporary chat is on — messages are not saved.",
+  "assistantTemporaryOff": "Save conversation",
+  "assistantLoadChatFailed": "Could not load the conversation.",
   "formatToday": "Today",
   "formatYesterday": "Yesterday",
   "garageNotificationsTitle": "Notifications",
@@ -1125,5 +1146,26 @@
   "settingsLoginNeedCredentials": "Username and password are required.",
   "settingsLoginNeedVehicle": "Vehicle ID and claim code are required.",
   "settingsLoginNeedToken": "Enter the device token.",
-  "settingsLoginSessionEnded": "Session ended. Please sign in again."
+  "settingsLoginSessionEnded": "Session ended. Please sign in again.",
+  "settingsMemoryTitle": "Assistant memory",
+  "settingsMemorySubtitle": "Saved facts and chat export",
+  "settingsMemoryEmpty": "No saved facts yet. Ask the assistant to remember something about your bike.",
+  "settingsMemoryEditTitle": "Edit fact",
+  "settingsMemoryValueLabel": "Value",
+  "settingsMemoryDeleteAll": "Delete all facts",
+  "settingsMemoryDeleteAllTitle": "Delete all saved facts?",
+  "settingsMemoryDeleteAllBody": "Removes every saved fact from the assistant's memory on the server.",
+  "settingsMemoryDeletedAll": "All saved facts deleted.",
+  "settingsMemoryExport": "Export my chats",
+  "settingsMemoryExportSubtitle": "Download or share all conversations and memory facts as JSON.",
+  "settingsMemoryExportDone": "Chat export ready.",
+  "settingsMemoryExportFailed": "Could not export chats: {detail}",
+  "@settingsMemoryExportFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMemoryLoadFailed": "Could not load assistant memory."
 }

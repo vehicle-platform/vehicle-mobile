@@ -239,5 +239,26 @@
   "settingsLoginNeedCredentials": "Kullanıcı adı ve parola gerekli.",
   "settingsLoginNeedVehicle": "Araç kimliği ve talep kodu gerekli.",
   "settingsLoginNeedToken": "Cihaz token'ını gir.",
-  "settingsLoginSessionEnded": "Oturum sona erdi. Lütfen yeniden giriş yap."
+  "settingsLoginSessionEnded": "Oturum sona erdi. Lütfen yeniden giriş yap.",
+  "settingsMemoryTitle": "Asistan hafızası",
+  "settingsMemorySubtitle": "Kayıtlı bilgiler ve sohbet dışa aktarımı",
+  "settingsMemoryEmpty": "Henüz kayıtlı bilgi yok. Asistana motorun hakkında hatırlamasını istediğin bir şeyi yazabilirsin.",
+  "settingsMemoryEditTitle": "Bilgiyi düzenle",
+  "settingsMemoryValueLabel": "Değer",
+  "settingsMemoryDeleteAll": "Tüm bilgileri sil",
+  "settingsMemoryDeleteAllTitle": "Tüm kayıtlı bilgiler silinsin mi?",
+  "settingsMemoryDeleteAllBody": "Asistanın hafızasındaki tüm kayıtlı bilgiler sunucudan silinir.",
+  "settingsMemoryDeletedAll": "Tüm kayıtlı bilgiler silindi.",
+  "settingsMemoryExport": "Sohbetlerimi dışa aktar",
+  "settingsMemoryExportSubtitle": "Tüm sohbetleri ve hafıza bilgilerini JSON olarak indir veya paylaş.",
+  "settingsMemoryExportDone": "Sohbet dışa aktarımı hazır.",
+  "settingsMemoryExportFailed": "Sohbetler dışa aktarılamadı: {detail}",
+  "@settingsMemoryExportFailed": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsMemoryLoadFailed": "Asistan hafızası yüklenemedi."
 }

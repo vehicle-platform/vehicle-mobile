@@ -126,5 +126,26 @@
   "assistantClose": "Kapat",
   "assistantHoldToTalk": "Basılı tut ve konuş",
   "assistantReleaseToSend": "Bırak ve gönder",
-  "assistantPreparing": "Mikrofon hazırlanıyor ..."
+  "assistantPreparing": "Mikrofon hazırlanıyor ...",
+  "assistantChatsTitle": "Sohbetler",
+  "assistantNewChat": "Yeni sohbet",
+  "assistantSearchChats": "Sohbetlerde ara",
+  "assistantNoChats": "Henüz kayıtlı sohbet yok.",
+  "assistantNoSearchHits": "Eşleşen mesaj bulunamadı.",
+  "assistantRenameChat": "Sohbeti yeniden adlandır",
+  "assistantRenameHint": "Sohbet başlığı",
+  "assistantDeleteChat": "Sohbeti sil",
+  "assistantDeleteChatTitle": "Sohbet silinsin mi?",
+  "assistantDeleteChatBody": "\"{title}\" ve mesajları sunucudan silinir.",
+  "@assistantDeleteChatBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantTemporaryChat": "Geçici sohbet",
+  "assistantTemporaryOn": "Geçici sohbet açık — mesajlar kaydedilmez.",
+  "assistantTemporaryOff": "Sohbeti kaydet",
+  "assistantLoadChatFailed": "Sohbet yüklenemedi."
 }

@@ -89,11 +89,13 @@ void main() {
     expect(find.text('Coolant temperature high'), findsOneWidget);
     expect(find.text('112'), findsOneWidget);
     expect(tts.spoken, ['Warning. Coolant temperature high']);
-    // Full width, at the very top.
+    // Full width, at the very top, pushing the page AppBar down instead of covering it.
     final rect = tester.getRect(find.byType(AlertBanner));
     expect(rect.left, 0);
     expect(rect.width, 390);
     expect(rect.top, 0);
+    final appBarRect = tester.getRect(find.byType(AppBar).first);
+    expect(appBarRect.top, greaterThanOrEqualTo(rect.bottom));
 
     stream.add(utf8.encode(_sse('clear', _alert('clear'))));
     await tester.pump(const Duration(milliseconds: 50));

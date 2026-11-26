@@ -638,6 +638,90 @@ abstract class AppLocalizations {
   /// **'Preparing the microphone ...'**
   String get assistantPreparing;
 
+  /// No description provided for @assistantChatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get assistantChatsTitle;
+
+  /// No description provided for @assistantNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get assistantNewChat;
+
+  /// No description provided for @assistantSearchChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Search conversations'**
+  String get assistantSearchChats;
+
+  /// No description provided for @assistantNoChats.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved conversations yet.'**
+  String get assistantNoChats;
+
+  /// No description provided for @assistantNoSearchHits.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching messages found.'**
+  String get assistantNoSearchHits;
+
+  /// No description provided for @assistantRenameChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename conversation'**
+  String get assistantRenameChat;
+
+  /// No description provided for @assistantRenameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation title'**
+  String get assistantRenameHint;
+
+  /// No description provided for @assistantDeleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete conversation'**
+  String get assistantDeleteChat;
+
+  /// No description provided for @assistantDeleteChatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete conversation?'**
+  String get assistantDeleteChatTitle;
+
+  /// No description provided for @assistantDeleteChatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes \"{title}\" and its messages from the server.'**
+  String assistantDeleteChatBody(String title);
+
+  /// No description provided for @assistantTemporaryChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary chat'**
+  String get assistantTemporaryChat;
+
+  /// No description provided for @assistantTemporaryOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary chat is on — messages are not saved.'**
+  String get assistantTemporaryOn;
+
+  /// No description provided for @assistantTemporaryOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Save conversation'**
+  String get assistantTemporaryOff;
+
+  /// No description provided for @assistantLoadChatFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the conversation.'**
+  String get assistantLoadChatFailed;
+
   /// No description provided for @formatToday.
   ///
   /// In en, this message translates to:
@@ -3110,6 +3194,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Session ended. Please sign in again.'**
   String get settingsLoginSessionEnded;
+
+  /// No description provided for @settingsMemoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant memory'**
+  String get settingsMemoryTitle;
+
+  /// No description provided for @settingsMemorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved facts and chat export'**
+  String get settingsMemorySubtitle;
+
+  /// No description provided for @settingsMemoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved facts yet. Ask the assistant to remember something about your bike.'**
+  String get settingsMemoryEmpty;
+
+  /// No description provided for @settingsMemoryEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit fact'**
+  String get settingsMemoryEditTitle;
+
+  /// No description provided for @settingsMemoryValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get settingsMemoryValueLabel;
+
+  /// No description provided for @settingsMemoryDeleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all facts'**
+  String get settingsMemoryDeleteAll;
+
+  /// No description provided for @settingsMemoryDeleteAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all saved facts?'**
+  String get settingsMemoryDeleteAllTitle;
+
+  /// No description provided for @settingsMemoryDeleteAllBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes every saved fact from the assistant\'s memory on the server.'**
+  String get settingsMemoryDeleteAllBody;
+
+  /// No description provided for @settingsMemoryDeletedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All saved facts deleted.'**
+  String get settingsMemoryDeletedAll;
+
+  /// No description provided for @settingsMemoryExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export my chats'**
+  String get settingsMemoryExport;
+
+  /// No description provided for @settingsMemoryExportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Download or share all conversations and memory facts as JSON.'**
+  String get settingsMemoryExportSubtitle;
+
+  /// No description provided for @settingsMemoryExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat export ready.'**
+  String get settingsMemoryExportDone;
+
+  /// No description provided for @settingsMemoryExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export chats: {detail}'**
+  String settingsMemoryExportFailed(String detail);
+
+  /// No description provided for @settingsMemoryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load assistant memory.'**
+  String get settingsMemoryLoadFailed;
 }
 
 class _AppLocalizationsDelegate

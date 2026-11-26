@@ -8,11 +8,14 @@ import 'package:vehicle_mobile/services/assistant_provider_client.dart';
 import 'package:vehicle_mobile/services/auth_client.dart';
 import 'package:vehicle_mobile/services/auth_events.dart';
 import 'package:vehicle_mobile/services/auth_store.dart';
+import 'package:vehicle_mobile/services/chat_export.dart';
+import 'package:vehicle_mobile/services/conversations_client.dart';
 import 'package:vehicle_mobile/services/host_resolver.dart';
 import 'package:vehicle_mobile/services/token_guard.dart';
 import 'package:vehicle_mobile/services/voice/voice_settings.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/settings/alert_types_section.dart';
+import 'package:vehicle_mobile/ui/settings/assistant_memory_screen.dart';
 import 'package:vehicle_mobile/ui/settings/assistant_model_screen.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -30,7 +33,9 @@ class SettingsScreen extends StatefulWidget {
       this.store = const AppSettingsStore(),
       this.onSaved,
       this.authClient,
-      this.assistantClient});
+      this.assistantClient,
+      this.conversationsClient,
+      this.chatExporter});
 
   final AppSettingsStore store;
 
@@ -39,6 +44,12 @@ class SettingsScreen extends StatefulWidget {
 
   /// Assistant model routes (D-124); a default client when null.
   final AssistantProviderClient? assistantClient;
+
+  /// Conversations and memory routes (D-128); a default client when null.
+  final ConversationsClient? conversationsClient;
+
+  /// File export hook for "Export my chats"; injectable for tests.
+  final ChatExporter? chatExporter;
 
   /// Called after hosts or the upload policy changed (the shell uses it to
   /// refresh screens that depend on them, e.g. the upload action in Record).
@@ -306,11 +317,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onChanged: _setReadAnswers,
                       ),
                     ),
-                    if (_account != null)
+                    if (_account != null) ...[
                       AssistantModelSection(
                           key: ValueKey('assistant-model-$_activeId'),
                           store: widget.store,
                           client: widget.assistantClient),
+                      AssistantMemorySection(
+                          key: ValueKey('assistant-memory-$_activeId'),
+                          store: widget.store,
+                          client: widget.conversationsClient,
+                          exporter: widget.chatExporter),
+                    ],
                   ],
                 ),
               ),
