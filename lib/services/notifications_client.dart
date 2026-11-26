@@ -14,6 +14,11 @@ const Duration notificationsTotalTimeout = Duration(seconds: 20);
 /// Largest `limit` the server accepts.
 const int notificationsMaxLimit = 100;
 
+/// The `locale` query value for a UI language code: the server stores texts
+/// for `en` and `tr` only, anything else asks for `en` (default, D-125).
+String notificationsLocaleParam(String code) =>
+    code.toLowerCase() == 'tr' ? 'tr' : 'en';
+
 enum NotificationsOutcome {
   ok,
 
@@ -66,12 +71,17 @@ class NotificationsClient {
     required String token,
     int sinceId = 0,
     int limit = notificationsMaxLimit,
+    String? locale,
   }) async {
     final clamped = limit.clamp(1, notificationsMaxLimit);
+    // [locale] is the UI language code; a server without the parameter
+    // ignores it. Omitted for callers without a UI (none today).
+    final localeQuery =
+        locale == null ? '' : '&locale=${notificationsLocaleParam(locale)}';
     final result = await _send(
       'GET',
       baseUrl,
-      '/notifications?since_id=$sinceId&limit=$clamped',
+      '/notifications?since_id=$sinceId&limit=$clamped$localeQuery',
       token,
       okStatus: 200,
     );

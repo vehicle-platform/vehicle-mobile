@@ -106,6 +106,78 @@ void main() {
     await stream.close();
   });
 
+  testWidgets(
+      'the banner toggle keeps the page state and handles a status-bar inset',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 40);
+    tester.view.viewPadding = const FakeViewPadding(top: 40);
+    addTearDown(tester.view.reset);
+
+    final stream = StreamController<List<int>>();
+    final store = signedInStore();
+    final voice = VoiceController(
+      recognizer: FakeRecognizer(),
+      output: FakeOutput()..instant = true,
+      intercom: IntercomAudio(supported: false),
+    );
+    final alerts = AlertController(
+      settingsStore: store,
+      opener: (url, headers) async => stream.stream,
+      onSpeak: (a) async {},
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: buildAppTheme(),
+      locale: const Locale('en'),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: AppShell(
+        settingsStore: store,
+        voice: voice,
+        alerts: alerts,
+        localNotifier: const NoopLocalNotifier(),
+        backgroundPull: false,
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.enterText(find.byType(TextField).last, 'half-typed question');
+    EditableText field() =>
+        tester.widget<EditableText>(find.byType(EditableText).last);
+    final appBar = find.byType(AppBar).first;
+    final plainHeight = tester.getSize(appBar).height;
+    expect(plainHeight, greaterThanOrEqualTo(40 + 64),
+        reason: 'without a banner the app bar carries the inset itself');
+
+    stream.add(utf8.encode(_sse('alert', _alert('alert'))));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(AlertBanner), findsOneWidget);
+    expect(field().controller.text, 'half-typed question');
+    // The banner starts below the status bar inset and the page does not add
+    // the inset a second time.
+    final banner = tester.getRect(find.byType(AlertBanner));
+    expect(banner.top, greaterThanOrEqualTo(40));
+    expect(tester.getRect(appBar).top, greaterThanOrEqualTo(banner.bottom - 1));
+    expect(tester.getSize(appBar).height, plainHeight - 40);
+
+    stream.add(utf8.encode(_sse('clear', _alert('clear'))));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(AlertBanner), findsNothing);
+    expect(field().controller.text, 'half-typed question');
+    expect(tester.getSize(appBar).height, plainHeight);
+
+    await tester.pumpWidget(const SizedBox());
+    await stream.close();
+  });
+
   testWidgets('settings: a P1 type mutes only its voice, a P2 type can be hidden',
       (tester) async {
     SharedPreferences.setMockInitialValues({

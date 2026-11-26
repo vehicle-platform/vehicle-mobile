@@ -54,7 +54,10 @@ class NotificationSync {
   final int pageLimit;
   final int maxPages;
 
-  Future<SyncResult> pull({bool full = false}) async {
+  /// [locale] gives the UI language code, read after the settings loaded (the
+  /// shell learns its locale only after its first frame); the inbox texts are
+  /// requested in that language.
+  Future<SyncResult> pull({bool full = false, String? Function()? locale}) async {
     final AppSettings settings;
     try {
       settings = await settingsStore.load();
@@ -66,6 +69,7 @@ class NotificationSync {
     if (hostId == null || !settings.isServerConfigured || token.isEmpty) {
       return const SyncResult(SyncState.noSession);
     }
+    final localeCode = locale?.call();
     final lastSeen = await store.lastSeenId(hostId);
     var since = full ? 0 : lastSeen;
     final byId = <int, AppNotification>{};
@@ -74,7 +78,8 @@ class NotificationSync {
           baseUrl: settings.serverBaseUrl!,
           token: token,
           sinceId: since,
-          limit: pageLimit);
+          limit: pageLimit,
+          locale: localeCode);
       switch (result.outcome) {
         case NotificationsOutcome.ok:
           break;

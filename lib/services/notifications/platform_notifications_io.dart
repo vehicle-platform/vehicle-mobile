@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
@@ -82,7 +83,8 @@ void notificationCallbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       final notifier = AndroidLocalNotifier();
-      final result = await NotificationSync().pull();
+      final result = await NotificationSync().pull(
+          locale: () => PlatformDispatcher.instance.locale.languageCode);
       for (final n in result.fresh) {
         if (!n.read) await notifier.show(n);
       }

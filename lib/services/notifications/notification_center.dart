@@ -19,11 +19,15 @@ class NotificationCenter extends ChangeNotifier {
     NotificationSync? sync,
     this.announcer,
     this.pollInterval = notificationPollInterval,
+    this.locale,
   }) : sync = sync ?? NotificationSync();
 
   final NotificationSync sync;
   final CriticalAnnouncer? announcer;
   final Duration pollInterval;
+
+  /// UI language code for the texts the server stores per locale.
+  final String? Function()? locale;
 
   final Map<int, AppNotification> _items = {};
   Timer? _timer;
@@ -73,7 +77,7 @@ class NotificationCenter extends ChangeNotifier {
     if (_pulling || _disposed) return;
     _pulling = true;
     try {
-      final result = await sync.pull(full: full || !_loadedOnce);
+      final result = await sync.pull(full: full || !_loadedOnce, locale: locale);
       if (_disposed) return;
       switch (result.state) {
         case SyncState.ok:
