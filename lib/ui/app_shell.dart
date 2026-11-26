@@ -142,6 +142,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         AlertController(
           settingsStore: widget.settingsStore,
           onReconnect: _center.refresh,
+          locale: () => _localeCode,
           onSpeak: (a) => _alertAnnouncer.announce(LiveAlertEvent(
               key: '${a.id ?? a.ts?.toIso8601String() ?? ''}|${a.ruleId}',
               text: a.text)),

@@ -49,8 +49,25 @@ void main() {
     expect(jsonDecode(captured.body), {
       'message': 'How was my last ride?',
       'session_id': 'abc',
-      'locale': 'tr'
+      'locale': 'en'
     });
+  });
+
+  test('sends the UI locale; unsupported codes fall back to en', () async {
+    final bodies = <Map<String, dynamic>>[];
+    final client = _client((request) {
+      bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+      return _json(200, _answer());
+    });
+    for (final code in ['tr', 'TR', 'de']) {
+      await client.send(
+        baseUrl: 'https://vehicle.example.com',
+        apiToken: 't',
+        message: 'hi',
+        locale: code,
+      );
+    }
+    expect([for (final b in bodies) b['locale']], ['tr', 'tr', 'en']);
   });
 
   test('a missing session id is sent as null', () async {
