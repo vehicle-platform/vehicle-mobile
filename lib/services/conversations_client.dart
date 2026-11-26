@@ -1,13 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import 'package:vehicle_mobile/models/conversation.dart';
-import 'package:vehicle_mobile/services/auth_events.dart';
-import 'package:vehicle_mobile/services/http_client_factory.dart';
-import 'package:vehicle_mobile/services/http_message.dart';
-import 'package:vehicle_mobile/services/token_guard.dart';
+import 'package:vehicle_mobile/services/authed_json_client.dart';
 
 const Duration conversationsConnectTimeout = Duration(seconds: 10);
 const Duration conversationsTotalTimeout = Duration(seconds: 20);
@@ -17,7 +13,6 @@ enum ConvOutcome {
   unauthorized,
   forbidden,
   notFound,
-  notSupported,
   invalid,
   conflict,
   unreachable,
@@ -33,6 +28,10 @@ class ConvResult<T> {
   final String? message;
 
   bool get isSuccess => outcome == ConvOutcome.ok;
+
+  /// A transient failure worth retrying (no answer, or a server error).
+  bool get isTransient =>
+      outcome == ConvOutcome.unreachable || outcome == ConvOutcome.failed;
 }
 
 class ConversationPage {
@@ -48,12 +47,12 @@ class ConversationsClient {
   ConversationsClient({
     http.Client? httpClient,
     Duration totalTimeout = conversationsTotalTimeout,
-  })  : _http = httpClient ??
-            createHttpClient(connectTimeout: conversationsConnectTimeout),
-        _timeout = totalTimeout;
+  }) : _api = AuthedJsonClient(
+            httpClient: httpClient,
+            connectTimeout: conversationsConnectTimeout,
+            totalTimeout: totalTimeout);
 
-  final http.Client _http;
-  final Duration _timeout;
+  final AuthedJsonClient _api;
 
   Future<ConvResult<ConversationPage>> list({
     required String baseUrl,
@@ -116,8 +115,13 @@ class ConversationsClient {
     required String token,
     required String id,
   }) =>
-      _callNoContent(
-          baseUrl, token, 'DELETE', '/conversations/${Uri.encodeComponent(id)}');
+      _call<void>(
+        baseUrl,
+        token,
+        'DELETE',
+        '/conversations/${Uri.encodeComponent(id)}',
+        okStatuses: const {200, 204},
+      );
 
   Future<ConvResult<int>> deleteAll({
     required String baseUrl,
@@ -194,11 +198,12 @@ class ConversationsClient {
     required String token,
     required String key,
   }) =>
-      _callNoContent(
+      _call<void>(
         baseUrl,
         token,
         'DELETE',
         '/assistant/memory/${Uri.encodeComponent(key)}',
+        okStatuses: const {200, 204},
       );
 
   Future<ConvResult<int>> deleteAllMemory({
@@ -214,33 +219,6 @@ class ConversationsClient {
             json is Map && json['deleted'] is num ? (json['deleted'] as num).toInt() : 0,
       );
 
-  Uri _uri(String baseUrl, String path, [Map<String, String>? query]) {
-    final trimmed = baseUrl.trim();
-    final root = trimmed.endsWith('/')
-        ? trimmed.substring(0, trimmed.length - 1)
-        : trimmed;
-    final parsed = Uri.parse('$root$path');
-    return query == null || query.isEmpty
-        ? parsed
-        : parsed.replace(queryParameters: query);
-  }
-
-  Future<http.Response> _send(
-    String method,
-    Uri uri,
-    String token,
-    Map<String, Object?>? body,
-  ) {
-    final headers = <String, String>{
-      'Authorization': 'Bearer $token',
-      'Accept': 'application/json',
-      if (body != null) 'Content-Type': 'application/json',
-    };
-    final req = http.Request(method, uri)..headers.addAll(headers);
-    if (body != null) req.body = jsonEncode(body);
-    return _http.send(req).then(http.Response.fromStream).timeout(_timeout);
-  }
-
   Future<ConvResult<T>> _call<T>(
     String baseUrl,
     String token,
@@ -248,86 +226,39 @@ class ConversationsClient {
     String path, {
     Map<String, String>? query,
     Map<String, Object?>? body,
-    required T? Function(Object? json) parse,
+    T? Function(Object? json)? parse,
+    Set<int> okStatuses = const {200},
   }) async {
-    final refusal = tokenSendRefusal(baseUrl);
-    if (refusal != null) return ConvResult(ConvOutcome.failed, message: refusal);
-    try {
-      final response =
-          await _send(method, _uri(baseUrl, path, query), token, body);
-      if (response.statusCode == 200) {
-        try {
-          final parsed = parse(jsonDecode(utf8.decode(response.bodyBytes)));
-          if (parsed == null) {
-            return const ConvResult(ConvOutcome.failed,
-                statusCode: 200, message: 'malformed response');
-          }
-          return ConvResult(ConvOutcome.ok, value: parsed, statusCode: 200);
-        } on FormatException catch (e) {
-          return ConvResult(ConvOutcome.failed,
-              statusCode: 200, message: e.message);
-        }
-      }
-      return _errorResult<T>(response);
-    } on TimeoutException {
-      return const ConvResult(ConvOutcome.unreachable, message: 'timed out');
-    } catch (error) {
-      if (isNetworkError(error)) {
-        return ConvResult(ConvOutcome.unreachable, message: '$error');
-      }
-      return ConvResult(ConvOutcome.failed, message: '$error');
-    }
+    final r = await _api.call<T>(method, baseUrl, token, path,
+        query: query, body: body, parse: parse, okStatuses: okStatuses);
+    return mapAuthedResult(r);
   }
 
-  Future<ConvResult<void>> _callNoContent(
-    String baseUrl,
-    String token,
-    String method,
-    String path,
-  ) async {
-    final refusal = tokenSendRefusal(baseUrl);
-    if (refusal != null) return ConvResult(ConvOutcome.failed, message: refusal);
-    try {
-      final response = await _send(method, _uri(baseUrl, path), token, null);
-      if (response.statusCode == 204 || response.statusCode == 200) {
-        return ConvResult(ConvOutcome.ok, statusCode: response.statusCode);
-      }
-      return _errorResult<void>(response);
-    } on TimeoutException {
-      return const ConvResult(ConvOutcome.unreachable, message: 'timed out');
-    } catch (error) {
-      if (isNetworkError(error)) {
-        return ConvResult(ConvOutcome.unreachable, message: '$error');
-      }
-      return ConvResult(ConvOutcome.failed, message: '$error');
+  /// Status mapping of the conversations routes: 401 session ended, 403 the
+  /// token kind is not allowed (operator/device), 404 an older server without
+  /// the routes (or an unknown id), 409, 422.
+  static ConvResult<T> mapAuthedResult<T>(AuthedResult<T> r) {
+    if (r.ok) {
+      return ConvResult(ConvOutcome.ok,
+          value: r.value, statusCode: r.statusCode);
     }
-  }
-
-  ConvResult<T> _errorResult<T>(http.Response response) {
-    final detail = extractHttpMessage(response);
-    switch (response.statusCode) {
-      case 401:
-        AuthEvents.reportUnauthorized();
-        return ConvResult(ConvOutcome.unauthorized,
-            statusCode: 401, message: detail);
-      case 403:
-        return ConvResult(ConvOutcome.forbidden,
-            statusCode: 403, message: detail);
-      case 404:
-        return ConvResult(ConvOutcome.notFound,
-            statusCode: 404, message: detail);
-      case 409:
-        return ConvResult(ConvOutcome.conflict,
-            statusCode: 409, message: detail);
-      case 422:
-        return ConvResult(ConvOutcome.invalid,
-            statusCode: 422, message: detail);
-      default:
-        return ConvResult(
-          ConvOutcome.failed,
-          statusCode: response.statusCode,
-          message: detail ?? 'HTTP ${response.statusCode}',
-        );
+    final status = r.statusCode;
+    if (status == null) {
+      return ConvResult(
+          r.unreachable ? ConvOutcome.unreachable : ConvOutcome.failed,
+          message: r.message);
     }
+    final outcome = switch (status) {
+      401 => ConvOutcome.unauthorized,
+      403 => ConvOutcome.forbidden,
+      404 => ConvOutcome.notFound,
+      409 => ConvOutcome.conflict,
+      422 => ConvOutcome.invalid,
+      _ => ConvOutcome.failed,
+    };
+    return ConvResult(outcome,
+        statusCode: status,
+        message: r.message ??
+            (outcome == ConvOutcome.failed ? 'HTTP $status' : null));
   }
 }
