@@ -12,6 +12,7 @@ class FakeRecognizer implements SpeechRecognizerPort {
   bool initializeHangs = false;
   int initializeCalls = 0;
   int listenCalls = 0;
+  final List<String> listenLocales = [];
   int stopCalls = 0;
   int cancelCalls = 0;
   bool listening = false;
@@ -35,8 +36,10 @@ class FakeRecognizer implements SpeechRecognizerPort {
 
   @override
   Future<void> listen(
-      {required void Function(String text, bool isFinal) onResult}) async {
+      {required void Function(String text, bool isFinal) onResult,
+      required String localeTag}) async {
     listenCalls++;
+    listenLocales.add(localeTag);
     if (listenError != null) throw listenError!;
     listening = true;
     _onResult = onResult;
@@ -65,6 +68,7 @@ class FakeRecognizer implements SpeechRecognizerPort {
 class FakeOutput implements SpeechOutputPort {
   final List<String> spoken = [];
   final List<bool> viaIntercom = [];
+  final List<String> localeTags = [];
   int stopCalls = 0;
 
   /// When true, [speak] returns at once; otherwise it waits for [finish] or [stop].
@@ -72,8 +76,10 @@ class FakeOutput implements SpeechOutputPort {
   Completer<void>? _current;
 
   @override
-  Future<void> speak(String text, {bool viaIntercom = false}) async {
+  Future<void> speak(String text,
+      {bool viaIntercom = false, required String localeTag}) async {
     spoken.add(text);
+    localeTags.add(localeTag);
     this.viaIntercom.add(viaIntercom);
     if (instant) return;
     final completer = _current = Completer<void>();

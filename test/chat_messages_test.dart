@@ -182,7 +182,7 @@ void main() {
       expect(find.text('DISTANCE'), findsOneWidget);
       expect(find.text('12.4'), findsOneWidget);
       expect(find.text('km'), findsOneWidget);
-      expect(find.text('98'), findsOneWidget);
+      expect(find.text('98.0'), findsOneWidget);
       // Raw rows only when expanded.
       expect(find.text('result.distance_km'), findsNothing);
 

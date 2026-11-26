@@ -31,29 +31,6 @@ String formatRideValue(double? value, double min, double max) {
 
 String formatRideRangeValue(double? value, RideRange range) => formatRideValue(value, range.min, range.max);
 
-/// Whole seconds in a compact form: `0 s`, `42 s`, `3 min 05 s`, `1 h 02 min`.
-String formatDurationS(num? seconds) {
-  if (seconds == null || !seconds.isFinite || seconds < 0) return '–';
-  final total = seconds.round();
-  if (total < 60) return '$total s';
-  final minutes = total ~/ 60;
-  final rest = total % 60;
-  if (total < 3600) return '$minutes min ${rest.toString().padLeft(2, '0')} s';
-  final hours = total ~/ 3600;
-  final hourMinutes = (total % 3600) ~/ 60;
-  return '$hours h ${hourMinutes.toString().padLeft(2, '0')} min';
-}
-
-String formatUtc(DateTime value) {
-  final utc = value.toUtc();
-  final year = utc.year.toString().padLeft(4, '0');
-  final month = utc.month.toString().padLeft(2, '0');
-  final day = utc.day.toString().padLeft(2, '0');
-  final hour = utc.hour.toString().padLeft(2, '0');
-  final minute = utc.minute.toString().padLeft(2, '0');
-  return '$year-$month-$day $hour:$minute UTC';
-}
-
 /// Heights scaled to the largest positive value; nulls and non-positive
 /// values stay empty.
 List<double> barHeights(List<double?> values, double height) {

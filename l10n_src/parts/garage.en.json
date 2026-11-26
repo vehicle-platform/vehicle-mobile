@@ -9,8 +9,6 @@
   "garageSeverityCritical": "Critical",
   "garageSeverityWarning": "Warning",
   "garageSeverityInfo": "Info",
-  "garageDayToday": "Today",
-  "garageDayYesterday": "Yesterday",
   "garageDayNoDate": "No date",
   "garageEmptyTitle": "No notifications yet",
   "garageEmptyHint": "Ride summaries and alerts appear here.",

@@ -3,12 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/health_windows.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
-import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 
 /// The ride-summary health-window section; it renders only what the report block holds.
 class HealthWindowsSection extends StatelessWidget {
@@ -125,7 +125,7 @@ class HealthWindowsSection extends StatelessWidget {
               children: [
                 Text('0 s', style: theme.textTheme.bodySmall),
                 Text(
-                  formatDurationS(lastEndMs / 1000),
+                  RiderFormat.of(context).duration(lastEndMs / 1000),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
@@ -137,7 +137,7 @@ class HealthWindowsSection extends StatelessWidget {
             const SizedBox(height: Spacing.sm),
             Text(context.l10n.logbookSignals,
                 style: theme.textTheme.labelMedium),
-            for (final signal in signals) _signalRow(theme, signal),
+            for (final signal in signals) _signalRow(context, theme, signal),
           ],
         ],
       ),
@@ -179,9 +179,9 @@ class HealthWindowsSection extends StatelessWidget {
                     Border(top: BorderSide(color: context.vehicle.hairline)),
               ),
               children: [
-                cell(formatDurationS(instance.startMs / 1000)),
-                cell(formatDurationS(instance.endMs / 1000)),
-                cell(formatDurationS(instance.durationMs / 1000)),
+                cell(RiderFormat.of(context).duration(instance.startMs / 1000)),
+                cell(RiderFormat.of(context).duration(instance.endMs / 1000)),
+                cell(RiderFormat.of(context).duration(instance.durationMs / 1000)),
                 cell(instance.closeReason),
                 cell(instance.qualifies
                     ? context.l10n.logbookYes
@@ -196,10 +196,10 @@ class HealthWindowsSection extends StatelessWidget {
     );
   }
 
-  Widget _signalRow(ThemeData theme, RideSummarySignal signal) {
+  Widget _signalRow(BuildContext context, ThemeData theme, RideSummarySignal signal) {
     final detail = switch (signal) {
       ScalarSummary() =>
-        '${formatRideRangeValue(signal.value, signal.range)} ${signal.unit}',
+        RiderFormat.of(context).withUnit(signal.value, signal.unit),
       _ => signal.status,
     };
     return Padding(

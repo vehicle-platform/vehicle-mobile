@@ -51,24 +51,6 @@ void main() {
     });
   });
 
-  group('durations', () {
-    test('formats seconds, minutes and hours without a locale', () {
-      expect(formatDurationS(0), '0 s');
-      expect(formatDurationS(42), '42 s');
-      expect(formatDurationS(185), '3 min 05 s');
-      expect(formatDurationS(3720), '1 h 02 min');
-      expect(formatDurationS(null), '–');
-      expect(formatDurationS(-1), '–');
-    });
-  });
-
-  group('UTC timestamps', () {
-    test('always prints UTC with minutes', () {
-      expect(formatUtc(DateTime.utc(2026, 1, 15, 12, 5)), '2026-01-15 12:05 UTC');
-      expect(formatUtc(DateTime.parse('2026-01-15T15:05:00+03:00')), '2026-01-15 12:05 UTC');
-    });
-  });
-
   group('chart helpers', () {
     test('scales bars to the largest value and keeps nulls empty', () {
       expect(barHeights([2, null, 4], 40), [20, 0, 40]);

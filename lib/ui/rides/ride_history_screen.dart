@@ -1,8 +1,8 @@
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
@@ -12,7 +12,6 @@ import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/theme/layout.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
 import 'package:vehicle_mobile/ui/widgets/readout.dart';
-import 'package:vehicle_mobile/ui/rides/ride_format.dart';
 import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
@@ -173,7 +172,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   String _rangeLabel() {
     final l = context.l10n;
     if (_from == null || _to == null) return l.logbookAllRides;
-    return l.logbookRangeUtc(formatQueryDate(_from!), formatQueryDate(_to!));
+    final fmt = RiderFormat(l);
+    return l.logbookRange(fmt.day(_from!), fmt.day(_to!));
   }
 
   @override
@@ -468,7 +468,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
               Text(
                 row.createdUtc == null
                     ? context.l10n.logbookUnknownTime
-                    : formatUtc(row.createdUtc!),
+                    : RiderFormat.of(context).dateTime(row.createdUtc!),
                 style: numberFace(20, FontWeight.w600, color: t.textPrimary),
               ),
               if (readouts.isNotEmpty) ...[
@@ -487,22 +487,20 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   }
 
   Widget? _valueReadout(RidesTable table, RideRow row, String name) {
+    final fmt = RiderFormat.of(context);
     final index = table.columns.indexWhere((column) => column.name == name);
     if (index < 0) return null;
     final column = table.columns[index];
     final value = row.values[name];
     final flag = row.flags[name];
-    final range = _observedRange(table, name);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Readout(
           label: quantityText(context.l10n, column.name),
-          value: column.unit == 's' || column.unit == 'count'
-              ? formatQuantity(value, column.unit)
-              : formatRideValue(value, range.min, range.max),
-          unit: quantityUnit(column.unit),
+          value: fmt.value(value, column.unit),
+          unit: fmt.unit(column.unit),
           size: ReadoutSize.small,
         ),
         if (flag != null)
@@ -515,19 +513,6 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           ),
       ],
     );
-  }
-
-  RideRange _observedRange(RidesTable table, String name) {
-    var min = double.infinity;
-    var max = double.negativeInfinity;
-    for (final row in table.rows) {
-      final value = row.values[name];
-      if (value == null || !value.isFinite) continue;
-      min = math.min(min, value);
-      max = math.max(max, value);
-    }
-    if (min == double.infinity) return const RideRange(0, 0);
-    return RideRange(min, max);
   }
 
   List<RideRow> _newestFirst(List<RideRow> rows) {

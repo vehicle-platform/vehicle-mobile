@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
+import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/app_notification.dart';
 import 'package:vehicle_mobile/ui/notifications/notification_scope.dart';
 import 'package:vehicle_mobile/ui/rides/ride_summary_screen.dart';
@@ -39,22 +40,14 @@ String notificationSeverityLabel(AppLocalizations l, NotificationSeverity s) =>
       NotificationSeverity.info => l.garageSeverityInfo,
     };
 
-String _two(int v) => v.toString().padLeft(2, '0');
+String notificationTime(AppLocalizations l, DateTime? time) =>
+    time == null ? '' : RiderFormat(l).time(time);
 
-String notificationTime(DateTime? time) =>
-    time == null ? '' : '${_two(time.hour)}:${_two(time.minute)}';
-
-/// "Today", "Yesterday" or dd.MM.yyyy.
+/// "Today", "Yesterday" or "Wed 26 Nov" (local day).
 String notificationDayLabel(AppLocalizations l, DateTime? day,
     {DateTime? now}) {
   if (day == null) return l.garageDayNoDate;
-  final today = now ?? DateTime.now();
-  final d = DateTime(day.year, day.month, day.day);
-  final t = DateTime(today.year, today.month, today.day);
-  final diff = t.difference(d).inDays;
-  if (diff == 0) return l.garageDayToday;
-  if (diff == 1) return l.garageDayYesterday;
-  return '${_two(day.day)}.${_two(day.month)}.${day.year}';
+  return RiderFormat(l, now: now == null ? null : () => now).day(day);
 }
 
 /// The newest unread critical (P1) or warning (P2) notification, which the
@@ -253,7 +246,7 @@ class _NotificationRow extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(notificationTime(n.created),
+                          Text(notificationTime(l, n.created),
                               style: numberFace(15, FontWeight.w500,
                                   color: t.textSecondary)),
                           if (!n.read) ...[
@@ -326,7 +319,7 @@ class NotificationDetailScreen extends StatelessWidget {
                     style: theme.textTheme.labelSmall!.copyWith(color: accent)),
                 const Spacer(),
                 Text(
-                    '${notificationDayLabel(l, n.created)} ${notificationTime(n.created)}'
+                    '${notificationDayLabel(l, n.created)} ${notificationTime(l, n.created)}'
                         .trim(),
                     style: numberFace(15, FontWeight.w500,
                         color: t.textSecondary)),

@@ -13,6 +13,7 @@ import 'package:vehicle_mobile/services/notifications/platform_notifications.dar
 import 'package:vehicle_mobile/services/voice/critical_announcer.dart';
 import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
+import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/assistant_screen.dart';
 import 'package:vehicle_mobile/ui/garage/garage_screen.dart';
@@ -163,6 +164,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     Navigator.of(context).popUntil((route) => route.isFirst);
     _prefill.value = AssistantPrefill(++_prefillSeq, question, sessionId);
     _select(ShellTab.assistant);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Speech recognition and the voice follow the app language.
+    _voice.localeTag =
+        voiceTagFor(Localizations.maybeLocaleOf(context)?.languageCode ?? 'en');
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _center.resumed();
   }
 
   @override

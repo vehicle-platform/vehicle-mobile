@@ -12,8 +12,8 @@
   "logbookNoServer": "No vehicle-server configured. Set the server URL and API token in Settings.",
   "logbookCleartextWarning": "Warning: http:// sends the API token and ride data unencrypted. Use it only on a trusted local network; use https:// for any server reachable from outside.",
   "logbookAllRides": "All rides",
-  "logbookRangeUtc": "{from} – {to} (UTC days)",
-  "@logbookRangeUtc": {
+  "logbookRange": "{from} – {to}",
+  "@logbookRange": {
     "placeholders": {
       "from": {
         "type": "String"

@@ -295,6 +295,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assistantPreparing => 'Mikrofon hazırlanıyor ...';
 
   @override
+  String get formatToday => 'Bugün';
+
+  @override
+  String get formatYesterday => 'Dün';
+
+  @override
   String get garageNotificationsTitle => 'Bildirimler';
 
   @override
@@ -316,12 +322,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get garageSeverityInfo => 'Bilgi';
-
-  @override
-  String get garageDayToday => 'Bugün';
-
-  @override
-  String get garageDayYesterday => 'Dün';
 
   @override
   String get garageDayNoDate => 'Tarih yok';
@@ -415,8 +415,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get logbookAllRides => 'Tüm sürüşler';
 
   @override
-  String logbookRangeUtc(String from, String to) {
-    return '$from – $to (UTC günleri)';
+  String logbookRange(String from, String to) {
+    return '$from – $to';
   }
 
   @override

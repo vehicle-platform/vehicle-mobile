@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:vehicle_mobile/services/voice/intercom_audio.dart';
 import 'package:vehicle_mobile/services/voice/voice_controller.dart';
+import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 import 'package:vehicle_mobile/services/voice/voice_settings.dart';
 
 import 'support/fake_voice.dart';
@@ -30,6 +31,34 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues(
       {VoiceSettings.keyReadAnswers: true}));
+
+  test('speech language follows the app language (en-US default, tr-TR)',
+      () async {
+    expect(voiceTagFor('en'), 'en-US');
+    expect(voiceTagFor('tr'), 'tr-TR');
+    expect(voiceTagFor('de'), 'en-US');
+
+    final stt = FakeRecognizer();
+    final tts = FakeOutput()..instant = true;
+    final c = _controller(stt, tts);
+    expect(c.localeTag, 'en-US');
+    await c.toggleMic();
+    stt.finalResult('last ride');
+    await Future<void>.delayed(Duration.zero);
+    await c.speak('Answer');
+    expect(stt.listenLocales, ['en-US']);
+    expect(tts.localeTags, ['en-US']);
+
+    // The shell switches the tag when the language changes; the next listen
+    // and the next voice use it.
+    c.localeTag = voiceTagFor('tr');
+    await c.toggleMic();
+    stt.finalResult('son sürüş');
+    await Future<void>.delayed(Duration.zero);
+    await c.speak('Cevap');
+    expect(stt.listenLocales, ['en-US', 'tr-TR']);
+    expect(tts.localeTags, ['en-US', 'tr-TR']);
+  });
 
   test('mic flow: idle -> listening -> partials -> final sends the transcript',
       () async {
