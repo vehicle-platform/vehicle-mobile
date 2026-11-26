@@ -722,6 +722,36 @@ abstract class AppLocalizations {
   /// **'Could not load the conversation.'**
   String get assistantLoadChatFailed;
 
+  /// No description provided for @assistantRenameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not rename the conversation.'**
+  String get assistantRenameFailed;
+
+  /// No description provided for @assistantDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete the conversation.'**
+  String get assistantDeleteFailed;
+
+  /// No description provided for @assistantSearchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Search failed. Try again.'**
+  String get assistantSearchFailed;
+
+  /// No description provided for @assistantChatsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your conversations.'**
+  String get assistantChatsLoadFailed;
+
+  /// No description provided for @assistantChatsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get assistantChatsRetry;
+
   /// No description provided for @formatToday.
   ///
   /// In en, this message translates to:

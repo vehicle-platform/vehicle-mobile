@@ -147,5 +147,10 @@
   "assistantTemporaryChat": "Geçici sohbet",
   "assistantTemporaryOn": "Geçici sohbet açık — mesajlar kaydedilmez.",
   "assistantTemporaryOff": "Sohbeti kaydet",
-  "assistantLoadChatFailed": "Sohbet yüklenemedi."
+  "assistantLoadChatFailed": "Sohbet yüklenemedi.",
+  "assistantRenameFailed": "Sohbet yeniden adlandırılamadı.",
+  "assistantDeleteFailed": "Sohbet silinemedi.",
+  "assistantSearchFailed": "Arama başarısız oldu. Tekrar dene.",
+  "assistantChatsLoadFailed": "Sohbetlerin yüklenemedi.",
+  "assistantChatsRetry": "Tekrar dene"
 }

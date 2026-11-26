@@ -367,6 +367,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assistantLoadChatFailed => 'Sohbet yüklenemedi.';
 
   @override
+  String get assistantRenameFailed => 'Sohbet yeniden adlandırılamadı.';
+
+  @override
+  String get assistantDeleteFailed => 'Sohbet silinemedi.';
+
+  @override
+  String get assistantSearchFailed => 'Arama başarısız oldu. Tekrar dene.';
+
+  @override
+  String get assistantChatsLoadFailed => 'Sohbetlerin yüklenemedi.';
+
+  @override
+  String get assistantChatsRetry => 'Tekrar dene';
+
+  @override
   String get formatToday => 'Bugün';
 
   @override

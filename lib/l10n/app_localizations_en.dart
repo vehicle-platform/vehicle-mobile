@@ -367,6 +367,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLoadChatFailed => 'Could not load the conversation.';
 
   @override
+  String get assistantRenameFailed => 'Could not rename the conversation.';
+
+  @override
+  String get assistantDeleteFailed => 'Could not delete the conversation.';
+
+  @override
+  String get assistantSearchFailed => 'Search failed. Try again.';
+
+  @override
+  String get assistantChatsLoadFailed => 'Could not load your conversations.';
+
+  @override
+  String get assistantChatsRetry => 'Try again';
+
+  @override
   String get formatToday => 'Today';
 
   @override

@@ -147,5 +147,10 @@
   "assistantTemporaryChat": "Temporary chat",
   "assistantTemporaryOn": "Temporary chat is on — messages are not saved.",
   "assistantTemporaryOff": "Save conversation",
-  "assistantLoadChatFailed": "Could not load the conversation."
+  "assistantLoadChatFailed": "Could not load the conversation.",
+  "assistantRenameFailed": "Could not rename the conversation.",
+  "assistantDeleteFailed": "Could not delete the conversation.",
+  "assistantSearchFailed": "Search failed. Try again.",
+  "assistantChatsLoadFailed": "Could not load your conversations.",
+  "assistantChatsRetry": "Try again"
 }

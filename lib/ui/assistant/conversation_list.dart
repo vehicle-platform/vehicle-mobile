@@ -18,8 +18,11 @@ class ConversationListPane extends StatefulWidget {
     required this.onRename,
     required this.onDelete,
     required this.onSearch,
+    required this.onRetry,
     this.searchHits,
     this.searching = false,
+    this.loadFailed = false,
+    this.searchFailed = false,
   });
 
   final List<ConversationSummary> conversations;
@@ -33,6 +36,13 @@ class ConversationListPane extends StatefulWidget {
   final ValueChanged<String> onSearch;
   final List<ConversationSearchHit>? searchHits;
   final bool searching;
+
+  /// The list could not be loaded (transient): show an error and [onRetry].
+  final bool loadFailed;
+
+  /// The last search failed: show an error, not "no matching messages".
+  final bool searchFailed;
+  final VoidCallback onRetry;
 
   @override
   State<ConversationListPane> createState() => _ConversationListPaneState();
@@ -52,6 +62,7 @@ class _ConversationListPaneState extends State<ConversationListPane> {
       context: context,
       builder: (_) => _RenameDialog(initial: conv.title),
     );
+    if (!mounted) return;
     if (next != null && next.isNotEmpty && next != conv.title) {
       widget.onRename(conv, next);
     }
@@ -76,6 +87,7 @@ class _ConversationListPaneState extends State<ConversationListPane> {
         ],
       ),
     );
+    if (!mounted) return;
     if (confirmed == true) {
       widget.onDelete(conv);
     }
@@ -143,11 +155,47 @@ class _ConversationListPaneState extends State<ConversationListPane> {
           Expanded(
             child: widget.loading || widget.searching
                 ? const Center(child: CircularProgressIndicator())
-                : hits != null
-                    ? _searchList(context, hits)
-                    : _conversationList(context),
+                : widget.searchFailed
+                    ? _errorState(context, l.assistantSearchFailed,
+                        () => widget.onSearch(_searchController.text))
+                    : hits != null
+                        ? _searchList(context, hits)
+                        : widget.loadFailed && widget.conversations.isEmpty
+                            ? _errorState(context, l.assistantChatsLoadFailed,
+                                widget.onRetry)
+                            : _conversationList(context),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _errorState(BuildContext context, String text, VoidCallback retry) {
+    final l = context.l10n;
+    final t = context.vehicle;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              text,
+              key: const ValueKey('conversation-error-text'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall!
+                  .copyWith(color: t.textSecondary),
+            ),
+            const SizedBox(height: Spacing.sm),
+            TextButton(
+              key: const ValueKey('conversation-retry-button'),
+              onPressed: retry,
+              child: Text(l.assistantChatsRetry),
+            ),
+          ],
+        ),
       ),
     );
   }

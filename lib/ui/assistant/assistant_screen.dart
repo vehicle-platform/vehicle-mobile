@@ -18,6 +18,7 @@ import 'package:vehicle_mobile/services/voice/voice_ports.dart';
 import 'package:vehicle_mobile/services/voice/voice_triggers.dart';
 import 'package:vehicle_mobile/ui/assistant/chat_widgets.dart';
 import 'package:vehicle_mobile/ui/assistant/conversation_list.dart';
+import 'package:vehicle_mobile/ui/assistant/conversations_controller.dart';
 import 'package:vehicle_mobile/ui/assistant/model_chip.dart';
 import 'package:vehicle_mobile/ui/assistant/voice_widgets.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
@@ -39,8 +40,12 @@ class AssistantPrefill {
 }
 
 /// Rider assistant (D-121, D-128): a logbook-style transcript against
-/// `POST /chat` of the active host, with server-stored conversations,
-/// search, temporary-chat mode and follow-up chips.
+/// `POST /chat` of the active host. The server picks one read-only
+/// vehicle-mcp tool and phrases its result; this screen only shows the answer
+/// and the tool that computed the numbers. It never computes or rephrases a
+/// number and adds no advice. Conversations are stored on the server (list,
+/// search, rename, delete, follow-up chips) unless temporary chat is on; the
+/// phone keeps no history on disk (answers may contain ride data).
 class AssistantScreen extends StatefulWidget {
   const AssistantScreen({
     super.key,
@@ -83,20 +88,27 @@ class AssistantScreen extends StatefulWidget {
 
 class _AssistantScreenState extends State<AssistantScreen> {
   late final ChatClient _client;
-  late final ConversationsClient _conversationsClient;
+  late final ConversationsController _convs;
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final List<ChatMessage> _messages = [];
   String? _sessionId;
-  String? _conversationId;
   bool _temporary = false;
   bool _sending = false;
 
-  List<ConversationSummary> _conversations = const [];
-  bool _conversationsLoading = false;
-  bool _conversationsAvailable = false;
-  List<ConversationSearchHit>? _searchHits;
-  bool _searching = false;
+  /// Identity of the open transcript: bumped whenever it is replaced (new
+  /// chat, another chat, temporary toggle, deleted chat). A reply that was
+  /// asked under an older value belongs to a chat that is no longer open and
+  /// is dropped.
+  int _epoch = 0;
+
+  /// Newest "open this stored chat" request; an older answer is ignored.
+  int _selectSeq = 0;
+
+  /// The stored conversation the transcript continues (kept by [_convs] so
+  /// the list highlights it). Set it outside the list's own notifications.
+  String? get _conversationId => _convs.activeId;
+  set _conversationId(String? id) => _convs.activeId = id;
 
   late final VoiceController _voice;
   late final bool _ownsVoice;
@@ -107,7 +119,10 @@ class _AssistantScreenState extends State<AssistantScreen> {
   void initState() {
     super.initState();
     _client = widget.client ?? ChatClient();
-    _conversationsClient = widget.conversationsClient ?? ConversationsClient();
+    _convs = ConversationsController(
+        client: widget.conversationsClient ?? ConversationsClient(),
+        target: _target)
+      ..addListener(_onConversationsChanged);
     _sessionId = widget.sessionId;
     _ownsVoice = widget.voice == null;
     _voice = widget.voice ?? VoiceController();
@@ -117,13 +132,19 @@ class _AssistantScreenState extends State<AssistantScreen> {
     _announcer = CriticalAnnouncer(
         speak: _voice.speak, sentences: () => AnnouncerSentences.fromL10n(_l));
     _bus = widget.voiceBus ?? VoiceTriggerBus.instance;
+    // Triggers that arrived before this screen existed are delivered after
+    // the first frame (starting to listen sets state).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _bus.attach(_onTrigger);
     });
     _voice.refreshIntercom();
     widget.prefill?.addListener(_onPrefill);
     _onPrefill();
-    unawaited(_loadConversations());
+    unawaited(_convs.load());
+  }
+
+  void _onConversationsChanged() {
+    if (mounted) setState(() {});
   }
 
   int _prefillSeen = 0;
@@ -143,6 +164,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
   @override
   void dispose() {
     widget.prefill?.removeListener(_onPrefill);
+    _convs
+      ..removeListener(_onConversationsChanged)
+      ..dispose();
     _bus.detach(_onTrigger);
     _voice.removeListener(_onVoiceChanged);
     _voice.onTranscript = null;
@@ -182,177 +206,121 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
   }
 
-  Future<void> _loadConversations() async {
-    final target = await _target();
-    if (target == null || !mounted) return;
-    setState(() => _conversationsLoading = true);
-    final res = await _conversationsClient.list(
-        baseUrl: target.$1, token: target.$2);
-    if (!mounted) return;
-    if (res.isSuccess && res.value != null) {
-      setState(() {
-        _conversations = res.value!.conversations;
-        _conversationsAvailable = true;
-        _conversationsLoading = false;
-      });
-    } else {
-      setState(() {
-        _conversationsLoading = false;
-        if (res.outcome == ConvOutcome.forbidden ||
-            res.outcome == ConvOutcome.notFound ||
-            res.outcome == ConvOutcome.notSupported) {
-          _conversationsAvailable = false;
-        }
-      });
-    }
+  /// Replaces the transcript with an empty one. Call inside `setState`.
+  void _resetTranscript() {
+    _epoch++;
+    _selectSeq++;
+    _sending = false;
+    _conversationId = null;
+    _messages.clear();
   }
 
   Future<void> _selectConversation(String id, {bool closeSheet = false}) async {
     if (closeSheet && mounted) Navigator.of(context).pop();
-    final target = await _target();
-    if (target == null || !mounted) return;
-    final res = await _conversationsClient.get(
-        baseUrl: target.$1, token: target.$2, id: id);
-    if (!mounted) return;
+    final seq = ++_selectSeq;
+    final res = await _convs.open(id);
+    if (res == null || !mounted || seq != _selectSeq) return;
     if (res.isSuccess && res.value != null) {
+      _convs.clearSearch();
       setState(() {
+        _resetTranscript();
         _conversationId = res.value!.conversation.id;
         _temporary = false;
-        _searchHits = null;
-        _messages
-          ..clear()
-          ..addAll(res.value!.messages);
+        _messages.addAll(res.value!.messages);
       });
       _scrollToEnd();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_l.assistantLoadChatFailed)),
-      );
+      _snack(_l.assistantLoadChatFailed);
     }
   }
 
   void _startNewChat({bool closeSheet = false}) {
     if (closeSheet && mounted) Navigator.of(context).pop();
+    _convs.clearSearch();
+    setState(_resetTranscript);
+  }
+
+  /// Both transitions start a fresh transcript: a temporary chat never shows
+  /// or continues a stored one, and a stored chat never inherits a temporary
+  /// transcript the server has not seen (D-128).
+  void _toggleTemporary() {
+    _convs.clearSearch();
     setState(() {
-      _conversationId = null;
-      _messages.clear();
-      _searchHits = null;
+      _resetTranscript();
+      _temporary = !_temporary;
     });
   }
 
-  void _toggleTemporary() {
-    setState(() {
-      _temporary = !_temporary;
-      if (_temporary) {
-        _conversationId = null;
-        _messages.clear();
-      }
-    });
+  void _snack(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _renameConversation(
       ConversationSummary conv, String newTitle) async {
-    final target = await _target();
-    if (target == null || !mounted) return;
-    final res = await _conversationsClient.rename(
-      baseUrl: target.$1,
-      token: target.$2,
-      id: conv.id,
-      title: newTitle,
-    );
-    if (!mounted || !res.isSuccess || res.value == null) return;
-    setState(() {
-      _conversations = [
-        for (final item in _conversations)
-          item.id == conv.id ? res.value! : item,
-      ];
-    });
+    final ok = await _convs.rename(conv, newTitle);
+    if (!ok) _snack(_l.assistantRenameFailed);
   }
 
   Future<void> _deleteConversation(ConversationSummary conv) async {
-    final target = await _target();
-    if (target == null || !mounted) return;
-    final res = await _conversationsClient.deleteOne(
-      baseUrl: target.$1,
-      token: target.$2,
-      id: conv.id,
-    );
-    if (!mounted || !res.isSuccess) return;
-    setState(() {
-      _conversations =
-          _conversations.where((c) => c.id != conv.id).toList(growable: false);
-      if (_conversationId == conv.id) {
-        _conversationId = null;
-        _messages.clear();
-      }
-    });
+    final outcome = await _convs.delete(conv);
+    if (!mounted) return;
+    switch (outcome) {
+      case DeleteOutcome.failed:
+        _snack(_l.assistantDeleteFailed);
+      case DeleteOutcome.deletedActive:
+        setState(_resetTranscript);
+      case DeleteOutcome.deleted:
+        break;
+    }
   }
 
-  Future<void> _searchConversations(String raw) async {
-    final q = raw.trim();
-    if (q.isEmpty) {
-      setState(() {
-        _searchHits = null;
-        _searching = false;
-      });
-      return;
-    }
-    final target = await _target();
-    if (target == null || !mounted) return;
-    setState(() => _searching = true);
-    final res = await _conversationsClient.search(
-      baseUrl: target.$1,
-      token: target.$2,
-      query: q,
-    );
-    if (!mounted) return;
-    setState(() {
-      _searching = false;
-      _searchHits = res.isSuccess ? (res.value ?? const []) : const [];
-    });
-  }
+  /// The list, in the sidebar or the sheet; rebuilt by [_convs].
+  Widget _conversationPane({bool inSheet = false}) => ListenableBuilder(
+        listenable: _convs,
+        builder: (_, __) => ConversationListPane(
+          conversations: _convs.conversations,
+          activeId: _convs.activeId,
+          loading: _convs.loading,
+          loadFailed: _convs.loadFailed,
+          searchHits: _convs.searchHits,
+          searching: _convs.searching,
+          searchFailed: _convs.searchFailed,
+          onSelect: (id) => _selectConversation(id, closeSheet: inSheet),
+          onNewChat: () => _startNewChat(closeSheet: inSheet),
+          onRename: _renameConversation,
+          onDelete: _deleteConversation,
+          onSearch: _convs.search,
+          onRetry: _convs.load,
+        ),
+      );
 
   Future<void> _openConversationsSheet() async {
-    unawaited(_loadConversations());
+    unawaited(_convs.load());
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => SizedBox(
-          height: MediaQuery.sizeOf(ctx).height * 0.75,
-          child: ConversationListPane(
-            conversations: _conversations,
-            activeId: _conversationId,
-            loading: _conversationsLoading,
-            searchHits: _searchHits,
-            searching: _searching,
-            onSelect: (id) => _selectConversation(id, closeSheet: true),
-            onNewChat: () => _startNewChat(closeSheet: true),
-            onRename: (c, t) async {
-              await _renameConversation(c, t);
-              if (ctx.mounted) setSheetState(() {});
-            },
-            onDelete: (c) async {
-              await _deleteConversation(c);
-              if (ctx.mounted) setSheetState(() {});
-            },
-            onSearch: (q) async {
-              await _searchConversations(q);
-              if (ctx.mounted) setSheetState(() {});
-            },
-          ),
-        ),
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.75,
+        child: _conversationPane(inSheet: true),
       ),
     );
+    _convs.clearSearch();
   }
 
   Future<void> _send(String raw) async {
     final text = raw.trim();
     if (text.isEmpty || _sending) return;
+    // A new question silences the previous answer (and any listening).
     await _voice.cancelListening();
     await _voice.stopSpeaking();
     if (!mounted) return;
     _controller.clear();
+    // What this question belongs to; the transcript may be replaced while the
+    // server thinks (another chat opened, new chat, temporary toggled).
+    final epoch = _epoch;
+    final temporary = _temporary;
+    final conversationId = _conversationId;
     setState(() {
       _messages.add(ChatMessage.user(text));
       _sending = true;
@@ -362,24 +330,33 @@ class _AssistantScreenState extends State<AssistantScreen> {
     ChatMessage reply;
     String? returnedConvId;
     try {
-      final result = await _ask(text);
+      final result = await _ask(text, conversationId, temporary);
       reply = result.$1;
       returnedConvId = result.$2;
     } catch (_) {
       reply = ChatMessage.failure(_l.assistantFailSettings);
     }
     if (!mounted) return;
-    final createdNew =
-        !_temporary && returnedConvId != null && _conversationId == null;
+    // A temporary chat ignores any returned id: nothing of it is stored.
+    final storedId = temporary ? null : returnedConvId;
+    if (epoch != _epoch) {
+      // The chat this answer belongs to is no longer open: drop it. The
+      // server may still have stored the exchange, so refresh the list.
+      if (storedId != null) {
+        unawaited(_convs.refreshAfterAnswer(createdNew: true));
+      }
+      return;
+    }
+    final createdNew = storedId != null && conversationId == null;
     setState(() {
       _messages.add(reply);
       _sending = false;
-      if (!_temporary && returnedConvId != null) {
-        _conversationId = returnedConvId;
-      }
+      if (storedId != null) _conversationId = storedId;
     });
     _scrollToEnd();
-    if (createdNew) unawaited(_loadConversations());
+    if (!reply.isFailure || createdNew) {
+      unawaited(_convs.refreshAfterAnswer(createdNew: createdNew));
+    }
     if (!reply.isFailure) unawaited(_speakReply(reply));
   }
 
@@ -433,31 +410,36 @@ class _AssistantScreenState extends State<AssistantScreen> {
     }
   }
 
-  Future<(ChatMessage, String?)> _ask(String text) async {
+  Future<(ChatMessage, String?)> _ask(
+      String text, String? conversationId, bool temporary) async {
     var settings = await widget.settingsStore.load();
     if (!settings.isServerConfigured || (settings.apiToken ?? '').isEmpty) {
       return (ChatMessage.failure(_l.assistantFailNoHost), null);
     }
-    var result = await _send1(settings, text);
+    var result = await _send1(settings, text, conversationId, temporary);
     if (result.outcome == ChatOutcome.unreachable) {
+      // The cached host may have gone away (left home Wi-Fi): probe the list
+      // again and retry once on another host.
       HostResolver.invalidate();
       final fresh = await widget.settingsStore.load(reprobe: true);
       if (fresh.isServerConfigured && fresh.hostId != settings.hostId) {
         settings = fresh;
-        result = await _send1(settings, text);
+        result = await _send1(settings, text, conversationId, temporary);
       }
     }
     return (_describe(result, settings), result.answer?.conversationId);
   }
 
-  Future<ChatResult> _send1(AppSettings settings, String text) => _client.send(
+  Future<ChatResult> _send1(AppSettings settings, String text,
+          String? conversationId, bool temporary) =>
+      _client.send(
         baseUrl: settings.serverBaseUrl!,
         apiToken: settings.apiToken!,
         message: text,
         sessionId: _sessionId,
         locale: _localeCode,
-        conversationId: _temporary ? null : _conversationId,
-        temporary: _temporary,
+        conversationId: temporary ? null : conversationId,
+        temporary: temporary,
       );
 
   ChatMessage _describe(ChatResult result, AppSettings settings) {
@@ -505,7 +487,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final showSidebar =
-            _conversationsAvailable && constraints.maxWidth >= Breakpoints.wide;
+            _convs.available && constraints.maxWidth >= Breakpoints.wide;
         final chatBody = Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: ContentWidth.assistant),
@@ -602,7 +584,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
               ],
             ),
             actions: [
-              if (_conversationsAvailable && !showSidebar)
+              if (_convs.available && !showSidebar)
                 IconButton(
                   key: const ValueKey('open-conversations-button'),
                   tooltip: l.assistantChatsTitle,
@@ -630,23 +612,14 @@ class _AssistantScreenState extends State<AssistantScreen> {
             ],
           ),
           body: SafeArea(
+            // One centred column: full width on a phone, at most 720 px on a wide
+            // window; with the conversation list a sidebar sits to its left.
             child: showSidebar
                 ? Row(
                     children: [
                       SizedBox(
                         width: 280,
-                        child: ConversationListPane(
-                          conversations: _conversations,
-                          activeId: _conversationId,
-                          loading: _conversationsLoading,
-                          searchHits: _searchHits,
-                          searching: _searching,
-                          onSelect: _selectConversation,
-                          onNewChat: _startNewChat,
-                          onRename: _renameConversation,
-                          onDelete: _deleteConversation,
-                          onSearch: _searchConversations,
-                        ),
+                        child: _conversationPane(),
                       ),
                       VerticalDivider(width: 1, thickness: 1, color: t.hairline),
                       Expanded(child: chatBody),
