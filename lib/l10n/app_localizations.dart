@@ -1340,6 +1340,114 @@ abstract class AppLocalizations {
   /// **'first'**
   String get logbookFirstMark;
 
+  /// No description provided for @rideMarkButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark event'**
+  String get rideMarkButton;
+
+  /// No description provided for @rideMarkPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened?'**
+  String get rideMarkPickerTitle;
+
+  /// No description provided for @rideMarkPickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes automatically in a few seconds'**
+  String get rideMarkPickerHint;
+
+  /// No description provided for @rideMarkKindMisfire.
+  ///
+  /// In en, this message translates to:
+  /// **'Misfire'**
+  String get rideMarkKindMisfire;
+
+  /// No description provided for @rideMarkKindNoise.
+  ///
+  /// In en, this message translates to:
+  /// **'Noise'**
+  String get rideMarkKindNoise;
+
+  /// No description provided for @rideMarkKindVibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration'**
+  String get rideMarkKindVibration;
+
+  /// No description provided for @rideMarkKindWarningLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning light'**
+  String get rideMarkKindWarningLight;
+
+  /// No description provided for @rideMarkKindRoughRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Rough road'**
+  String get rideMarkKindRoughRoad;
+
+  /// No description provided for @rideMarkKindTraffic.
+  ///
+  /// In en, this message translates to:
+  /// **'Traffic'**
+  String get rideMarkKindTraffic;
+
+  /// No description provided for @rideMarkKindOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get rideMarkKindOther;
+
+  /// No description provided for @rideMarkSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked: {kind}'**
+  String rideMarkSaved(String kind);
+
+  /// No description provided for @rideMarkQueuedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved offline ({count} queued): {kind}'**
+  String rideMarkQueuedOffline(int count, String kind);
+
+  /// No description provided for @logbookMarksSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride marks'**
+  String get logbookMarksSection;
+
+  /// No description provided for @logbookMarksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No event marks recorded during this ride.'**
+  String get logbookMarksEmpty;
+
+  /// No description provided for @logbookMarksLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load ride marks.'**
+  String get logbookMarksLoadFailed;
+
+  /// No description provided for @logbookMarkDeleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete mark'**
+  String get logbookMarkDeleteTooltip;
+
+  /// No description provided for @logbookMarkDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete mark: {detail}'**
+  String logbookMarkDeleteFailed(String detail);
+
+  /// No description provided for @rideMarkRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The server rejected a mark and it was discarded.'**
+  String get rideMarkRejected;
+
   /// No description provided for @quantityRideDistance.
   ///
   /// In en, this message translates to:

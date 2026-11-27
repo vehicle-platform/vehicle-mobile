@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/l10n/rider_format.dart';
 import 'package:vehicle_mobile/models/health_windows.dart';
+import 'package:vehicle_mobile/models/ride_mark.dart';
 import 'package:vehicle_mobile/models/ride_summary.dart';
 import 'package:vehicle_mobile/services/app_settings.dart';
+import 'package:vehicle_mobile/services/marks_client.dart';
 import 'package:vehicle_mobile/services/ride_client.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
@@ -17,6 +19,7 @@ import 'package:vehicle_mobile/ui/rides/bringup_screen.dart';
 import 'package:vehicle_mobile/ui/rides/health_windows_section.dart';
 import 'package:vehicle_mobile/ui/rides/quantities.dart';
 import 'package:vehicle_mobile/ui/rides/ride_format.dart';
+import 'package:vehicle_mobile/ui/rides/ride_marks_section.dart';
 import 'package:vehicle_mobile/ui/rides/ride_widgets.dart';
 
 class RideSummaryScreen extends StatefulWidget {
@@ -25,11 +28,13 @@ class RideSummaryScreen extends StatefulWidget {
     required this.sessionId,
     this.settingsStore = const AppSettingsStore(),
     this.client,
+    this.marksClient,
   });
 
   final String sessionId;
   final AppSettingsStore settingsStore;
   final RideClient? client;
+  final MarksClient? marksClient;
 
   @override
   State<RideSummaryScreen> createState() => _RideSummaryScreenState();
@@ -37,10 +42,16 @@ class RideSummaryScreen extends StatefulWidget {
 
 class _RideSummaryScreenState extends State<RideSummaryScreen> {
   late final RideClient _client;
+  late final MarksClient _marksClient;
   AppSettings? _settings;
   RideSummary? _summary;
   HealthWindowsResult? _healthWindows;
   bool _healthWindowsLoading = false;
+  List<RideMark> _marks = const [];
+  bool _marksLoading = false;
+  bool _marksSupported = true;
+  String? _marksError;
+  String? _deletingMarkId;
   String? _error;
   bool _notFound = false;
   bool _loading = true;
@@ -50,6 +61,7 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
   void initState() {
     super.initState();
     _client = widget.client ?? RideClient();
+    _marksClient = widget.marksClient ?? MarksClient();
     _load();
   }
 
@@ -62,6 +74,11 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
         _notFound = false;
         _healthWindows = null;
         _healthWindowsLoading = false;
+        _marks = const [];
+        _marksLoading = false;
+        _marksSupported = true;
+        _marksError = null;
+        _deletingMarkId = null;
       });
     }
     final settings = await widget.settingsStore.load();
@@ -95,7 +112,64 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
       }
     });
     if (result.isSuccess) {
-      await _loadHealthWindows(settings, requestId);
+      await Future.wait([
+        _loadHealthWindows(settings, requestId),
+        _loadMarks(settings, requestId),
+      ]);
+    }
+  }
+
+  Future<void> _loadMarks(AppSettings settings, int requestId) async {
+    setState(() => _marksLoading = true);
+    final res = await _marksClient.listRideMarks(
+      baseUrl: settings.serverBaseUrl!,
+      apiToken: settings.apiToken ?? '',
+      rideId: widget.sessionId,
+    );
+    if (!mounted || requestId != _requestId) return;
+    setState(() {
+      _marksLoading = false;
+      if (res.isSuccess && res.data != null) {
+        _marks = res.data!;
+        _marksSupported = true;
+        _marksError = null;
+      } else if (res.outcome == MarkCallOutcome.notFound) {
+        _marks = const [];
+        _marksSupported = false;
+        _marksError = null;
+      } else {
+        _marks = const [];
+        _marksSupported = true;
+        _marksError = context.l10n.logbookMarksLoadFailed;
+      }
+    });
+  }
+
+  Future<void> _deleteMark(RideMark mark) async {
+    final settings = _settings;
+    if (settings == null || !settings.isServerConfigured) return;
+    final requestId = _requestId;
+    setState(() => _deletingMarkId = mark.id);
+    final res = await _marksClient.deleteMark(
+      baseUrl: settings.serverBaseUrl!,
+      apiToken: settings.apiToken ?? '',
+      markId: mark.id,
+    );
+    if (!mounted || requestId != _requestId) return;
+    setState(() {
+      _deletingMarkId = null;
+      // 404 = already gone on the server (deleted elsewhere): drop the row too.
+      if (res.isSuccess || res.outcome == MarkCallOutcome.notFound) {
+        _marks = _marks.where((m) => m.id != mark.id).toList(growable: false);
+      }
+    });
+    if (!res.isSuccess && res.outcome != MarkCallOutcome.notFound) {
+      final detail = res.message ?? res.outcome.name;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.logbookMarkDeleteFailed(detail))),
+        );
     }
   }
 
@@ -255,6 +329,17 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
           loading: _healthWindowsLoading,
           summary: summary,
         ),
+        if (_marksSupported) ...[
+          const SizedBox(height: Spacing.lg),
+          SectionLabel(context.l10n.logbookMarksSection),
+          RideMarksSection(
+            marks: _marks,
+            loading: _marksLoading,
+            error: _marksError,
+            deletingId: _deletingMarkId,
+            onDelete: _deleteMark,
+          ),
+        ],
       ],
     );
   }
@@ -301,7 +386,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               children: [
                 Readout(
                   label: quantityText(context.l10n, scalar.name),
-                  value: RiderFormat.of(context).value(scalar.value, scalar.unit),
+                  value:
+                      RiderFormat.of(context).value(scalar.value, scalar.unit),
                   unit: RiderFormat.of(context).unit(scalar.unit),
                   size: ReadoutSize.medium,
                 ),
@@ -361,7 +447,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         runSpacing: Spacing.xs,
                         children: [
                           Text(
-                            RiderFormat.of(context).withUnit(gears[index].value, signal.unit),
+                            RiderFormat.of(context)
+                                .withUnit(gears[index].value, signal.unit),
                             style: numberFace(18, FontWeight.w600,
                                 color: context.vehicle.textPrimary),
                           ),
@@ -411,7 +498,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
-              context.l10n.logbookTotalOutside(RiderFormat.of(context).duration(signal.totalS),
+              context.l10n.logbookTotalOutside(
+                  RiderFormat.of(context).duration(signal.totalS),
                   RiderFormat.of(context).duration(signal.outsideS)),
               style: theme.textTheme.bodySmall,
             ),
@@ -694,8 +782,7 @@ class _HeatGridState extends State<_HeatGrid> {
       BinnedSummary signal, RideAxis columns, RideAxis rows, RideCell? cell) {
     final row = _selectedRow!;
     final column = _selectedColumn!;
-    final value =
-        RiderFormat.of(context).withUnit(cell?.value, signal.unit);
+    final value = RiderFormat.of(context).withUnit(cell?.value, signal.unit);
     final flag = cell?.flag;
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);
