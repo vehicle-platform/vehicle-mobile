@@ -37,19 +37,54 @@ Future<void> seedSession(
   }));
 }
 
-Future<void> openSessionsTab(WidgetTester tester) async {
+/// Pumps real-time event-loop turns until [finder] matches. The screen loads
+/// its session folders with real file IO, which only completes inside
+/// `runAsync`; waiting on the visible result instead of a fixed delay keeps the
+/// test independent of machine load.
+Future<void> pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (finder.evaluate().isEmpty) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('Timed out waiting for $finder');
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    // Advance fake time too so the tab animation can finish.
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+}
+
+/// Opens the Sessions tab and waits until every id in [sessionIds] is listed.
+/// The settings load (mocked prefs and secure storage, no file IO) is started
+/// before the folder scan and ends first, so the last drain below only covers
+/// event-loop turns that are already queued.
+Future<void> openSessionsTab(
+  WidgetTester tester,
+  List<String> sessionIds,
+) async {
   tester.view.physicalSize = const Size(360, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
+  // Built inside `runAsync` so the screen's initState IO runs in the real zone.
   await tester.runAsync(() async {
     await tester.pumpWidget(host(RecordScreen(bleService: BleService())));
-    await Future<void>.delayed(const Duration(milliseconds: 50));
   });
   await tester.pump();
   await tester.tap(find.text('Sessions'));
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.pump(const Duration(milliseconds: 100));
+  for (final id in sessionIds) {
+    await pumpUntilFound(tester, find.text(id));
+  }
+  for (var i = 0; i < 3; i++) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+  }
 }
 
 void main() {
@@ -90,7 +125,8 @@ void main() {
           uploadState: 'notUploaded');
     });
 
-    await openSessionsTab(tester);
+    await openSessionsTab(
+        tester, ['20260116-120000-ab12', '20260115-120000-ab12']);
 
     expect(find.byTooltip('Server rides'), findsOneWidget);
 
@@ -130,7 +166,7 @@ void main() {
       );
     });
 
-    await openSessionsTab(tester);
+    await openSessionsTab(tester, ['20260116-120000-ab12']);
 
     expect(find.byTooltip('Ride summary'), findsNothing);
 
@@ -167,7 +203,11 @@ void main() {
       await seedSession(tmp, '20260114-120000-ab12', uploadState: 'failed');
     });
 
-    await openSessionsTab(tester);
+    await openSessionsTab(tester, [
+      '20260116-120000-ab12',
+      '20260115-120000-ab12',
+      '20260114-120000-ab12',
+    ]);
 
     final uploadedCard = find.ancestor(
       of: find.text('20260116-120000-ab12'),
