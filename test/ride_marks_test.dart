@@ -504,7 +504,7 @@ void main() {
   });
 
   testWidgets(
-      'Mark picker Other pauses auto-close while note has focus, resumes on unfocus, and queues note offline unchanged',
+      'Mark picker Other pauses auto-close while note has focus, submits on unfocus timeout, and queues note offline unchanged',
       (tester) async {
     final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
     final queue = MarkQueue(
@@ -551,12 +551,14 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
     expect(noteField, findsOneWidget);
 
-    // Unfocusing restarts the auto-close timer -> closes after timeout.
+    // Unfocusing restarts the auto-close timer -> the chosen kind is kept and
+    // submitted on timeout (nothing the rider chose is discarded).
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
     expect(noteField, findsNothing);
+    expect(await queue.pending(), hasLength(1));
 
     // Open Other again, type note, submit while offline -> persisted in MarkQueue unchanged.
     await tester.ensureVisible(markButton);
@@ -571,10 +573,183 @@ void main() {
     await tester.pumpAndSettle();
 
     final queued = await queue.pending();
-    expect(queued, hasLength(1));
-    expect(queued.single.kind, RideMarkKind.other);
-    expect(queued.single.note, offlineNote);
+    expect(queued, hasLength(2));
+    expect(queued.last.kind, RideMarkKind.other);
+    expect(queued.last.note, offlineNote);
     await tester.pumpWidget(const SizedBox.shrink());
     queue.dispose();
+  });
+
+  group('Mark picker auto-close', () {
+    const timeout = Duration(seconds: 2);
+    late MarkQueue queue;
+    late TelemetryStore store;
+    late List<Map<String, dynamic>> posted;
+    late Finder markButton;
+
+    Future<void> pumpLive(WidgetTester tester) async {
+      final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+      posted = [];
+      queue = MarkQueue(
+        client: MarksClient(
+          httpClient: MockClient((request) async {
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            posted.add(body);
+            return http.Response(jsonEncode(body), 201);
+          }),
+        ),
+        settingsStore: settings,
+        clock: () => DateTime.utc(2026, 11, 16, 9, 30),
+        random: Random(21),
+      );
+      store = TelemetryStore();
+      addTearDown(() {
+        queue.dispose();
+        store.dispose();
+      });
+      await tester.pumpWidget(
+        _appHost(
+          LiveScreen(
+            store: store,
+            bleService: BleService(),
+            onOpenRecord: () {},
+            markQueue: queue,
+            pickerTimeout: timeout,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      markButton = find.byKey(const ValueKey('live-mark-button'));
+      await tester.ensureVisible(markButton);
+      await tester.tap(markButton);
+      await tester.pumpAndSettle();
+    }
+
+    Finder byKey(String key) => find.byKey(ValueKey(key));
+
+    testWidgets('Other view autofocuses the note and stays open while focused',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(byKey('mark-note-field'));
+      expect(field.autofocus, isTrue);
+      expect(field.focusNode!.hasFocus, isTrue);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets(
+        'Other view timeout after focus loss submits other with the trimmed note',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('mark-note-field'), '  chain clatter  ');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await tester.pump(timeout - const Duration(milliseconds: 100));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      expect(byKey('mark-note-field'), findsNothing);
+      expect(posted, hasLength(1));
+      expect(posted.single['kind'], 'other');
+      expect(posted.single['note'], 'chain clatter');
+    });
+
+    testWidgets(
+        'Other view timeout with an empty note submits other without note',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      await tester.pump(timeout + const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(posted, hasLength(1));
+      expect(posted.single['kind'], 'other');
+      expect(posted.single.containsKey('note'), isFalse);
+    });
+
+    testWidgets('More view stays open while the note has focus',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('mark-note-field'));
+      await tester.pumpAndSettle();
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets('More view stays open while text is present after focus loss',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('mark-note-field'), 'rattle at 6k');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+
+      // The typed note is still delivered unchanged when a kind is chosen.
+      final noise = byKey('mark-kind-noise');
+      await tester.ensureVisible(noise);
+      await tester.tap(noise);
+      await tester.pumpAndSettle();
+      expect(posted.single['kind'], 'noise');
+      expect(posted.single['note'], 'rattle at 6k');
+    });
+
+    testWidgets('More view with no choice and no text closes empty on timeout',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.pump(timeout + const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(byKey('mark-note-field'), findsNothing);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets('timer is cancelled when the sheet is dismissed early',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-misfire'));
+      await tester.pumpAndSettle();
+      expect(posted, hasLength(1));
+      // No timer left from the sheet: nothing is pending after it is gone.
+      expect(tester.binding.transientCallbackCount, 0);
+      await tester.pump(const Duration(seconds: 10));
+      expect(posted, hasLength(1));
+    });
+
+    testWidgets('timer is cancelled when the sheet is removed from the tree',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump(); // timer armed
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      // The test framework fails on pending timers at teardown; reaching
+      // here with a pump past the timeout proves nothing fires afterwards.
+      await tester.pump(timeout * 3);
+      expect(posted, isEmpty);
+    });
   });
 }

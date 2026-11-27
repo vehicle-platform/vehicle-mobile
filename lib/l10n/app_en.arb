@@ -496,7 +496,14 @@
   "rideMarkPickerMore": "More",
   "rideMarkNoteLabel": "Optional note",
   "rideMarkNoteHint": "What did you notice?",
-  "rideMarkSave": "Save mark",
+  "rideMarkSaveKind": "Save mark: {kind}",
+  "@rideMarkSaveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "rideMarkKindMisfire": "Misfire",
   "rideMarkKindNoise": "Noise",
   "rideMarkKindVibration": "Vibration",

@@ -21,8 +21,11 @@ class RideMarkSelection {
 /// (<= 200 characters) when picking "Other" or opening "More".
 ///
 /// Closes itself automatically after [autoCloseAfter] so a rider does not have
-/// to hunt for a dismiss button while riding; the timer pauses while the note
-/// field has focus.
+/// to hunt for a dismiss button while riding. A choice the rider made is never
+/// discarded: after "Other" was picked, a timeout submits `other` with the
+/// current note. In the quick and "More" views (no kind chosen) a timeout
+/// closes empty, except that it stays paused while the note field has focus or
+/// contains text.
 Future<RideMarkSelection?> showRideMarkPicker(
   BuildContext context, {
   Duration autoCloseAfter = const Duration(seconds: 5),
@@ -55,12 +58,15 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
   void initState() {
     super.initState();
     _noteFocus.addListener(_onNoteFocusChanged);
+    _noteController.addListener(_onNoteTextChanged);
     _startAutoCloseTimer();
   }
 
   @override
   void dispose() {
     _autoCloseTimer?.cancel();
+    _autoCloseTimer = null;
+    _noteController.removeListener(_onNoteTextChanged);
     _noteFocus
       ..removeListener(_onNoteFocusChanged)
       ..dispose();
@@ -70,11 +76,19 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
 
   void _startAutoCloseTimer() {
     _autoCloseTimer?.cancel();
-    _autoCloseTimer = Timer(widget.autoCloseAfter, () {
-      if (mounted && !_noteFocus.hasFocus) {
-        Navigator.of(context).pop();
-      }
-    });
+    _autoCloseTimer = Timer(widget.autoCloseAfter, _onAutoClose);
+  }
+
+  void _onAutoClose() {
+    _autoCloseTimer = null;
+    if (!mounted || _noteFocus.hasFocus) return;
+    if (_view == _PickerView.otherNote) {
+      // The rider already chose "Other": keep the choice and the note.
+      _submit(RideMarkKind.other, includeNote: true);
+      return;
+    }
+    if (_noteController.text.isNotEmpty) return; // typed text: stay open
+    Navigator.of(context).pop();
   }
 
   void _onNoteFocusChanged() {
@@ -82,6 +96,14 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
       _autoCloseTimer?.cancel();
       _autoCloseTimer = null;
     } else if (mounted) {
+      _startAutoCloseTimer();
+    }
+  }
+
+  void _onNoteTextChanged() {
+    // Typing counts as activity; the timer only runs while the field is
+    // unfocused (and then restarts from the last edit).
+    if (mounted && !_noteFocus.hasFocus) {
       _startAutoCloseTimer();
     }
   }
@@ -117,12 +139,17 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
         RideMarkKind.other => Icons.flag_outlined,
       };
 
-  Widget _noteField(BuildContext context, {VoidCallback? onSubmitted}) {
+  Widget _noteField(
+    BuildContext context, {
+    VoidCallback? onSubmitted,
+    bool autofocus = false,
+  }) {
     final l = context.l10n;
     return TextField(
       key: const ValueKey('mark-note-field'),
       controller: _noteController,
       focusNode: _noteFocus,
+      autofocus: autofocus,
       maxLength: maxRideMarkNoteLength,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
       maxLines: 2,
@@ -213,7 +240,9 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
             ] else if (_view == _PickerView.otherNote) ...[
               _noteField(
                 context,
-                onSubmitted: () => _submit(RideMarkKind.other, includeNote: true),
+                autofocus: true,
+                onSubmitted: () =>
+                    _submit(RideMarkKind.other, includeNote: true),
               ),
               const SizedBox(height: Spacing.md),
               FilledButton.icon(
@@ -224,14 +253,14 @@ class _RideMarkPickerSheetState extends State<_RideMarkPickerSheet> {
                 onPressed: () => _submit(RideMarkKind.other, includeNote: true),
                 icon: Icon(_iconOf(RideMarkKind.other), size: 24),
                 label: Text(
-                  '${l.rideMarkSave} (${RideMarkKind.other.label(l)})',
+                  l.rideMarkSaveKind(RideMarkKind.other.label(l)),
                   style: theme.textTheme.titleMedium,
                 ),
               ),
             ] else ...[
               _noteField(context),
               const SizedBox(height: Spacing.md),
-              for (final kind in RideMarkKind.allPickerKinds) ...[
+              for (final kind in RideMarkKind.values) ...[
                 _kindButton(
                   context,
                   kind,

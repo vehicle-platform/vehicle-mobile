@@ -770,7 +770,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rideMarkNoteHint => 'Ne fark ettiniz?';
 
   @override
-  String get rideMarkSave => 'İşareti kaydet';
+  String rideMarkSaveKind(String kind) {
+    return 'İşareti kaydet: $kind';
+  }
 
   @override
   String get rideMarkKindMisfire => 'Tekleme';

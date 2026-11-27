@@ -772,7 +772,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rideMarkNoteHint => 'What did you notice?';
 
   @override
-  String get rideMarkSave => 'Save mark';
+  String rideMarkSaveKind(String kind) {
+    return 'Save mark: $kind';
+  }
 
   @override
   String get rideMarkKindMisfire => 'Misfire';

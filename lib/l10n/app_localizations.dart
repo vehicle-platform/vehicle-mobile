@@ -1376,11 +1376,11 @@ abstract class AppLocalizations {
   /// **'What did you notice?'**
   String get rideMarkNoteHint;
 
-  /// No description provided for @rideMarkSave.
+  /// No description provided for @rideMarkSaveKind.
   ///
   /// In en, this message translates to:
-  /// **'Save mark'**
-  String get rideMarkSave;
+  /// **'Save mark: {kind}'**
+  String rideMarkSaveKind(String kind);
 
   /// No description provided for @rideMarkKindMisfire.
   ///

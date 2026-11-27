@@ -5,7 +5,14 @@
   "rideMarkPickerMore": "Daha fazla",
   "rideMarkNoteLabel": "İsteğe bağlı not",
   "rideMarkNoteHint": "Ne fark ettiniz?",
-  "rideMarkSave": "İşareti kaydet",
+  "rideMarkSaveKind": "İşareti kaydet: {kind}",
+  "@rideMarkSaveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "rideMarkKindMisfire": "Tekleme",
   "rideMarkKindNoise": "Ses",
   "rideMarkKindVibration": "Titreşim",
