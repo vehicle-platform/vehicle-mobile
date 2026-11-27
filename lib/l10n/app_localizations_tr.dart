@@ -809,6 +809,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get rideMarkRejected => 'Sunucu bir işareti reddetti ve silindi.';
+
+  @override
   String get quantityRideDistance => 'Mesafe';
 
   @override

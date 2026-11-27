@@ -39,5 +39,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "rideMarkRejected": "The server rejected a mark and it was discarded."
 }

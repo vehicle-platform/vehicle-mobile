@@ -1442,6 +1442,12 @@ abstract class AppLocalizations {
   /// **'Could not delete mark: {detail}'**
   String logbookMarkDeleteFailed(String detail);
 
+  /// No description provided for @rideMarkRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The server rejected a mark and it was discarded.'**
+  String get rideMarkRejected;
+
   /// No description provided for @quantityRideDistance.
   ///
   /// In en, this message translates to:

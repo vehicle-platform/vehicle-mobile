@@ -531,6 +531,7 @@
       }
     }
   },
+  "rideMarkRejected": "Sunucu bir işareti reddetti ve silindi.",
   "quantityRideDistance": "Mesafe",
   "quantityRideTime": "Sürüş süresi",
   "quantityRideStopCount": "Duruş",

@@ -158,11 +158,12 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
     if (!mounted || requestId != _requestId) return;
     setState(() {
       _deletingMarkId = null;
-      if (res.isSuccess) {
+      // 404 = already gone on the server (deleted elsewhere): drop the row too.
+      if (res.isSuccess || res.outcome == MarkCallOutcome.notFound) {
         _marks = _marks.where((m) => m.id != mark.id).toList(growable: false);
       }
     });
-    if (!res.isSuccess) {
+    if (!res.isSuccess && res.outcome != MarkCallOutcome.notFound) {
       final detail = res.message ?? res.outcome.name;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -385,7 +386,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
               children: [
                 Readout(
                   label: quantityText(context.l10n, scalar.name),
-                  value: RiderFormat.of(context).value(scalar.value, scalar.unit),
+                  value:
+                      RiderFormat.of(context).value(scalar.value, scalar.unit),
                   unit: RiderFormat.of(context).unit(scalar.unit),
                   size: ReadoutSize.medium,
                 ),
@@ -445,7 +447,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                         runSpacing: Spacing.xs,
                         children: [
                           Text(
-                            RiderFormat.of(context).withUnit(gears[index].value, signal.unit),
+                            RiderFormat.of(context)
+                                .withUnit(gears[index].value, signal.unit),
                             style: numberFace(18, FontWeight.w600,
                                 color: context.vehicle.textPrimary),
                           ),
@@ -495,7 +498,8 @@ class _RideSummaryScreenState extends State<RideSummaryScreen> {
                   style: theme.textTheme.bodySmall),
             const SizedBox(height: Spacing.sm),
             Text(
-              context.l10n.logbookTotalOutside(RiderFormat.of(context).duration(signal.totalS),
+              context.l10n.logbookTotalOutside(
+                  RiderFormat.of(context).duration(signal.totalS),
                   RiderFormat.of(context).duration(signal.outsideS)),
               style: theme.textTheme.bodySmall,
             ),
@@ -778,8 +782,7 @@ class _HeatGridState extends State<_HeatGrid> {
       BinnedSummary signal, RideAxis columns, RideAxis rows, RideCell? cell) {
     final row = _selectedRow!;
     final column = _selectedColumn!;
-    final value =
-        RiderFormat.of(context).withUnit(cell?.value, signal.unit);
+    final value = RiderFormat.of(context).withUnit(cell?.value, signal.unit);
     final flag = cell?.flag;
     final rowRange = rideAxisRange(rows.edges);
     final columnRange = rideAxisRange(columns.edges);

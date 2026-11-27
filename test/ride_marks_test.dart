@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -135,10 +136,10 @@ void main() {
     );
 
     // Offline enqueue persists and does not deliver yet.
-    expect(await queue.enqueue(m1), isFalse);
+    expect(await queue.enqueue(m1), MarkSendOutcome.queued);
     // Duplicate id is dropped instead of queued twice.
-    expect(await queue.enqueue(m1), isFalse);
-    expect(await queue.enqueue(m2), isFalse);
+    expect(await queue.enqueue(m1), MarkSendOutcome.queued);
+    expect(await queue.enqueue(m2), MarkSendOutcome.queued);
     expect((await queue.pending()).map((m) => m.id).toList(),
         ['dup-id-1', 'mark-id-2']);
     expect(queue.pendingCount.value, 2);
@@ -150,6 +151,103 @@ void main() {
     expect(postedIds, ['dup-id-1', 'mark-id-2']);
     expect(await queue.pending(), isEmpty);
     expect(queue.pendingCount.value, 0);
+  });
+
+  test('MarkQueue drops a permanently rejected mark and reports it', () async {
+    final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+    final queue = MarkQueue(
+      client: MarksClient(
+        httpClient: MockClient(
+          (request) async => http.Response('{"detail":"bad"}', 422),
+        ),
+      ),
+      settingsStore: settings,
+    );
+    addTearDown(queue.dispose);
+
+    final outcome = await queue.enqueue(const RideMark(
+      id: 'rejected-1',
+      tUtcMs: 1794819900000,
+      kind: RideMarkKind.noise,
+    ));
+    expect(outcome, MarkSendOutcome.rejected);
+    expect(await queue.pending(), isEmpty);
+    expect(queue.rejectedCount.value, 1);
+  });
+
+  test('MarkQueue keeps a mark enqueued while a flush is in flight', () async {
+    final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+    final gate = Completer<void>();
+    final posted = <String>[];
+    final queue = MarkQueue(
+      client: MarksClient(
+        httpClient: MockClient((request) async {
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          posted.add(body['id'] as String);
+          if (body['id'] == 'first') await gate.future;
+          return http.Response(jsonEncode(body), 201);
+        }),
+      ),
+      settingsStore: settings,
+    );
+    addTearDown(queue.dispose);
+
+    const first =
+        RideMark(id: 'first', tUtcMs: 1794819900000, kind: RideMarkKind.noise);
+    const second = RideMark(
+        id: 'second', tUtcMs: 1794819901000, kind: RideMarkKind.misfire);
+    final firstDone = queue.enqueue(first);
+    // Let the first request start, then tap again while it is in flight.
+    while (posted.isEmpty) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    final secondDone = queue.enqueue(second);
+    gate.complete();
+    expect(await firstDone, MarkSendOutcome.sent);
+    expect(await secondDone, MarkSendOutcome.sent);
+    expect(posted, ['first', 'second']);
+    expect(await queue.pending(), isEmpty);
+  });
+
+  testWidgets('MarkQueue retries with exponential backoff until delivered',
+      (tester) async {
+    final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+    var online = false;
+    var attempts = 0;
+    final queue = MarkQueue(
+      client: MarksClient(
+        httpClient: MockClient((request) async {
+          attempts++;
+          if (!online) throw http.ClientException('offline');
+          return http.Response(request.body, 201);
+        }),
+      ),
+      settingsStore: settings,
+      retryBase: const Duration(seconds: 5),
+      retryMax: const Duration(seconds: 12),
+    );
+    addTearDown(queue.dispose);
+
+    expect(
+      await queue.enqueue(const RideMark(
+          id: 'm-backoff', tUtcMs: 1794819900000, kind: RideMarkKind.noise)),
+      MarkSendOutcome.queued,
+    );
+    expect(attempts, 1);
+    await tester.pump(const Duration(seconds: 4));
+    expect(attempts, 1); // first retry is due after 5 s
+    await tester.pump(const Duration(seconds: 1));
+    expect(attempts, 2);
+    await tester.pump(const Duration(seconds: 9));
+    expect(attempts, 2); // second delay is 10 s
+    await tester.pump(const Duration(seconds: 1));
+    expect(attempts, 3);
+    online = true;
+    await tester.pump(const Duration(seconds: 12)); // capped at retryMax
+    expect(attempts, 4);
+    expect(await queue.pending(), isEmpty);
+    await tester.pump(const Duration(minutes: 1));
+    expect(attempts, 4); // nothing pending: no more timers
   });
 
   testWidgets(
@@ -199,7 +297,8 @@ void main() {
     await tester.tap(markButton);
     await tester.pumpAndSettle();
     for (final kind in RideMarkKind.quickPickerKinds) {
-      expect(find.byKey(ValueKey('mark-kind-${kind.wireName}')), findsOneWidget);
+      expect(
+          find.byKey(ValueKey('mark-kind-${kind.wireName}')), findsOneWidget);
     }
 
     // Wait past auto-close timeout -> picker closes itself with no mark posted.
@@ -229,8 +328,8 @@ void main() {
         if (request.url.path.contains('summary')) {
           return http.Response(jsonEncode(_summaryFixture()), 200);
         }
-        return http.Response(jsonEncode({'session_id': '20261116-090000-d83e'}),
-            200);
+        return http.Response(
+            jsonEncode({'session_id': '20261116-090000-d83e'}), 200);
       }),
     );
 

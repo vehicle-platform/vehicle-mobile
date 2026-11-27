@@ -56,7 +56,9 @@ class _LiveScreenState extends State<LiveScreen> {
     widget.store.addListener(_onStore);
     _ownsMarkQueue = widget.markQueue == null;
     _markQueue = widget.markQueue ?? MarkQueue();
-    unawaited(_markQueue.pending());
+    _markQueue.rejectedCount.addListener(_onMarkRejected);
+    // Deliver marks left over from an earlier ride or a killed app.
+    unawaited(_markQueue.flush());
   }
 
   void _onStore() {
@@ -70,8 +72,20 @@ class _LiveScreenState extends State<LiveScreen> {
   void dispose() {
     widget.store.removeListener(_onStore);
     _connectTimeout?.cancel();
+    _markQueue.rejectedCount.removeListener(_onMarkRejected);
     if (_ownsMarkQueue) _markQueue.dispose();
     super.dispose();
+  }
+
+  void _onMarkRejected() {
+    if (!mounted) return;
+    _showMarkMessage(context.l10n.rideMarkRejected);
+  }
+
+  void _showMarkMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onMarkPressed() async {
@@ -80,16 +94,20 @@ class _LiveScreenState extends State<LiveScreen> {
       autoCloseAfter: widget.pickerTimeout,
     );
     if (!mounted || kind == null) return;
-    final sent = await _markQueue.recordAndSend(kind);
+    final outcome = await _markQueue.recordAndSend(kind);
+    // The rider may have left the screen while the request ran: drop the reply.
     if (!mounted) return;
     final l = context.l10n;
     final kindLabel = kind.label(l);
-    final message = sent
-        ? l.rideMarkSaved(kindLabel)
-        : l.rideMarkQueuedOffline(_markQueue.pendingCount.value, kindLabel);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    switch (outcome) {
+      case MarkSendOutcome.sent:
+        _showMarkMessage(l.rideMarkSaved(kindLabel));
+      case MarkSendOutcome.queued:
+        _showMarkMessage(
+            l.rideMarkQueuedOffline(_markQueue.pendingCount.value, kindLabel));
+      case MarkSendOutcome.rejected:
+        break; // `_onMarkRejected` already told the rider.
+    }
   }
 
   void _connectOrDisconnect() {

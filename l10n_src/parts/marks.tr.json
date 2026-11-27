@@ -39,5 +39,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "rideMarkRejected": "Sunucu bir işareti reddetti ve silindi."
 }

@@ -811,6 +811,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get rideMarkRejected =>
+      'The server rejected a mark and it was discarded.';
+
+  @override
   String get quantityRideDistance => 'Distance';
 
   @override
