@@ -754,6 +754,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logbookFirstMark => 'first';
 
   @override
+  String get rideMarkButton => 'Mark event';
+
+  @override
+  String get rideMarkPickerTitle => 'What happened?';
+
+  @override
+  String get rideMarkPickerHint => 'Closes automatically in a few seconds';
+
+  @override
+  String get rideMarkKindMisfire => 'Misfire';
+
+  @override
+  String get rideMarkKindNoise => 'Noise';
+
+  @override
+  String get rideMarkKindVibration => 'Vibration';
+
+  @override
+  String get rideMarkKindWarningLight => 'Warning light';
+
+  @override
+  String get rideMarkKindRoughRoad => 'Rough road';
+
+  @override
+  String get rideMarkKindTraffic => 'Traffic';
+
+  @override
+  String get rideMarkKindOther => 'Other';
+
+  @override
+  String rideMarkSaved(String kind) {
+    return 'Marked: $kind';
+  }
+
+  @override
+  String rideMarkQueuedOffline(int count, String kind) {
+    return 'Saved offline ($count queued): $kind';
+  }
+
+  @override
+  String get logbookMarksSection => 'Ride marks';
+
+  @override
+  String get logbookMarksEmpty => 'No event marks recorded during this ride.';
+
+  @override
+  String get logbookMarksLoadFailed => 'Could not load ride marks.';
+
+  @override
+  String get logbookMarkDeleteTooltip => 'Delete mark';
+
+  @override
+  String logbookMarkDeleteFailed(String detail) {
+    return 'Could not delete mark: $detail';
+  }
+
+  @override
+  String get rideMarkRejected =>
+      'The server rejected a mark and it was discarded.';
+
+  @override
   String get quantityRideDistance => 'Distance';
 
   @override

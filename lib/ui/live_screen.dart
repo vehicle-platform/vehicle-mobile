@@ -5,12 +5,14 @@ import 'package:vehicle_defs/vehicle_defs.dart';
 
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
+import 'package:vehicle_mobile/services/mark_queue.dart';
 import 'package:vehicle_mobile/ui/shell/shell_scope.dart';
 import 'package:vehicle_mobile/ui/telemetry/link_status.dart';
 import 'package:vehicle_mobile/ui/telemetry/signal_view.dart';
 import 'package:vehicle_mobile/ui/telemetry/telemetry_store.dart';
 import 'package:vehicle_mobile/ui/theme/app_theme.dart';
 import 'package:vehicle_mobile/ui/widgets/common.dart';
+import 'package:vehicle_mobile/ui/widgets/mark_picker.dart';
 import 'package:vehicle_mobile/ui/widgets/readout.dart';
 
 /// Live dashboard: hero speed, RPM and throttle, secondary tiles, and a
@@ -21,6 +23,8 @@ class LiveScreen extends StatefulWidget {
     required this.store,
     required this.bleService,
     required this.onOpenRecord,
+    this.markQueue,
+    this.pickerTimeout = const Duration(seconds: 5),
   });
 
   final TelemetryStore store;
@@ -28,6 +32,12 @@ class LiveScreen extends StatefulWidget {
 
   /// Switches the shell to the Record destination.
   final VoidCallback onOpenRecord;
+
+  /// Optional override for testing the offline mark queue.
+  final MarkQueue? markQueue;
+
+  /// Auto-close duration for the quick event-mark picker.
+  final Duration pickerTimeout;
 
   @override
   State<LiveScreen> createState() => _LiveScreenState();
@@ -37,11 +47,18 @@ class _LiveScreenState extends State<LiveScreen> {
   /// A scan is running (the scan times out after 15 s in [BleService]).
   bool _connecting = false;
   Timer? _connectTimeout;
+  late final MarkQueue _markQueue;
+  late final bool _ownsMarkQueue;
 
   @override
   void initState() {
     super.initState();
     widget.store.addListener(_onStore);
+    _ownsMarkQueue = widget.markQueue == null;
+    _markQueue = widget.markQueue ?? MarkQueue();
+    _markQueue.rejectedCount.addListener(_onMarkRejected);
+    // Deliver marks left over from an earlier ride or a killed app.
+    unawaited(_markQueue.flush());
   }
 
   void _onStore() {
@@ -55,7 +72,42 @@ class _LiveScreenState extends State<LiveScreen> {
   void dispose() {
     widget.store.removeListener(_onStore);
     _connectTimeout?.cancel();
+    _markQueue.rejectedCount.removeListener(_onMarkRejected);
+    if (_ownsMarkQueue) _markQueue.dispose();
     super.dispose();
+  }
+
+  void _onMarkRejected() {
+    if (!mounted) return;
+    _showMarkMessage(context.l10n.rideMarkRejected);
+  }
+
+  void _showMarkMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _onMarkPressed() async {
+    final kind = await showRideMarkPicker(
+      context,
+      autoCloseAfter: widget.pickerTimeout,
+    );
+    if (!mounted || kind == null) return;
+    final outcome = await _markQueue.recordAndSend(kind);
+    // The rider may have left the screen while the request ran: drop the reply.
+    if (!mounted) return;
+    final l = context.l10n;
+    final kindLabel = kind.label(l);
+    switch (outcome) {
+      case MarkSendOutcome.sent:
+        _showMarkMessage(l.rideMarkSaved(kindLabel));
+      case MarkSendOutcome.queued:
+        _showMarkMessage(
+            l.rideMarkQueuedOffline(_markQueue.pendingCount.value, kindLabel));
+      case MarkSendOutcome.rejected:
+        break; // `_onMarkRejected` already told the rider.
+    }
   }
 
   void _connectOrDisconnect() {
@@ -186,6 +238,24 @@ class _LiveScreenState extends State<LiveScreen> {
         SectionLabel(context.l10n.rideStatusLabel),
         _StatusStrip(store: widget.store),
         const SizedBox(height: Spacing.lg),
+        FilledButton.icon(
+          key: const ValueKey('live-mark-button'),
+          style: FilledButton.styleFrom(
+            backgroundColor: context.vehicle.accent,
+            foregroundColor: context.vehicle.onAccent,
+            minimumSize: const Size.fromHeight(64),
+          ),
+          onPressed: _onMarkPressed,
+          icon: const Icon(Icons.flag, size: 26),
+          label: Text(
+            context.l10n.rideMarkButton,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: context.vehicle.onAccent),
+          ),
+        ),
+        const SizedBox(height: Spacing.md),
         FilledButton.icon(
           style: FilledButton.styleFrom(
             backgroundColor: context.vehicle.record,
