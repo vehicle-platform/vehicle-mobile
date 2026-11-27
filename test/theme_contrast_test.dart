@@ -14,11 +14,20 @@ double contrast(Color a, Color b) {
 
 void main() {
   const aa = 4.5;
-  final themes = {'dark': VehicleTokens.dark, 'light': VehicleTokens.light};
+  const aaa = 7.0;
+  final themes = {
+    'dark': VehicleTokens.dark,
+    'light': VehicleTokens.light,
+    'sunlight': VehicleTokens.sunlight,
+  };
 
   for (final entry in themes.entries) {
     final t = entry.value;
-    group('WCAG AA text contrast, ${entry.key} theme', () {
+    // Sunlight must stay readable under glare: AAA for every text and state
+    // colour, and borders that read as lines, not as a faint tint.
+    final target = entry.key == 'sunlight' ? aaa : aa;
+    final level = target == aaa ? 'AAA' : 'AA';
+    group('WCAG $level text contrast, ${entry.key} theme', () {
       final texts = {
         'textPrimary': t.textPrimary,
         'textSecondary': t.textSecondary,
@@ -37,18 +46,38 @@ void main() {
       for (final text in texts.entries) {
         for (final surface in surfaces.entries) {
           test('${text.key} on ${surface.key}', () {
-            expect(contrast(text.value, surface.value), greaterThanOrEqualTo(aa));
+            expect(contrast(text.value, surface.value),
+                greaterThanOrEqualTo(target));
           });
         }
       }
       test('onAccent on accent', () {
-        expect(contrast(t.onAccent, t.accent), greaterThanOrEqualTo(aa));
+        expect(contrast(t.onAccent, t.accent), greaterThanOrEqualTo(target));
       });
       test('hairline stays visible but is not a text colour', () {
         expect(contrast(t.hairline, t.background), greaterThan(1.1));
       });
     });
   }
+
+  test('sunlight borders read under glare (>= 4.5:1 on every surface)', () {
+    const t = VehicleTokens.sunlight;
+    for (final surface in [t.background, t.surface, t.surfaceRaised]) {
+      expect(contrast(t.outline, surface), greaterThanOrEqualTo(4.5));
+    }
+  });
+
+  test('sunlight theme draws 2 px borders, the others 1 px', () {
+    final sun = buildAppTheme(brightness: Brightness.light, sunlight: true);
+    final light = buildAppTheme(brightness: Brightness.light);
+    final dark =
+        buildAppTheme(sunlight: true); // sunlight only applies to light
+    expect(sun.dividerTheme.thickness, 2);
+    expect(light.dividerTheme.thickness, 1);
+    expect(dark.dividerTheme.thickness, 1);
+    expect(sun.extension<VehicleTokens>(), VehicleTokens.sunlight);
+    expect(dark.extension<VehicleTokens>(), VehicleTokens.dark);
+  });
 
   test('radii stay at 8 or below and motion within 150-200 ms', () {
     expect(Radii.chip, lessThanOrEqualTo(8));

@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 ///
 /// Colour carries meaning only: one teal [accent] for live/active state,
 /// amber [advisory] (D-129 class P2), red [critical] (class P1). Surfaces are
-/// graphite in the dark theme and a barely warm off-white in the light theme;
-/// no gradients, glows or shadows.
+/// graphite in the dark theme, a barely warm off-white in the light theme and
+/// plain white in the sunlight theme; no gradients, glows or shadows.
 @immutable
 class VehicleTokens extends ThemeExtension<VehicleTokens> {
   const VehicleTokens({
@@ -101,6 +101,27 @@ class VehicleTokens extends ThemeExtension<VehicleTokens> {
     notPolled: Color(0xFF50607A),
     error: Color(0xFFB3261E),
     record: Color(0xFFB3261E),
+  );
+
+  /// Sunlight (direct daylight on a phone): white surfaces, black text and
+  /// darker state colours so every text and state colour reaches WCAG AAA
+  /// (7:1) on every surface, and borders strong enough to survive glare
+  /// (checked by a test). The theme also draws borders 2 px wide.
+  static const VehicleTokens sunlight = VehicleTokens(
+    background: Color(0xFFFFFFFF),
+    surface: Color(0xFFF5F6F7),
+    surfaceRaised: Color(0xFFE2E5E9),
+    outline: Color(0xFF4A525B),
+    textPrimary: Color(0xFF000000),
+    textSecondary: Color(0xFF262B31),
+    accent: Color(0xFF00504A),
+    onAccent: Color(0xFFFFFFFF),
+    live: Color(0xFF00504A),
+    stale: Color(0xFF633D00),
+    noData: Color(0xFF363C43),
+    notPolled: Color(0xFF2F3C55),
+    error: Color(0xFF8A1A14),
+    record: Color(0xFF8A1A14),
   );
 
   @override

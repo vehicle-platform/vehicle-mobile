@@ -1,0 +1,10 @@
+{
+  "settingsDisplay": "Görünüm",
+  "themeSystem": "Sistem",
+  "themeDark": "Koyu",
+  "themeLight": "Açık",
+  "themeSunlight": "Gün ışığı",
+  "settingsDisplayHint": "Gün ışığı modu, telefonu doğrudan güneş altında okuyabilmen için beyaz zemin üzerinde siyah yazı ve kalın çerçeveler kullanır.",
+  "sunlightModeOn": "Gün ışığı modu açık",
+  "sunlightModeOff": "Gün ışığı modu kapalı"
+}

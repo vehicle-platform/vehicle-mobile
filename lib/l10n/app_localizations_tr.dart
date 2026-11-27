@@ -382,6 +382,31 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assistantChatsRetry => 'Tekrar dene';
 
   @override
+  String get settingsDisplay => 'Görünüm';
+
+  @override
+  String get themeSystem => 'Sistem';
+
+  @override
+  String get themeDark => 'Koyu';
+
+  @override
+  String get themeLight => 'Açık';
+
+  @override
+  String get themeSunlight => 'Gün ışığı';
+
+  @override
+  String get settingsDisplayHint =>
+      'Gün ışığı modu, telefonu doğrudan güneş altında okuyabilmen için beyaz zemin üzerinde siyah yazı ve kalın çerçeveler kullanır.';
+
+  @override
+  String get sunlightModeOn => 'Gün ışığı modu açık';
+
+  @override
+  String get sunlightModeOff => 'Gün ışığı modu kapalı';
+
+  @override
   String get formatToday => 'Bugün';
 
   @override

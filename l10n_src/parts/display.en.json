@@ -1,0 +1,10 @@
+{
+  "settingsDisplay": "Display",
+  "themeSystem": "System",
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "themeSunlight": "Sunlight",
+  "settingsDisplayHint": "Sunlight shows black text on white with thicker borders, for reading the phone in direct daylight.",
+  "sunlightModeOn": "Sunlight mode on",
+  "sunlightModeOff": "Sunlight mode off"
+}

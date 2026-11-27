@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:vehicle_mobile/ui/theme/theme_controller.dart';
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/l10n/locale_controller.dart';
 import 'package:vehicle_mobile/models/host.dart';
@@ -273,6 +274,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _displaySection(BuildContext context) {
+    final controller = ThemeScope.maybeOf(context);
+    if (controller == null) return const SizedBox.shrink();
+    final l = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionLabel(l.settingsDisplay),
+        SegmentedButton<ThemeChoice>(
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(
+                value: ThemeChoice.system, label: Text(l.themeSystem)),
+            ButtonSegment(value: ThemeChoice.dark, label: Text(l.themeDark)),
+            ButtonSegment(value: ThemeChoice.light, label: Text(l.themeLight)),
+            ButtonSegment(
+                value: ThemeChoice.sunlight, label: Text(l.themeSunlight)),
+          ],
+          selected: {controller.choice},
+          onSelectionChanged: (s) => controller.set(s.first),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: Spacing.sm),
+          child: Text(l.settingsDisplayHint,
+              style: Theme.of(context).textTheme.bodySmall),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -295,6 +326,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _hostsSection(context),
                     const SizedBox(height: Spacing.lg),
                     _languageSection(context),
+                    const SizedBox(height: Spacing.lg),
+                    _displaySection(context),
                     const SizedBox(height: Spacing.lg),
                     const AlertTypesSection(),
                     const SizedBox(height: Spacing.lg),

@@ -382,6 +382,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantChatsRetry => 'Try again';
 
   @override
+  String get settingsDisplay => 'Display';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeSunlight => 'Sunlight';
+
+  @override
+  String get settingsDisplayHint =>
+      'Sunlight shows black text on white with thicker borders, for reading the phone in direct daylight.';
+
+  @override
+  String get sunlightModeOn => 'Sunlight mode on';
+
+  @override
+  String get sunlightModeOff => 'Sunlight mode off';
+
+  @override
   String get formatToday => 'Today';
 
   @override

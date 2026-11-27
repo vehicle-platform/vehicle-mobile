@@ -752,6 +752,54 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get assistantChatsRetry;
 
+  /// No description provided for @settingsDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplay;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeSunlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight'**
+  String get themeSunlight;
+
+  /// No description provided for @settingsDisplayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight shows black text on white with thicker borders, for reading the phone in direct daylight.'**
+  String get settingsDisplayHint;
+
+  /// No description provided for @sunlightModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight mode on'**
+  String get sunlightModeOn;
+
+  /// No description provided for @sunlightModeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunlight mode off'**
+  String get sunlightModeOff;
+
   /// No description provided for @formatToday.
   ///
   /// In en, this message translates to:

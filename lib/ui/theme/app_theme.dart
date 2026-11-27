@@ -9,10 +9,14 @@ export 'package:vehicle_mobile/ui/theme/tokens.dart';
 export 'package:vehicle_mobile/ui/theme/typography.dart';
 
 /// The app theme: high contrast, Material 3; dark by default, [Brightness.light]
-/// for the system light mode.
-ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
-  final t =
-      brightness == Brightness.dark ? VehicleTokens.dark : VehicleTokens.light;
+/// for the system light mode. [sunlight] selects the daylight variant of the
+/// light theme ([VehicleTokens.sunlight], 2 px borders).
+ThemeData buildAppTheme(
+    {Brightness brightness = Brightness.dark, bool sunlight = false}) {
+  final t = brightness == Brightness.dark
+      ? VehicleTokens.dark
+      : (sunlight ? VehicleTokens.sunlight : VehicleTokens.light);
+  final stroke = brightness == Brightness.light && sunlight ? 2.0 : 1.0;
   final scheme = ColorScheme(
     brightness: brightness,
     primary: t.accent,
@@ -62,10 +66,11 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Radii.card),
-        side: BorderSide(color: t.hairline),
+        side: BorderSide(color: t.hairline, width: stroke),
       ),
     ),
-    dividerTheme: DividerThemeData(color: t.outline, thickness: 1, space: 1),
+    dividerTheme:
+        DividerThemeData(color: t.outline, thickness: stroke, space: stroke),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: t.surface,
       surfaceTintColor: Colors.transparent,
@@ -123,7 +128,7 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       style: OutlinedButton.styleFrom(
         minimumSize: minButton,
         foregroundColor: t.textPrimary,
-        side: BorderSide(color: t.textSecondary),
+        side: BorderSide(color: t.textSecondary, width: stroke),
         textStyle: textTheme.labelLarge,
         shape: shape,
       ),
@@ -151,11 +156,11 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
           horizontal: Spacing.lg, vertical: Spacing.md),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(Radii.chip),
-        borderSide: BorderSide(color: t.outline),
+        borderSide: BorderSide(color: t.outline, width: stroke),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(Radii.chip),
-        borderSide: BorderSide(color: t.outline),
+        borderSide: BorderSide(color: t.outline, width: stroke),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(Radii.chip),
@@ -185,7 +190,7 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
         foregroundColor: t.textPrimary,
         selectedBackgroundColor: t.surfaceRaised,
         selectedForegroundColor: t.accent,
-        side: BorderSide(color: t.outline),
+        side: BorderSide(color: t.outline, width: stroke),
         textStyle: textTheme.labelLarge,
       ),
     ),
@@ -196,7 +201,7 @@ ThemeData buildAppTheme({Brightness brightness = Brightness.dark}) {
       actionTextColor: t.accent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Radii.chip),
-        side: BorderSide(color: t.outline),
+        side: BorderSide(color: t.outline, width: stroke),
       ),
     ),
     dialogTheme: DialogThemeData(
