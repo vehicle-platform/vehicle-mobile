@@ -9,12 +9,13 @@ import 'package:vehicle_mobile/ui/app_shell.dart';
 import 'package:vehicle_mobile/ui/auth/auth_gate.dart';
 import 'package:vehicle_mobile/ui/phone/phone_tabs.dart';
 import 'package:vehicle_mobile/ui/phone/phone_tabs_factory.dart';
-import 'package:vehicle_mobile/ui/theme/app_theme.dart';
+import 'package:vehicle_mobile/ui/theme/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final locale = await LocaleController.load();
-  runApp(Cl250TelemetryApp(localeController: locale));
+  final theme = await ThemeController.load();
+  runApp(Cl250TelemetryApp(localeController: locale, themeController: theme));
 }
 
 class Cl250TelemetryApp extends StatelessWidget {
@@ -22,12 +23,17 @@ class Cl250TelemetryApp extends StatelessWidget {
       {super.key,
       PhoneTabs? phoneTabs,
       this.settingsStore = const AppSettingsStore(),
-      LocaleController? localeController})
+      LocaleController? localeController,
+      ThemeController? themeController})
       : phoneTabs = phoneTabs ?? createPhoneTabs(),
-        localeController = localeController ?? LocaleController();
+        localeController = localeController ?? LocaleController(),
+        themeController = themeController ?? ThemeController();
 
   /// The language choice (English default, Turkish selectable, D-125).
   final LocaleController localeController;
+
+  /// The display choice: system (dark first), dark, light or sunlight.
+  final ThemeController themeController;
 
   /// Where the login gate reads the host and its session (tests inject one).
   final AppSettingsStore settingsStore;
@@ -40,10 +46,10 @@ class Cl250TelemetryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: localeController,
+      listenable: Listenable.merge([localeController, themeController]),
       builder: (context, _) => LocaleScope(
         controller: localeController,
-        child: _app(),
+        child: ThemeScope(controller: themeController, child: _app()),
       ),
     );
   }
@@ -60,10 +66,11 @@ class Cl250TelemetryApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(brightness: Brightness.light),
-      darkTheme: buildAppTheme(),
-      // Dark first; the light theme follows the system setting.
-      themeMode: ThemeMode.system,
+      theme: themeController.lightTheme,
+      darkTheme: themeController.darkTheme,
+      // Dark first; "system" follows the system setting, sunlight is the
+      // daylight variant of the light theme.
+      themeMode: themeController.themeMode,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: Theme.of(context).brightness == Brightness.dark
             ? SystemUiOverlayStyle.light

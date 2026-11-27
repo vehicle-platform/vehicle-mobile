@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vehicle_defs/vehicle_defs.dart';
 
+import 'package:vehicle_mobile/ui/widgets/sunlight_toggle.dart';
 import 'package:vehicle_mobile/l10n/l10n.dart';
 import 'package:vehicle_mobile/services/ble_service.dart';
 import 'package:vehicle_mobile/services/mark_queue.dart';
@@ -134,6 +135,7 @@ class _LiveScreenState extends State<LiveScreen> {
       appBar: AppBar(
         toolbarHeight: 48,
         actions: [
+          const SunlightToggle(),
           IconButton(
             tooltip: context.l10n.rideLiveOpenRecord,
             onPressed: widget.onOpenRecord,

@@ -29,6 +29,10 @@ Top-level destinations (`lib/ui/app_shell.dart`):
 - **Settings (`lib/ui/settings_screen.dart`):** account management and vehicle claiming (D-122), language selector (`LocaleController`, D-125), host list (`lib/services/host_store.dart`, `host_resolver.dart`, D-121 item 4), Wi-Fi-only upload toggle, voice read-aloud toggle, per-rule alert mutes (`lib/ui/settings/alert_types_section.dart`, D-129), assistant provider configuration (`lib/ui/settings/assistant_model_screen.dart`, D-124), and user-visible assistant memory (`lib/ui/settings/assistant_memory_screen.dart`, D-128).
 - **Login (`lib/ui/auth/auth_gate.dart`, `login_screen.dart`):** shown when the active host has no token (skippable on the phone because BLE and local recording work offline); supports account login, registration with vehicle ID + claim code, and manual device-token entry.
 
+### Display modes
+
+Settings > Display: System (dark first), Dark, Light, Sunlight (`lib/ui/theme/theme_controller.dart`, saved as `ui_theme`). Sunlight is the light theme for direct daylight: white surfaces, black text, every text and state colour at WCAG AAA (>= 7:1) on every surface, borders >= 4.5:1 and 2 px wide (`VehicleTokens.sunlight`, checked by `test/theme_contrast_test.dart`). The ride screen has a one-tap sun button that switches sunlight on and back to the previous choice.
+
 ## Ride event marks and offline queue (D-133)
 
 Riders can tag timestamped, position-free events (`{id, t_utc, kind, note?}`, no GPS fields per D-076) during a ride as consented weak labels:
