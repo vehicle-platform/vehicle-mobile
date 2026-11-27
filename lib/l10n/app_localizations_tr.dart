@@ -761,6 +761,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rideMarkPickerHint => 'Birkaç saniye içinde otomatik kapanır';
 
   @override
+  String get rideMarkPickerMore => 'Daha fazla';
+
+  @override
+  String get rideMarkNoteLabel => 'İsteğe bağlı not';
+
+  @override
+  String get rideMarkNoteHint => 'Ne fark ettiniz?';
+
+  @override
+  String rideMarkSaveKind(String kind) {
+    return 'İşareti kaydet: $kind';
+  }
+
+  @override
   String get rideMarkKindMisfire => 'Tekleme';
 
   @override

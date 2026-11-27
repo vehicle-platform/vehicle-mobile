@@ -2,6 +2,17 @@
   "rideMarkButton": "Mark event",
   "rideMarkPickerTitle": "What happened?",
   "rideMarkPickerHint": "Closes automatically in a few seconds",
+  "rideMarkPickerMore": "More",
+  "rideMarkNoteLabel": "Optional note",
+  "rideMarkNoteHint": "What did you notice?",
+  "rideMarkSaveKind": "Save mark: {kind}",
+  "@rideMarkSaveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "rideMarkKindMisfire": "Misfire",
   "rideMarkKindNoise": "Noise",
   "rideMarkKindVibration": "Vibration",

@@ -493,6 +493,17 @@
   "rideMarkButton": "Olay işaretle",
   "rideMarkPickerTitle": "Ne oldu?",
   "rideMarkPickerHint": "Birkaç saniye içinde otomatik kapanır",
+  "rideMarkPickerMore": "Daha fazla",
+  "rideMarkNoteLabel": "İsteğe bağlı not",
+  "rideMarkNoteHint": "Ne fark ettiniz?",
+  "rideMarkSaveKind": "İşareti kaydet: {kind}",
+  "@rideMarkSaveKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "rideMarkKindMisfire": "Tekleme",
   "rideMarkKindNoise": "Ses",
   "rideMarkKindVibration": "Titreşim",

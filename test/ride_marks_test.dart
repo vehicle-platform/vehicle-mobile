@@ -410,4 +410,346 @@ void main() {
     expect(find.text('Noise'), findsOneWidget);
     expect(find.textContaining('Could not delete mark'), findsOneWidget);
   });
+
+  testWidgets(
+      'Mark picker More opens all 7 kinds, enforces 200-char note limit with counter, and sends note unchanged',
+      (tester) async {
+    final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+    final posted = <Map<String, dynamic>>[];
+    final queue = MarkQueue(
+      client: MarksClient(
+        httpClient: MockClient((request) async {
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          posted.add(body);
+          return http.Response(jsonEncode(body), 201);
+        }),
+      ),
+      settingsStore: settings,
+      clock: () => DateTime.utc(2026, 11, 16, 9, 20),
+      random: Random(11),
+    );
+    final store = TelemetryStore();
+    addTearDown(() {
+      queue.dispose();
+      store.dispose();
+    });
+
+    await tester.pumpWidget(
+      _appHost(
+        LiveScreen(
+          store: store,
+          bleService: BleService(),
+          onOpenRecord: () {},
+          markQueue: queue,
+          pickerTimeout: const Duration(seconds: 5),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Open picker and tap More -> all 7 D-133 kinds + note field are shown.
+    final markButton = find.byKey(const ValueKey('live-mark-button'));
+    await tester.ensureVisible(markButton);
+    await tester.tap(markButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('mark-kind-more')));
+    await tester.pumpAndSettle();
+
+    for (final kind in RideMarkKind.values) {
+      expect(
+          find.byKey(ValueKey('mark-kind-${kind.wireName}')), findsOneWidget);
+    }
+    final noteField = find.byKey(const ValueKey('mark-note-field'));
+    expect(noteField, findsOneWidget);
+    expect(find.text('0/200'), findsOneWidget);
+
+    // Entering > 200 characters is capped at 200 and counter shows 200/200.
+    final overLimit = 'x' * 225;
+    await tester.enterText(noteField, overLimit);
+    await tester.pumpAndSettle();
+    expect(find.text('200/200'), findsOneWidget);
+
+    // Replace with a specific note and tap Rough road -> reaches queue/server unchanged.
+    const noteText = 'potholes before bridge turn';
+    await tester.enterText(noteField, noteText);
+    await tester.pumpAndSettle();
+    expect(find.text('${noteText.length}/200'), findsOneWidget);
+
+    final roughRoad = find.byKey(const ValueKey('mark-kind-rough_road'));
+    await tester.ensureVisible(roughRoad);
+    await tester.tap(roughRoad);
+    await tester.pumpAndSettle();
+
+    expect(posted, hasLength(1));
+    expect(posted.single['kind'], 'rough_road');
+    expect(posted.single['note'], noteText);
+    expect(find.text('Marked: Rough road'), findsOneWidget);
+
+    // Open More again, leave note empty (spaces only), tap Traffic -> no note field sent.
+    await tester.ensureVisible(markButton);
+    await tester.tap(markButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('mark-kind-more')));
+    await tester.pumpAndSettle();
+    await tester.enterText(noteField, '   ');
+    await tester.pumpAndSettle();
+    final traffic = find.byKey(const ValueKey('mark-kind-traffic'));
+    await tester.ensureVisible(traffic);
+    await tester.tap(traffic);
+    await tester.pumpAndSettle();
+
+    expect(posted, hasLength(2));
+    expect(posted.last['kind'], 'traffic');
+    expect(posted.last.containsKey('note'), isFalse);
+  });
+
+  testWidgets(
+      'Mark picker Other pauses auto-close while note has focus, submits on unfocus timeout, and queues note offline unchanged',
+      (tester) async {
+    final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+    final queue = MarkQueue(
+      client: MarksClient(
+        httpClient: MockClient((request) async {
+          throw http.ClientException('offline');
+        }),
+      ),
+      settingsStore: settings,
+      clock: () => DateTime.utc(2026, 11, 16, 9, 25),
+      random: Random(13),
+    );
+    final store = TelemetryStore();
+    addTearDown(store.dispose);
+
+    await tester.pumpWidget(
+      _appHost(
+        LiveScreen(
+          store: store,
+          bleService: BleService(),
+          onOpenRecord: () {},
+          markQueue: queue,
+          pickerTimeout: const Duration(seconds: 2),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final markButton = find.byKey(const ValueKey('live-mark-button'));
+    await tester.ensureVisible(markButton);
+    await tester.tap(markButton);
+    await tester.pumpAndSettle();
+
+    // Tap Other -> switches to note entry step.
+    await tester.tap(find.byKey(const ValueKey('mark-kind-other')));
+    await tester.pumpAndSettle();
+
+    final noteField = find.byKey(const ValueKey('mark-note-field'));
+    expect(noteField, findsOneWidget);
+
+    // Focus note field -> auto-close pauses even well past the 2 s timeout.
+    await tester.tap(noteField);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 6));
+    expect(noteField, findsOneWidget);
+
+    // Unfocusing restarts the auto-close timer -> the chosen kind is kept and
+    // submitted on timeout (nothing the rider chose is discarded).
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(noteField, findsNothing);
+    expect(await queue.pending(), hasLength(1));
+
+    // Open Other again, type note, submit while offline -> persisted in MarkQueue unchanged.
+    await tester.ensureVisible(markButton);
+    await tester.tap(markButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('mark-kind-other')));
+    await tester.pumpAndSettle();
+    const offlineNote = 'chain clatter on decel';
+    await tester.enterText(noteField, offlineNote);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('mark-note-submit')));
+    await tester.pumpAndSettle();
+
+    final queued = await queue.pending();
+    expect(queued, hasLength(2));
+    expect(queued.last.kind, RideMarkKind.other);
+    expect(queued.last.note, offlineNote);
+    await tester.pumpWidget(const SizedBox.shrink());
+    queue.dispose();
+  });
+
+  group('Mark picker auto-close', () {
+    const timeout = Duration(seconds: 2);
+    late MarkQueue queue;
+    late TelemetryStore store;
+    late List<Map<String, dynamic>> posted;
+    late Finder markButton;
+
+    Future<void> pumpLive(WidgetTester tester) async {
+      final settings = _settingsStore('http://127.0.0.1:8000', 'tok');
+      posted = [];
+      queue = MarkQueue(
+        client: MarksClient(
+          httpClient: MockClient((request) async {
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            posted.add(body);
+            return http.Response(jsonEncode(body), 201);
+          }),
+        ),
+        settingsStore: settings,
+        clock: () => DateTime.utc(2026, 11, 16, 9, 30),
+        random: Random(21),
+      );
+      store = TelemetryStore();
+      addTearDown(() {
+        queue.dispose();
+        store.dispose();
+      });
+      await tester.pumpWidget(
+        _appHost(
+          LiveScreen(
+            store: store,
+            bleService: BleService(),
+            onOpenRecord: () {},
+            markQueue: queue,
+            pickerTimeout: timeout,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      markButton = find.byKey(const ValueKey('live-mark-button'));
+      await tester.ensureVisible(markButton);
+      await tester.tap(markButton);
+      await tester.pumpAndSettle();
+    }
+
+    Finder byKey(String key) => find.byKey(ValueKey(key));
+
+    testWidgets('Other view autofocuses the note and stays open while focused',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(byKey('mark-note-field'));
+      expect(field.autofocus, isTrue);
+      expect(field.focusNode!.hasFocus, isTrue);
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets(
+        'Other view timeout after focus loss submits other with the trimmed note',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('mark-note-field'), '  chain clatter  ');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await tester.pump(timeout - const Duration(milliseconds: 100));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      expect(byKey('mark-note-field'), findsNothing);
+      expect(posted, hasLength(1));
+      expect(posted.single['kind'], 'other');
+      expect(posted.single['note'], 'chain clatter');
+    });
+
+    testWidgets(
+        'Other view timeout with an empty note submits other without note',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      await tester.pump(timeout + const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(posted, hasLength(1));
+      expect(posted.single['kind'], 'other');
+      expect(posted.single.containsKey('note'), isFalse);
+    });
+
+    testWidgets('More view stays open while the note has focus',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('mark-note-field'));
+      await tester.pumpAndSettle();
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets('More view stays open while text is present after focus loss',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('mark-note-field'), 'rattle at 6k');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await tester.pump(const Duration(seconds: 30));
+      expect(byKey('mark-note-field'), findsOneWidget);
+      expect(posted, isEmpty);
+
+      // The typed note is still delivered unchanged when a kind is chosen.
+      final noise = byKey('mark-kind-noise');
+      await tester.ensureVisible(noise);
+      await tester.tap(noise);
+      await tester.pumpAndSettle();
+      expect(posted.single['kind'], 'noise');
+      expect(posted.single['note'], 'rattle at 6k');
+    });
+
+    testWidgets('More view with no choice and no text closes empty on timeout',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-more'));
+      await tester.pumpAndSettle();
+      await tester.pump(timeout + const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(byKey('mark-note-field'), findsNothing);
+      expect(posted, isEmpty);
+    });
+
+    testWidgets('timer is cancelled when the sheet is dismissed early',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-misfire'));
+      await tester.pumpAndSettle();
+      expect(posted, hasLength(1));
+      // No timer left from the sheet: nothing is pending after it is gone.
+      expect(tester.binding.transientCallbackCount, 0);
+      await tester.pump(const Duration(seconds: 10));
+      expect(posted, hasLength(1));
+    });
+
+    testWidgets('timer is cancelled when the sheet is removed from the tree',
+        (tester) async {
+      await pumpLive(tester);
+      await tester.tap(byKey('mark-kind-other'));
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump(); // timer armed
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      // The test framework fails on pending timers at teardown; reaching
+      // here with a pump past the timeout proves nothing fires afterwards.
+      await tester.pump(timeout * 3);
+      expect(posted, isEmpty);
+    });
+  });
 }

@@ -89,16 +89,19 @@ class _LiveScreenState extends State<LiveScreen> {
   }
 
   Future<void> _onMarkPressed() async {
-    final kind = await showRideMarkPicker(
+    final selection = await showRideMarkPicker(
       context,
       autoCloseAfter: widget.pickerTimeout,
     );
-    if (!mounted || kind == null) return;
-    final outcome = await _markQueue.recordAndSend(kind);
+    if (!mounted || selection == null) return;
+    final outcome = await _markQueue.recordAndSend(
+      selection.kind,
+      note: selection.note,
+    );
     // The rider may have left the screen while the request ran: drop the reply.
     if (!mounted) return;
     final l = context.l10n;
-    final kindLabel = kind.label(l);
+    final kindLabel = selection.kind.label(l);
     switch (outcome) {
       case MarkSendOutcome.sent:
         _showMarkMessage(l.rideMarkSaved(kindLabel));

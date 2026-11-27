@@ -1358,6 +1358,30 @@ abstract class AppLocalizations {
   /// **'Closes automatically in a few seconds'**
   String get rideMarkPickerHint;
 
+  /// No description provided for @rideMarkPickerMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get rideMarkPickerMore;
+
+  /// No description provided for @rideMarkNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional note'**
+  String get rideMarkNoteLabel;
+
+  /// No description provided for @rideMarkNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What did you notice?'**
+  String get rideMarkNoteHint;
+
+  /// No description provided for @rideMarkSaveKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Save mark: {kind}'**
+  String rideMarkSaveKind(String kind);
+
   /// No description provided for @rideMarkKindMisfire.
   ///
   /// In en, this message translates to:
