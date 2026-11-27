@@ -763,6 +763,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rideMarkPickerHint => 'Closes automatically in a few seconds';
 
   @override
+  String get rideMarkPickerMore => 'More';
+
+  @override
+  String get rideMarkNoteLabel => 'Optional note';
+
+  @override
+  String get rideMarkNoteHint => 'What did you notice?';
+
+  @override
+  String get rideMarkSave => 'Save mark';
+
+  @override
   String get rideMarkKindMisfire => 'Misfire';
 
   @override

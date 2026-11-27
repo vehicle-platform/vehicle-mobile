@@ -1,5 +1,8 @@
 import 'package:vehicle_mobile/l10n/app_localizations.dart';
 
+/// Maximum note length accepted by `POST /marks` (D-133).
+const int maxRideMarkNoteLength = 200;
+
 /// Proposed event mark categories (G4-4 / T68).
 ///
 /// Marks never carry GPS position (D-076); the UTC timestamp links them to a
@@ -24,6 +27,17 @@ enum RideMarkKind {
     RideMarkKind.noise,
     RideMarkKind.misfire,
     RideMarkKind.warningLight,
+    RideMarkKind.other,
+  ];
+
+  /// All seven D-133 kinds shown when the rider opens "More".
+  static const List<RideMarkKind> allPickerKinds = [
+    RideMarkKind.vibration,
+    RideMarkKind.noise,
+    RideMarkKind.misfire,
+    RideMarkKind.warningLight,
+    RideMarkKind.roughRoad,
+    RideMarkKind.traffic,
     RideMarkKind.other,
   ];
 
